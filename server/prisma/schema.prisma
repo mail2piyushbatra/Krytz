@@ -1,0 +1,107 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users ────────────────────────────────────────────────────────
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String?
+  settings     Json         @default("{}")
+  entries      Entry[]
+  dailyStates  DailyState[]
+  refreshTokens RefreshToken[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─── Entries ──────────────────────────────────────────────────────
+
+model Entry {
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rawText        String
+  source         String           @default("manual") // manual | calendar | gmail | notion
+  hasFiles       Boolean          @default(false)
+  timestamp      DateTime         @default(now())
+  extractedState ExtractedState?
+  files          FileAttachment[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId, timestamp(sort: Desc)])
+  @@index([userId, source])
+}
+
+// ─── AI Extracted State ───────────────────────────────────────────
+
+model ExtractedState {
+  id          String   @id @default(cuid())
+  entryId     String   @unique
+  entry       Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  actionItems Json     @default("[]")  // [{text, status?, dueDate?}]
+  blockers    Json     @default("[]")  // [{text, since?}]
+  completions Json     @default("[]")  // [{text}]
+  deadlines   Json     @default("[]")  // [{task, date}]
+  tags        Json     @default("[]")  // ["tag1", "tag2"]
+  sentiment   String?                  // focused | stressed | productive | neutral | overwhelmed
+  processedAt DateTime @default(now())
+}
+
+// ─── File Attachments ─────────────────────────────────────────────
+
+model FileAttachment {
+  id            String   @id @default(cuid())
+  entryId       String
+  entry         Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  fileName      String
+  fileType      String   // image/jpeg | image/png | application/pdf
+  fileUrl       String   // S3/R2 URL
+  fileKey       String   // S3/R2 object key
+  fileSize      Int      // bytes
+  extractedText String?  // OCR/AI extracted content
+  createdAt     DateTime @default(now())
+
+  @@index([entryId])
+}
+
+// ─── Daily Aggregated State ───────────────────────────────────────
+
+model DailyState {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  openItems      Int      @default(0)
+  blockerCount   Int      @default(0)
+  completedCount Int      @default(0)
+  deadlines      Json     @default("[]") // [{task, date}]
+  summary        String?
+  computedAt     DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date(sort: Desc)])
+}

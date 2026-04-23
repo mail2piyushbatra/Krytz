@@ -1,0 +1,114 @@
+# Flowra — Local Development Stack
+# Run: docker-compose up -d
+# API will be at: http://localhost:8000
+
+services:
+  # ─── PostgreSQL ──────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowra-db
+    environment:
+      POSTGRES_USER: flowra
+      POSTGRES_PASSWORD: flowra_dev_password
+      POSTGRES_DB: flowra
+    ports:
+      - "5432:5432"
+    volumes:
+      - flowra_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowra"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Redis ───────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: flowra-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - flowra_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── MinIO (S3-compatible file storage) ──────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: flowra-storage
+    environment:
+      MINIO_ROOT_USER: flowra_access_key
+      MINIO_ROOT_PASSWORD: flowra_secret_key
+    ports:
+      - "9000:9000"    # API
+      - "9001:9001"    # Console
+    volumes:
+      - flowra_minio:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Create default bucket on startup ────────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: flowra-storage-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set flowra http://minio:9000 flowra_access_key flowra_secret_key;
+        mc mb flowra/flowra-files --ignore-existing;
+        mc anonymous set download flowra/flowra-files;
+        echo 'Bucket flowra-files created.';
+      "
+
+  # ─── Flowra API ──────────────────────────────────────────
+  api:
+    build:
+      context: .
+      target: development
+    container_name: flowra-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 8000
+      DATABASE_URL: postgresql://flowra:flowra_dev_password@postgres:5432/flowra?schema=public
+      JWT_SECRET: dev-jwt-secret-not-for-production
+      JWT_REFRESH_SECRET: dev-refresh-secret-not-for-production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 30d
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-api-key}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: flowra_access_key
+      S3_SECRET_KEY: flowra_secret_key
+      S3_BUCKET: flowra-files
+      S3_REGION: us-east-1
+      LOG_LEVEL: debug
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/src:/app/server/src       # Hot reload
+      - ./shared:/app/shared               # Hot reload
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  flowra_pgdata:
+  flowra_redis:
+  flowra_minio:

@@ -1,0 +1,22 @@
+{
+  "name": "flowra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Your life, reconstructed. State-aware personal capture & tracking.",
+  "workspaces": [
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=server",
+    "build:server": "npm run build --workspace=server",
+    "db:migrate": "npm run db:migrate --workspace=server",
+    "db:seed": "npm run db:seed --workspace=server",
+    "db:studio": "npm run db:studio --workspace=server",
+    "test:server": "npm run test --workspace=server",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
+  },
+  "author": "Piyush",
+  "license": "UNLICENSED"
+}

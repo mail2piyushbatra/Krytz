@@ -1,0 +1,14 @@
+# Docker
+*.db
+*.db-journal
+node_modules/
+.env
+.env.local
+.env.production
+.git/
+.github/
+docs/
+coverage/
+*.md
+!README.md
+.expo/

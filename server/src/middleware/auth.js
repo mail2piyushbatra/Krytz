@@ -9,7 +9,7 @@ function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AppError('Authentication required.', 401, 'UNAUTHORIZED');
+    return next(new AppError('Authentication required.', 401, 'UNAUTHORIZED'));
   }
 
   const token = authHeader.split(' ')[1];

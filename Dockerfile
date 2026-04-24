@@ -23,7 +23,8 @@ ENV NODE_ENV=development
 
 EXPOSE 8000
 
-CMD ["npm", "run", "dev:server"]
+# Run migrations then start dev server
+CMD ["sh", "-c", "cd server && npx prisma migrate deploy && cd /app && npm run dev:server"]
 
 # ─── Production ────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -43,6 +44,10 @@ COPY server/ ./server/
 
 RUN cd server && npx prisma generate
 
+# Entrypoint script: migrate then start
+COPY server/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Non-root user for security
 RUN addgroup -g 1001 -S flowra && \
     adduser -S flowra -u 1001 -G flowra
@@ -53,4 +58,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1
 
-CMD ["node", "server/src/index.js"]
+CMD ["/app/docker-entrypoint.sh"]

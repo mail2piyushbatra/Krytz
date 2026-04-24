@@ -44,12 +44,12 @@ services:
       MINIO_ROOT_PASSWORD: flowra_secret_key
     ports:
       - "9000:9000"    # API
-      - "9001:9001"    # Console
+      - "9091:9001"    # Console
     volumes:
       - flowra_minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
       timeout: 3s
       retries: 5

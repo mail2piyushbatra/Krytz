@@ -1,4 +1,5 @@
 const { S3Client, DeleteObjectCommand, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
+const logger = require('../../lib/logger');
 
 const s3 = new S3Client({
   region: process.env.S3_REGION || 'auto',
@@ -20,9 +21,9 @@ async function deleteFileFromS3(fileKey) {
       Bucket: BUCKET,
       Key: fileKey,
     }));
-    console.log(`✦ Deleted file from S3: ${fileKey}`);
+    logger.info('Deleted file from S3', { fileKey });
   } catch (err) {
-    console.error(`✦ Failed to delete file from S3: ${fileKey}`, err.message);
+    logger.error('Failed to delete file from S3', { fileKey, error: err });
     // Don't throw — file deletion failure should not block DB operations.
     // The file becomes orphaned but the user experience is not affected.
   }
@@ -49,9 +50,9 @@ async function deleteFilesFromS3(fileKeys) {
           Quiet: true,
         },
       }));
-      console.log(`✦ Batch deleted ${batch.length} files from S3`);
+      logger.info('Batch deleted files from S3', { count: batch.length });
     } catch (err) {
-      console.error(`✦ Batch delete failed for ${batch.length} files:`, err.message);
+      logger.error('Batch delete failed, falling back to individual', { count: batch.length, error: err });
       // Fallback: try deleting individually
       for (const key of batch) {
         await deleteFileFromS3(key);

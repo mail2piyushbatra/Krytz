@@ -2,15 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 
+const logger = require('./lib/logger');
 const authRoutes = require('./modules/auth/auth.routes');
 const entryRoutes = require('./modules/entries/entry.routes');
 const stateRoutes = require('./modules/state/state.routes');
 const fileRoutes = require('./modules/files/file.routes');
 const recallRoutes = require('./modules/ai/recall.routes');
 const { errorHandler } = require('./middleware/errorHandler');
+const prisma = require('./lib/prisma');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -22,7 +23,7 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true,
 }));
-app.use(morgan('dev'));
+app.use(logger.requestLogger());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -94,20 +95,50 @@ app.use(errorHandler);
 
 const { initializeEngines } = require('./engines');
 
+let server;
+
 async function start() {
+  // Verify database connection
+  await prisma.$connect();
+  logger.info('Database connected');
+
   // Initialize all engines before accepting requests
   await initializeEngines();
+  logger.info('All engines initialized');
 
-  app.listen(PORT, () => {
-    console.log(`  ✦ Flowra API running on http://localhost:${PORT}`);
-    console.log(`  ✦ Health: http://localhost:${PORT}/health`);
-    console.log(`  ✦ Engines: http://localhost:${PORT}/health/engines`);
-    console.log(`  ✦ Environment: ${process.env.NODE_ENV || 'development'}\n`);
+  server = app.listen(PORT, () => {
+    logger.info(`Flowra API running`, { port: PORT, env: process.env.NODE_ENV || 'development' });
   });
 }
 
+// ─── Graceful Shutdown ────────────────────────────────────────────
+
+async function shutdown(signal) {
+  logger.info(`${signal} received. Shutting down gracefully...`);
+
+  // Stop accepting new connections
+  if (server) {
+    server.close(() => {
+      logger.info('HTTP server closed');
+    });
+  }
+
+  // Disconnect database
+  try {
+    await prisma.$disconnect();
+    logger.info('Database disconnected');
+  } catch (err) {
+    logger.error('Error disconnecting database', { error: err });
+  }
+
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 start().catch((err) => {
-  console.error('✦ Failed to start server:', err);
+  logger.error('Failed to start server', { error: err });
   process.exit(1);
 });
 

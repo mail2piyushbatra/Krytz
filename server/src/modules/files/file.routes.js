@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const express = require('express');
 const { authenticate } = require('../../middleware/auth');
 const prisma = require('../../lib/prisma');
+const logger = require('../../lib/logger');
+const { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } = require('../../../../shared/constants');
 
 const router = express.Router();
 

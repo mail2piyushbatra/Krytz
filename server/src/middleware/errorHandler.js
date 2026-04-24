@@ -1,9 +1,11 @@
+const logger = require('../lib/logger');
+
 /**
  * Global error handler middleware.
  * Catches all errors and returns consistent JSON response.
  */
 function errorHandler(err, req, res, next) {
-  console.error('Error:', err.message);
+  logger.error(err.message, { error: err, path: req.path, method: req.method });
 
   // Prisma known errors
   if (err.code === 'P2002') {

@@ -1,20 +1,20 @@
 # Flowra — Local Development Stack
 # Run: docker-compose up -d
-# API will be at: http://localhost:8000
+# API will be at: http://localhost:8301
 
 services:
   # ─── PostgreSQL ──────────────────────────────────────────
   postgres:
-    image: postgres:16-alpine
-    container_name: flowra-db
+    image: pgvector/pgvector:pg16
+    container_name: flowra2-db
     environment:
       POSTGRES_USER: flowra
       POSTGRES_PASSWORD: flowra_dev_password
       POSTGRES_DB: flowra
     ports:
-      - "5432:5432"
+      - "5544:5432"
     volumes:
-      - flowra_pgdata:/var/lib/postgresql/data
+      - flowra2_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U flowra"]
       interval: 5s
@@ -24,11 +24,11 @@ services:
   # ─── Redis ───────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: flowra-redis
+    container_name: flowra2-redis
     ports:
-      - "6379:6379"
+      - "6381:6379"
     volumes:
-      - flowra_redis:/data
+      - flowra2_redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -38,15 +38,15 @@ services:
   # ─── MinIO (S3-compatible file storage) ──────────────────
   minio:
     image: minio/minio:latest
-    container_name: flowra-storage
+    container_name: flowra2-storage
     environment:
       MINIO_ROOT_USER: flowra_access_key
       MINIO_ROOT_PASSWORD: flowra_secret_key
     ports:
-      - "9000:9000"    # API
-      - "9091:9001"    # Console
+      - "9100:9000"    # API
+      - "9191:9001"    # Console
     volumes:
-      - flowra_minio:/data
+      - flowra2_minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -57,7 +57,7 @@ services:
   # ─── Create default bucket on startup ────────────────────
   minio-init:
     image: minio/mc:latest
-    container_name: flowra-storage-init
+    container_name: flowra2-storage-init
     depends_on:
       minio:
         condition: service_healthy
@@ -74,7 +74,7 @@ services:
     build:
       context: .
       target: development
-    container_name: flowra-api
+    container_name: flowra2-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,7 +98,7 @@ services:
       S3_REGION: us-east-1
       LOG_LEVEL: debug
     ports:
-      - "8000:8000"
+      - "8301:8000"
     volumes:
       - ./server/src:/app/server/src       # Hot reload
       - ./shared:/app/shared               # Hot reload
@@ -109,6 +109,6 @@ services:
       retries: 5
 
 volumes:
-  flowra_pgdata:
-  flowra_redis:
-  flowra_minio:
+  flowra2_pgdata:
+  flowra2_redis:
+  flowra2_minio:

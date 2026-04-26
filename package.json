@@ -18,5 +18,8 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "author": "Piyush",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "uuid": "^14.0.0"
+  }
 }

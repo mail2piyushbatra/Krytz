@@ -1,0 +1,51 @@
+/* ✦ Settings Screen styles — Phase 1 */
+
+.settings-section { margin-bottom: var(--space-8); }
+.settings-card { display: flex; flex-direction: column; gap: var(--space-5); }
+
+.settings-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.settings-label { font-size: var(--text-sm); font-weight: 500; color: var(--text-secondary); }
+.settings-actions { display: flex; justify-content: flex-end; padding-top: var(--space-2); }
+
+/* Theme options */
+.theme-options { display: flex; gap: var(--space-3); }
+.theme-option {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.theme-option.active { border-color: var(--accent-primary); color: var(--text-primary); }
+.theme-option:disabled { opacity: 0.4; cursor: not-allowed; }
+.theme-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border-strong); }
+
+/* Info rows */
+.settings-info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.settings-info-row:last-child { border-bottom: none; }
+.settings-info-label { font-size: var(--text-sm); color: var(--text-secondary); }
+.settings-info-value { font-size: var(--text-sm); color: var(--text-tertiary); font-family: monospace; }
+
+/* Data rows */
+.settings-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-4);
+}
+.settings-data-row:last-child { border-bottom: none; }
+.settings-data-label { font-size: var(--text-sm); font-weight: 500; color: var(--text-primary); }
+.settings-data-desc { font-size: var(--text-xs); color: var(--text-tertiary); margin-top: 2px; }
+
+.settings-danger { border-color: rgba(255, 71, 87, 0.15); }

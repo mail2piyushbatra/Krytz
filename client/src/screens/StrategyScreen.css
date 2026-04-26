@@ -1,0 +1,53 @@
+.strategy-screen {
+  max-width: 1080px;
+}
+
+.strategy-screen h1 {
+  font-size: clamp(2.4rem, 7vw, 5.4rem);
+  line-height: 0.92;
+  max-width: 860px;
+  margin: var(--space-2) 0 var(--space-8);
+}
+
+.strategy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.strategy-card {
+  min-height: 220px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(46, 213, 115, 0.11), transparent 34%),
+    var(--bg-secondary);
+  padding: var(--space-6);
+}
+
+.strategy-card.wide {
+  grid-column: 1 / -1;
+}
+
+.strategy-card span {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.strategy-card strong {
+  display: block;
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  margin: var(--space-5) 0;
+}
+
+.strategy-card p {
+  color: var(--text-secondary);
+  max-width: 620px;
+}
+
+@media (max-width: 760px) {
+  .strategy-grid {
+    grid-template-columns: 1fr;
+  }
+}

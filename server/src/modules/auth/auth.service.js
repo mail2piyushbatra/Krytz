@@ -1,128 +1,100 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const prisma = require('../../lib/prisma');
+const { Pool } = require('pg');
 const { AppError } = require('../../middleware/errorHandler');
 
 const SALT_ROUNDS = 12;
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-/**
- * Register a new user.
- */
 async function register({ email, password, name }) {
-  // Check if user exists
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
+  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+  if (existing.rows.length > 0) {
     throw new AppError('Email already registered.', 409, 'CONFLICT');
   }
 
-  // Hash password
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const { rows } = await pool.query(
+    `INSERT INTO users(email, password_hash, name)
+     VALUES($1, $2, $3)
+     RETURNING id, email, name, timezone, onboarded, settings, created_at`,
+    [email, passwordHash, name || null]
+  );
 
-  // Create user
-  const user = await prisma.user.create({
-    data: { email, passwordHash, name },
-    select: { id: true, email: true, name: true, createdAt: true },
-  });
-
-  // Generate tokens
+  const user = toApiUser(rows[0]);
   const tokens = await generateTokens(user);
-
   return { user, ...tokens };
 }
 
-/**
- * Login with email and password.
- */
 async function login({ email, password }) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
+  const { rows } = await pool.query(
+    `SELECT id, email, name, password_hash, timezone, onboarded, settings, created_at
+     FROM users
+     WHERE email = $1`,
+    [email]
+  );
+
+  if (rows.length === 0) {
     throw new AppError('Invalid email or password.', 401, 'UNAUTHORIZED');
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  const valid = await bcrypt.compare(password, rows[0].password_hash || '');
   if (!valid) {
     throw new AppError('Invalid email or password.', 401, 'UNAUTHORIZED');
   }
 
+  const user = toApiUser(rows[0]);
   const tokens = await generateTokens(user);
-
-  return {
-    user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
-    ...tokens,
-  };
+  return { user, ...tokens };
 }
 
-/**
- * Refresh access token using a valid refresh token.
- */
 async function refresh(refreshToken) {
-  // Find refresh token in DB
-  const stored = await prisma.refreshToken.findUnique({
-    where: { token: refreshToken },
-    include: { user: true },
-  });
+  const { rows } = await pool.query(
+    `SELECT rt.id AS token_id,
+            rt.expires_at,
+            u.id,
+            u.email,
+            u.name,
+            u.timezone,
+            u.onboarded,
+            u.settings,
+            u.created_at
+     FROM refresh_tokens rt
+     JOIN users u ON u.id = rt.user_id
+     WHERE rt.token = $1`,
+    [refreshToken]
+  );
 
-  if (!stored || stored.expiresAt < new Date()) {
-    // Clean up expired token if found
-    if (stored) {
-      await prisma.refreshToken.delete({ where: { id: stored.id } });
+  if (rows.length === 0 || new Date(rows[0].expires_at) < new Date()) {
+    if (rows.length > 0) {
+      await pool.query('DELETE FROM refresh_tokens WHERE id = $1', [rows[0].token_id]);
     }
     throw new AppError('Invalid or expired refresh token.', 401, 'UNAUTHORIZED');
   }
 
-  // Rotate: delete old token, create new pair
-  await prisma.refreshToken.delete({ where: { id: stored.id } });
+  await pool.query('DELETE FROM refresh_tokens WHERE id = $1', [rows[0].token_id]);
 
-  const tokens = await generateTokens(stored.user);
-
-  return {
-    user: {
-      id: stored.user.id,
-      email: stored.user.email,
-      name: stored.user.name,
-      createdAt: stored.user.createdAt,
-    },
-    ...tokens,
-  };
+  const user = toApiUser(rows[0]);
+  const tokens = await generateTokens(user);
+  return { user, ...tokens };
 }
 
-/**
- * Get current user profile.
- */
 async function getProfile(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, email: true, name: true, settings: true, createdAt: true },
-  });
-  if (!user) throw new AppError('User not found.', 404, 'NOT_FOUND');
-  return user;
+  const { rows } = await pool.query(
+    `SELECT id, email, name, timezone, onboarded, settings, created_at
+     FROM users
+     WHERE id = $1`,
+    [userId]
+  );
+
+  if (rows.length === 0) throw new AppError('User not found.', 404, 'NOT_FOUND');
+  return toApiUser(rows[0]);
 }
 
-/**
- * Delete user account and all data.
- * Purges all files from S3/R2 before cascading DB deletes.
- */
 async function deleteAccount(userId) {
-  // 1. Collect all file keys before deleting DB records
-  const files = await prisma.fileAttachment.findMany({
-    where: { entry: { userId } },
-    select: { fileKey: true },
-  });
-
-  // 2. Delete files from S3/R2
-  if (files.length > 0) {
-    const { deleteFilesFromS3 } = require('../files/file.service');
-    await deleteFilesFromS3(files.map((f) => f.fileKey));
-  }
-
-  // 3. Cascade delete all DB records (entries, states, files, tokens)
-  await prisma.user.delete({ where: { id: userId } });
-
+  await pool.query('DELETE FROM users WHERE id = $1', [userId]);
   return { message: 'Account and all data deleted.' };
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────
 
 async function generateTokens(user) {
   const accessToken = jwt.sign(
@@ -132,17 +104,25 @@ async function generateTokens(user) {
   );
 
   const refreshToken = crypto.randomBytes(40).toString('hex');
-
-  // Store refresh token in DB
-  await prisma.refreshToken.create({
-    data: {
-      token: refreshToken,
-      userId: user.id,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    },
-  });
+  await pool.query(
+    `INSERT INTO refresh_tokens(token, user_id, expires_at)
+     VALUES($1, $2, $3)`,
+    [refreshToken, user.id, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)]
+  );
 
   return { accessToken, refreshToken };
+}
+
+function toApiUser(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    timezone: row.timezone,
+    onboarded: row.onboarded,
+    settings: row.settings,
+    createdAt: row.created_at,
+  };
 }
 
 module.exports = { register, login, refresh, getProfile, deleteAccount };

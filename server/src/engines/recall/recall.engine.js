@@ -1,297 +1,232 @@
 /**
- * ✦ RECALL ENGINE
+ * ✦ RECALL ENGINE — v3
  *
- * Natural language query system over user's entry history.
- * Retrieves relevant entries, builds context, and asks LLM to answer.
+ * Intent-aware retrieval + semantic re-ranking.
  *
- * Strategies:
- *   - Time-based retrieval ("what did I do last week?")
- *   - Keyword search ("anything about Rajesh?")
- *   - Full context dump (for short time ranges)
+ * Upgrades from v2:
+ *   - Intent classifier routes query to correct strategy (via QueryPlanner)
+ *   - Semantic ranking via cosine similarity (embedding-based)
+ *   - Query result caching (SHA-256 keyed, 5 min TTL)
+ *   - Token-budget context packing
+ *   - Cost tracking for LLM calls
+ *   - Falls back to keyword search when time-range retrieval is sparse
  */
 
-const OpenAI = require('openai');
+'use strict';
+
+const crypto   = require('crypto');
+const OpenAI   = require('openai');
 const BaseEngine = require('../base.engine');
-const prisma = require('../../lib/prisma');
+const { classifyIntent, packContext, formatContext, getSystemPrompt } = require('./query.planner');
+const logger     = require('../../lib/logger');
 
-const RECALL_SYSTEM_PROMPT = `You are a personal recall assistant for Flowra.
-The user will ask about their past activities. You have access to their timeline entries below.
+// ─── Query cache ──────────────────────────────────────────────────────────────
+class QueryCache {
+  constructor({ ttlMs = 5 * 60 * 1000, maxSize = 200 } = {}) {
+    this._map   = new Map();
+    this._ttl   = ttlMs;
+    this._max   = maxSize;
+    this.hits   = 0;
+    this.misses = 0;
+  }
 
-Rules:
-- Answer based ONLY on the provided entries. Do NOT speculate or invent information.
-- Be concise but complete. Use bullet points for multiple items.
-- Reference specific dates when relevant.
-- If the entries don't contain enough info, say so honestly.
-- Never make up activities, meetings, or tasks that aren't in the entries.`;
+  _key(userId, query) {
+    return crypto.createHash('sha256').update(`${userId}:${query}`).digest('hex');
+  }
 
+  get(userId, query) {
+    const k     = this._key(userId, query);
+    const entry = this._map.get(k);
+    if (!entry)                        { this.misses++; return null; }
+    if (Date.now() > entry.expiresAt)  { this._map.delete(k); this.misses++; return null; }
+    this.hits++;
+    return entry.value;
+  }
+
+  set(userId, query, value) {
+    const k = this._key(userId, query);
+    if (this._map.size >= this._max) {
+      const oldest = this._map.keys().next().value;
+      this._map.delete(oldest);
+    }
+    this._map.set(k, { value, expiresAt: Date.now() + this._ttl });
+  }
+}
+
+// ─── Time range parser ────────────────────────────────────────────────────────
+function parseTimeRange(query) {
+  const now = new Date();
+  const q   = query.toLowerCase();
+
+  if (/today/i.test(q)) {
+    const from = new Date(now); from.setHours(0, 0, 0, 0);
+    return { from, to: now };
+  }
+  if (/yesterday/i.test(q)) {
+    const from = new Date(now); from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0);
+    const to   = new Date(from); to.setHours(23, 59, 59, 999);
+    return { from, to };
+  }
+  if (/this week/i.test(q) || /past week/i.test(q) || /last 7 days/i.test(q)) {
+    const from = new Date(now); from.setDate(from.getDate() - 7); from.setHours(0, 0, 0, 0);
+    return { from, to: now };
+  }
+  if (/last month/i.test(q) || /past month/i.test(q) || /last 30 days/i.test(q)) {
+    const from = new Date(now); from.setDate(from.getDate() - 30); from.setHours(0, 0, 0, 0);
+    return { from, to: now };
+  }
+
+  // Day names: "monday", "tuesday"
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  for (let i = 0; i < days.length; i++) {
+    if (q.includes(days[i])) {
+      const diff = (now.getDay() - i + 7) % 7 || 7;
+      const from = new Date(now); from.setDate(from.getDate() - diff); from.setHours(0, 0, 0, 0);
+      const to   = new Date(from); to.setHours(23, 59, 59, 999);
+      return { from, to };
+    }
+  }
+
+  // Default: last 7 days
+  const from = new Date(now); from.setDate(from.getDate() - 7); from.setHours(0, 0, 0, 0);
+  return { from, to: now };
+}
+
+// ─── Engine ───────────────────────────────────────────────────────────────────
 class RecallEngine extends BaseEngine {
   constructor() {
     super('recall');
-    this.client = null;
-    this.model = 'gpt-4o-mini';
-    this.maxContextEntries = 50;
-    this.maxContextChars = 12000;
+    this._cache  = new QueryCache();
+    this._client = null;
   }
 
   async initialize() {
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey || apiKey === 'sk-your-openai-api-key') {
-      console.warn('  ⚠ RecallEngine: No valid OPENAI_API_KEY. Recall will return fallback responses.');
-      this.client = null;
-    } else {
-      this.client = new OpenAI({ apiKey });
-    }
-
     await super.initialize();
+    const key = process.env.OPENAI_API_KEY;
+    if (key && key !== 'sk-your-openai-api-key') {
+      this._client = new OpenAI({ apiKey: key });
+    }
+    logger.info('RecallEngine initialized', { hasOpenAI: !!this._client });
   }
 
   /**
-   * Answer a natural language query using the user's entries.
+   * Recall query — intent-aware retrieval + LLM synthesis.
    *
-   * @param {string} userId - User ID
-   * @param {string} query - Natural language question
-   * @returns {Object} { answer, sourceEntries, confidence }
+   * @param {string} userId
+   * @param {string} query
+   * @param {Repository} repo - injected data access layer
+   * @returns {{ answer, intent, entriesUsed, cached }}
    */
-  async query(userId, query) {
+  async query(userId, query, repo) {
     this.ensureReady();
-    this.trackCall();
+    const done = this.startCall();
 
-    // 1. Determine time range from query
-    const timeRange = this._parseTimeRange(query);
-
-    // 2. Retrieve relevant entries
-    const entries = await this._retrieveEntries(userId, query, timeRange);
-
-    if (entries.length === 0) {
-      return {
-        answer: "I don't have enough entries to answer that yet. Keep capturing!",
-        sourceEntries: [],
-        confidence: 'low',
-      };
-    }
-
-    // 3. If no LLM client, return raw entries summary
-    if (!this.client) {
-      return {
-        answer: `Found ${entries.length} entries in the time range. LLM not configured for full recall.`,
-        sourceEntries: entries.slice(0, 5).map(this._formatSourceEntry),
-        confidence: 'low',
-      };
-    }
-
-    // 4. Build context from entries
-    const context = this._buildContext(entries);
-
-    // 5. Ask LLM
     try {
-      const completion = await this.client.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: 'system', content: RECALL_SYSTEM_PROMPT },
-          { role: 'user', content: `Here are the user's entries:\n\n${context}\n\nQuestion: ${query}` },
-        ],
-        temperature: 0.3,
-        max_tokens: 1500,
+      // 1. Cache check
+      const cached = this._cache.get(userId, query);
+      if (cached) {
+        done();
+        return { ...cached, cached: true };
+      }
+
+      // 2. Classify intent
+      const intent    = classifyIntent(query);
+      const timeRange = parseTimeRange(query);
+      const queryTerms = query.toLowerCase()
+        .replace(/[^\w\s]/g, '').split(/\s+/)
+        .filter(t => t.length > 2 && !['what', 'when', 'how', 'did', 'the', 'was', 'and', 'for'].includes(t));
+
+      logger.info('Recall query classified', { userId, intent, queryTerms: queryTerms.slice(0, 5) });
+
+      // 3. Retrieve entries
+      let entries = await repo.getEntriesRange(userId, timeRange.from, timeRange.to, {
+        includeExtracted: true,
+        orderBy: 'desc',
+        limit: 50,
       });
 
-      const answer = completion.choices[0].message.content;
+      // Fallback: if time-range returned few results, try keyword search
+      if (entries.length < 3) {
+        const kw = queryTerms.slice(0, 5);
+        if (kw.length > 0) {
+          const kwEntries = await repo.searchEntriesByKeywords(userId, kw, { includeExtracted: true, limit: 20 });
+          const existingIds = new Set(entries.map(e => e.id));
+          entries = [...entries, ...kwEntries.filter(e => !existingIds.has(e.id))];
+        }
+      }
 
-      return {
-        answer,
-        sourceEntries: entries.slice(0, 5).map(this._formatSourceEntry),
-        confidence: entries.length > 10 ? 'high' : entries.length > 3 ? 'medium' : 'low',
-      };
-    } catch (err) {
-      this.trackError();
-      console.error('✦ Recall query failed:', err.message);
-      return {
-        answer: 'Sorry, I had trouble processing your question. Please try again.',
-        sourceEntries: [],
-        confidence: 'low',
-      };
-    }
-  }
+      if (entries.length === 0) {
+        const result = { answer: 'I don\'t have any entries in this time range. Try a different query.', intent, entriesUsed: 0, cached: false };
+        done();
+        return result;
+      }
 
-  /**
-   * Parse natural language query to determine time range.
-   */
-  _parseTimeRange(query) {
-    const now = new Date();
-    const q = query.toLowerCase();
+      // 4. Pack context under token budget
+      const selectedEntries = packContext(entries, {
+        tokenBudget: 3000,
+        queryTerms,
+      });
 
-    // "today"
-    if (q.includes('today')) {
-      const start = new Date(now);
-      start.setHours(0, 0, 0, 0);
-      return { from: start, to: now };
-    }
+      // 5. Format for LLM
+      const contextStr  = formatContext(selectedEntries, intent);
+      const systemPrompt = getSystemPrompt(intent);
 
-    // "yesterday"
-    if (q.includes('yesterday')) {
-      const start = new Date(now);
-      start.setDate(start.getDate() - 1);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setHours(23, 59, 59, 999);
-      return { from: start, to: end };
-    }
-
-    // "this week" / "last week"
-    if (q.includes('this week')) {
-      const start = new Date(now);
-      start.setDate(start.getDate() - start.getDay()); // start of week (Sunday)
-      start.setHours(0, 0, 0, 0);
-      return { from: start, to: now };
-    }
-
-    if (q.includes('last week')) {
-      const start = new Date(now);
-      start.setDate(start.getDate() - start.getDay() - 7);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-      return { from: start, to: end };
-    }
-
-    // "last X days"
-    const daysMatch = q.match(/last\s+(\d+)\s+days?/);
-    if (daysMatch) {
-      const days = parseInt(daysMatch[1]);
-      const start = new Date(now);
-      start.setDate(start.getDate() - days);
-      start.setHours(0, 0, 0, 0);
-      return { from: start, to: now };
-    }
-
-    // "this month"
-    if (q.includes('this month')) {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      return { from: start, to: now };
-    }
-
-    // Default: last 30 days
-    const start = new Date(now);
-    start.setDate(start.getDate() - 30);
-    return { from: start, to: now };
-  }
-
-  /**
-   * Retrieve entries matching the query context.
-   * Combines time-based and keyword-based retrieval.
-   */
-  async _retrieveEntries(userId, query, timeRange) {
-    // Time-based retrieval
-    const entries = await prisma.entry.findMany({
-      where: {
-        userId,
-        timestamp: {
-          gte: timeRange.from,
-          lte: timeRange.to,
-        },
-      },
-      include: { extractedState: true },
-      orderBy: { timestamp: 'desc' },
-      take: this.maxContextEntries,
-    });
-
-    // If few results from time range, also search by keyword
-    if (entries.length < 5) {
-      const keywords = this._extractKeywords(query);
-
-      if (keywords.length > 0) {
-        const keywordEntries = await prisma.entry.findMany({
-          where: {
-            userId,
-            OR: keywords.map((kw) => ({
-              rawText: { contains: kw, mode: 'insensitive' },
-            })),
-          },
-          include: { extractedState: true },
-          orderBy: { timestamp: 'desc' },
-          take: 20,
+      // 6. Generate answer
+      let answer;
+      if (this._client) {
+        const resp = await this._client.chat.completions.create({
+          model:       'gpt-4o-mini',
+          temperature: 0.1,
+          max_tokens:  500,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: `ENTRIES:\n${contextStr}\n\nQUESTION: ${query}` },
+          ],
         });
 
-        // Merge and deduplicate
-        const entryIds = new Set(entries.map((e) => e.id));
-        for (const entry of keywordEntries) {
-          if (!entryIds.has(entry.id)) {
-            entries.push(entry);
-            entryIds.add(entry.id);
-          }
-        }
-      }
-    }
+        answer = resp.choices[0].message.content;
 
-    return entries;
-  }
-
-  /**
-   * Extract meaningful keywords from query for search.
-   */
-  _extractKeywords(query) {
-    const stopWords = new Set([
-      'what', 'did', 'do', 'does', 'i', 'my', 'me', 'the', 'a', 'an', 'is', 'was',
-      'were', 'have', 'has', 'had', 'about', 'with', 'for', 'on', 'in', 'at', 'to',
-      'of', 'and', 'or', 'this', 'that', 'last', 'week', 'today', 'yesterday',
-      'how', 'many', 'much', 'when', 'where', 'any', 'anything', 'something',
-    ]);
-
-    return query
-      .toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(/\s+/)
-      .filter((word) => word.length > 2 && !stopWords.has(word));
-  }
-
-  /**
-   * Build LLM context string from entries, respecting token limits.
-   */
-  _buildContext(entries) {
-    let totalChars = 0;
-    const lines = [];
-
-    for (const entry of entries) {
-      const date = entry.timestamp.toISOString().split('T')[0];
-      const time = entry.timestamp.toTimeString().split(' ')[0].slice(0, 5);
-
-      let line = `[${date} ${time}] ${entry.rawText}`;
-
-      if (entry.extractedState) {
-        const es = entry.extractedState;
-        const parts = [];
-        if (Array.isArray(es.actionItems) && es.actionItems.length > 0) {
-          parts.push(`Actions: ${es.actionItems.map((i) => i.text).join('; ')}`);
-        }
-        if (Array.isArray(es.blockers) && es.blockers.length > 0) {
-          parts.push(`Blockers: ${es.blockers.map((i) => i.text).join('; ')}`);
-        }
-        if (Array.isArray(es.completions) && es.completions.length > 0) {
-          parts.push(`Done: ${es.completions.map((i) => i.text).join('; ')}`);
-        }
-        if (parts.length > 0) {
-          line += `\n  → ${parts.join(' | ')}`;
-        }
+        // Track cost
+        const usage = resp.usage || {};
+        this.recordCost({
+          inputTokens:  usage.prompt_tokens || 0,
+          outputTokens: usage.completion_tokens || 0,
+          usd:          ((usage.prompt_tokens || 0) * 0.00015 + (usage.completion_tokens || 0) * 0.0006) / 1000,
+        });
+      } else {
+        // No API key — return raw context
+        answer = `[No OpenAI key — returning raw entries]\n\n${contextStr}`;
       }
 
-      if (totalChars + line.length > this.maxContextChars) break;
+      const result = { answer, intent, entriesUsed: selectedEntries.length, cached: false };
 
-      lines.push(line);
-      totalChars += line.length;
+      // Cache result
+      this._cache.set(userId, query, result);
+
+      done();
+      return result;
+
+    } catch (err) {
+      done(err);
+      logger.error('Recall query failed', { userId, error: err.message });
+      throw err;
     }
-
-    return lines.join('\n\n');
   }
 
   /**
-   * Format an entry for the sourceEntries response.
+   * Return cache + cost stats for observability.
    */
-  _formatSourceEntry(entry) {
+  getHealth() {
+    const base = super.getHealth();
     return {
-      id: entry.id,
-      rawText: entry.rawText.length > 200 ? entry.rawText.slice(0, 200) + '...' : entry.rawText,
-      timestamp: entry.timestamp,
+      ...base,
+      cache: {
+        hits:   this._cache.hits,
+        misses: this._cache.misses,
+        hitRate: (this._cache.hits + this._cache.misses) > 0
+          ? (this._cache.hits / (this._cache.hits + this._cache.misses)).toFixed(2)
+          : '0',
+      },
     };
   }
 }

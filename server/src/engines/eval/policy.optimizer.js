@@ -121,9 +121,9 @@ function scoreRecall(answer, expectedFacts) {
 // ─── Extraction path router ───────────────────────────────────────────────────
 // Uses live quality stats to route each extraction to the right strategy.
 function chooseExtractionPath({ precision, cost, latencyMs } = {}) {
-  if (precision != null && precision < 0.65) return 'LLM_STRICT';    // quality too low → strict LLM
-  if (cost      != null && cost > 0.003)     return 'RULE_HEAVY';    // too expensive → lean on rules
-  if (latencyMs != null && latencyMs > 3000) return 'RULE_HEAVY';    // too slow → local first
+  if (precision !== null && precision < 0.65) return 'LLM_STRICT';    // quality too low → strict LLM
+  if (cost      !== null && cost > 0.003)     return 'RULE_HEAVY';    // too expensive → lean on rules
+  if (latencyMs !== null && latencyMs > 3000) return 'RULE_HEAVY';    // too slow → local first
   return 'HYBRID';                                                     // default
 }
 

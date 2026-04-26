@@ -211,10 +211,10 @@ function QueueItem({ item, busy, onAction, onExplain }) {
 function ItemMeta({ item }) {
   const bits = [];
   if (item.project) bits.push(item.project);
-  if (item.deadlineDays != null) bits.push(item.deadlineDays <= 0 ? 'time risk now' : `time risk ${item.deadlineDays}d`);
+  if (item.deadlineDays !== null) bits.push(item.deadlineDays <= 0 ? 'time risk now' : `time risk ${item.deadlineDays}d`);
   if (item.persistDays) bits.push(`memory age ${item.persistDays}d`);
   if (item.downstreamOpen) bits.push(`blocks ${item.downstreamOpen}`);
-  if (item.score != null) bits.push(`system score ${item.score}`);
+  if (item.score !== null) bits.push(`system score ${item.score}`);
   return <div className="item-meta">{bits.length ? bits.join(' / ') : 'new memory signal'}</div>;
 }
 
@@ -235,7 +235,7 @@ function SystemLedger({ stage, openThreads, confidence, signalCount, hasFocus })
       <BriefMetric label="Memory threads" value={openThreads} note="open state inferred from capture" />
       <BriefMetric label="Signal pressure" value={signalCount} note="blockers and notifications" />
       <BriefMetric label="Intelligence stage" value={stage} note="adapts as memory grows" />
-      <BriefMetric label="Command confidence" value={confidence == null ? (hasFocus ? 'learning' : 'cold') : `${confidence}%`} note="how strongly Flowra trusts the brief" />
+      <BriefMetric label="Command confidence" value={confidence === null ? (hasFocus ? 'learning' : 'cold') : `${confidence}%`} note="how strongly Flowra trusts the brief" />
     </section>
   );
 }

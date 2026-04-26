@@ -53,7 +53,7 @@ async function explainItem(db, userId, itemId) {
   const factors = [];
   const recencyDays = parseFloat(item.recency_days || 0);
   const persistDays = parseFloat(item.persistence_days || 0);
-  const deadlineDays = item.deadline_days != null ? parseFloat(item.deadline_days) : null;
+  const deadlineDays = item.deadline_days !== null ? parseFloat(item.deadline_days) : null;
   const downstreamOpen = parseInt(item.downstream_open || 0);
   if (item.state === 'IN_PROGRESS') factors.push({ key: 'in_progress', text: 'You already started this', weight: 'high' });
   if (deadlineDays !== null && deadlineDays <= 1) factors.push({ key: 'deadline_urgent', text: 'Due very soon', weight: 'high' });
@@ -68,7 +68,7 @@ async function explainItem(db, userId, itemId) {
 function _scoreItem(item) {
   const recency  = Math.max(0, 1 - (parseFloat(item.recency_days)  || 0) / 7);
   const freq     = Math.min(1, (item.mention_count || 1) / 5);
-  const deadline = item.deadline_days != null ? Math.max(0, 1 - parseFloat(item.deadline_days) / 7) : 0;
+  const deadline = item.deadline_days !== null ? Math.max(0, 1 - parseFloat(item.deadline_days) / 7) : 0;
   const blocker  = item.blocker ? 1.0 : 0;
   const causal   = Math.min(1, parseInt(item.downstream_open || 0) / 5);
   const inProg   = item.state === 'IN_PROGRESS' ? 0.2 : 0;
@@ -83,7 +83,7 @@ function _computePlanConfidence(itemCount, focus) {
 }
 
 function _serializeItem(item) {
-  return { id: item.id, text: item.canonical_text, state: item.state, project: item.project, priority: parseFloat((item.priority || 0).toFixed(3)), score: item._score ? parseFloat(item._score.toFixed(3)) : undefined, blocker: item.blocker || false, deadlineDays: item.deadline_days != null ? Math.round(parseFloat(item.deadline_days)) : null, persistDays: item.persistence_days ? Math.round(parseFloat(item.persistence_days)) : 0, downstreamOpen: parseInt(item.downstream_open || 0) };
+  return { id: item.id, text: item.canonical_text, state: item.state, project: item.project, priority: parseFloat((item.priority || 0).toFixed(3)), score: item._score ? parseFloat(item._score.toFixed(3)) : undefined, blocker: item.blocker || false, deadlineDays: item.deadline_days !== null ? Math.round(parseFloat(item.deadline_days)) : null, persistDays: item.persistence_days ? Math.round(parseFloat(item.persistence_days)) : 0, downstreamOpen: parseInt(item.downstream_open || 0) };
 }
 
 function _emptyPlan(userId, timezone) {

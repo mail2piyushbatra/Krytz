@@ -18,7 +18,7 @@ function evalCond(node, ctx) {
     case 'GTE':    return getVal(node.left, ctx) >=  getVal(node.right, ctx);
     case 'LT':     return getVal(node.left, ctx) <   getVal(node.right, ctx);
     case 'LTE':    return getVal(node.left, ctx) <=  getVal(node.right, ctx);
-    case 'EXISTS': return getPath(ctx, node.path) != null;
+    case 'EXISTS': return getPath(ctx, node.path) !== null;
     case 'MATCH':  return new RegExp(node.regex, 'i').test(String(getPath(ctx, node.path) || ''));
     default:       return false;
   }

@@ -24,7 +24,7 @@ function applyMutation(items, mutation) {
 function scoreItem(item) {
   const recency  = Math.max(0, 1 - (parseFloat(item.recency_days)  || 0) / 7);
   const freq     = Math.min(1, (item.mention_count || 1) / 5);
-  const deadline = item.deadline_days != null ? Math.max(0, 1 - parseFloat(item.deadline_days) / 7) : 0;
+  const deadline = item.deadline_days !== null ? Math.max(0, 1 - parseFloat(item.deadline_days) / 7) : 0;
   const blocker  = item.blocker ? 1.0 : 0;
   const causal   = Math.min(1, (parseInt(item.downstream_open) || 0) / 5);
   const inProg   = item.state === 'IN_PROGRESS' ? 0.2 : 0;

@@ -82,7 +82,7 @@ function parseEML(raw) {
     const sep = lines[i].indexOf(':');
     if (sep > 0) headers[lines[i].slice(0, sep).trim().toLowerCase()] = lines[i].slice(sep + 1).trim();
   }
-  let body = lines.slice(bodyStart).join('\n')
+  const body = lines.slice(bodyStart).join('\n')
     .replace(/^>.*$/gm, '').replace(/--\s*\n[\s\S]*$/, '')
     .replace(/Sent from my [\w\s]+\.?$/im, '').replace(/Get Outlook for [\w\s]+\.?$/im, '').trim();
   return { subject: headers['subject'] || null, from: headers['from'] || null, date: headers['date'] || null, body };

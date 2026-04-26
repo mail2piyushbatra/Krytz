@@ -35,7 +35,7 @@ function _clusterItems(items) {
 }
 
 function _clusterUrgency(items) {
-  const min = Math.min(...items.map(i => i.deadline_days != null ? parseFloat(i.deadline_days) : 999));
+  const min = Math.min(...items.map(i => i.deadline_days !== null ? parseFloat(i.deadline_days) : 999));
   return min <= 1 ? 'critical' : min <= 3 ? 'high' : min <= 7 ? 'medium' : 'low';
 }
 
@@ -48,6 +48,6 @@ function _scoreCluster(cluster) {
   return GOAL_WEIGHTS.urgency * urgencyScore + GOAL_WEIGHTS.causalImportance * causalImportance + GOAL_WEIGHTS.backlogSize * backlogSize + GOAL_WEIGHTS.recency * recency;
 }
 
-function _serializeItem(item) { return { id: item.id, text: item.canonical_text, state: item.state, priority: parseFloat((item.priority||0).toFixed(3)), blocker: item.blocker||false, deadlineDays: item.deadline_days != null ? Math.round(parseFloat(item.deadline_days)) : null }; }
+function _serializeItem(item) { return { id: item.id, text: item.canonical_text, state: item.state, priority: parseFloat((item.priority||0).toFixed(3)), blocker: item.blocker||false, deadlineDays: item.deadline_days !== null ? Math.round(parseFloat(item.deadline_days)) : null }; }
 
 module.exports = { buildWeeklyPlan };

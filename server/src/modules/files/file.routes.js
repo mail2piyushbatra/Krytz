@@ -3,7 +3,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const crypto = require('crypto');
 const express = require('express');
 const { authenticate } = require('../../middleware/auth');
-const prisma = require('../../lib/prisma');
+const db = require('../../lib/db');
 const logger = require('../../lib/logger');
 const { ALLOWED_FILE_TYPES, MAX_FILE_SIZE } = require('../../../../shared/constants');
 
@@ -123,8 +123,9 @@ router.post('/confirm', async (req, res, next) => {
     }
 
     // Verify entry ownership
-    const entry = await prisma.entry.findUnique({ where: { id: entryId } });
-    if (!entry || entry.userId !== req.user.id) {
+    const { rows: entryRows } = await db.query('SELECT id, user_id, raw_text, source FROM entries WHERE id = $1', [entryId]);
+    const entry = entryRows[0];
+    if (!entry || entry.user_id !== req.user.id) {
       return res.status(403).json({
         success: false,
         error: { code: 'FORBIDDEN', message: 'Access denied.' },
@@ -132,18 +133,16 @@ router.post('/confirm', async (req, res, next) => {
     }
 
     // Update file attachment with real metadata from S3
-    const file = await prisma.fileAttachment.updateMany({
-      where: { fileKey, entryId },
-      data: {
-        fileSize: headResult.ContentLength || 0,
-        fileType: headResult.ContentType || 'application/octet-stream',
-      },
-    });
+    await db.query(
+      `UPDATE file_attachments SET file_size = $1, file_type = $2
+       WHERE file_key = $3 AND entry_id = $4`,
+      [headResult.ContentLength || 0, headResult.ContentType || 'application/octet-stream', fileKey, entryId]
+    );
 
     // If this is an image, trigger Cortex re-ingestion with vision
     if (headResult.ContentType && headResult.ContentType.startsWith('image/')) {
       const { engines } = require('../../engines');
-      engines.cortex.ingestAsync(entryId, entry.rawText, {
+      engines.cortex.ingestAsync(entryId, entry.raw_text, {
         source: entry.source,
         fileKey,
         fileType: headResult.ContentType,
@@ -166,10 +165,14 @@ router.post('/confirm', async (req, res, next) => {
 // GET /api/v1/files/:id/download-url — Get presigned download URL
 router.get('/:id/download-url', async (req, res, next) => {
   try {
-    const file = await prisma.fileAttachment.findUnique({
-      where: { id: req.params.id },
-      include: { entry: { select: { userId: true } } },
-    });
+    const { rows: fileRows } = await db.query(
+      `SELECT fa.*, e.user_id AS entry_user_id
+       FROM file_attachments fa
+       JOIN entries e ON e.id = fa.entry_id
+       WHERE fa.id = $1`,
+      [req.params.id]
+    );
+    const file = fileRows[0];
 
     if (!file) {
       return res.status(404).json({
@@ -178,7 +181,7 @@ router.get('/:id/download-url', async (req, res, next) => {
       });
     }
 
-    if (file.entry.userId !== req.user.id) {
+    if (file.entry_user_id !== req.user.id) {
       return res.status(403).json({
         success: false,
         error: { code: 'FORBIDDEN', message: 'Access denied.' },
@@ -187,7 +190,7 @@ router.get('/:id/download-url', async (req, res, next) => {
 
     const command = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET,
-      Key: file.fileKey,
+      Key: file.file_key,
     });
 
     const downloadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });

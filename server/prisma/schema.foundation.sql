@@ -8,6 +8,7 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
 -- ─── users (snake_case mirror — V3 engines reference this) ───────────────────
 CREATE TABLE IF NOT EXISTS users (

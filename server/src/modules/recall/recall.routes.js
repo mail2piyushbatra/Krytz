@@ -16,8 +16,8 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    const { engines } = require('../../engines');
-    const result = await engines.recall.query(req.user.id, query.trim());
+    const { engines, repository } = require('../../engines');
+    const result = await engines.recall.query(req.user.id, query.trim(), repository);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

@@ -8,15 +8,17 @@
 | `schema.entities.sql` | entities, entity_aliases, undo_log, user_intelligence_stage, suggestion_events | 2 |
 | `schema.intelligence.sql` | contradictions, commitments, time_estimates, GDPR, Stripe | 3 |
 | `rls.sql` | RLS policies for ALL user-scoped tables + `current_user_id()` helper | 4 |
-| `schema.v3.sql` | **All 4 combined in correct order** — run this for a single-shot migration | — |
+| `schema.phases.sql` | decision_traces, traces, anomaly_events, command_log, user_learning_model, connector_state, commitment_dependencies + RLS | 5 |
+| `schema.v3.sql` | **Steps 1-4 combined in correct order** — run this for a single-shot V3 migration | — |
 
 ---
 
 ## How to run
 
-### Option A — Single combined file (recommended)
+### Option A — Single combined file (V3 base + phases)
 ```bash
 psql $DATABASE_URL -f server/prisma/schema.v3.sql
+psql $DATABASE_URL -f server/prisma/schema.phases.sql
 ```
 
 ### Option B — Step by step
@@ -25,6 +27,7 @@ psql $DATABASE_URL -f server/prisma/schema.additions.sql
 psql $DATABASE_URL -f server/prisma/schema.entities.sql
 psql $DATABASE_URL -f server/prisma/schema.intelligence.sql
 psql $DATABASE_URL -f server/prisma/rls.sql
+psql $DATABASE_URL -f server/prisma/schema.phases.sql
 ```
 
 ### Verify RLS is active

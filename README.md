@@ -30,7 +30,7 @@ API Monolith (Express + Node.js)
     ├── Engines (Cortex → Normalization → Extraction → State)
     │       │
     │       ▼
-    ├── PostgreSQL (Prisma ORM)
+    ├── PostgreSQL (pg Pool — raw SQL)
     ├── Redis (Job queue)
     └── S3/R2 (File storage)
 ```
@@ -74,7 +74,7 @@ docker-compose up -d postgres redis minio minio-init
 ### 4. Database Setup
 ```bash
 cd server
-npx prisma migrate dev --name init
+psql $DATABASE_URL -f server/prisma/schema.v3.sql
 npm run db:seed
 ```
 
@@ -125,12 +125,12 @@ docker-compose up
 FLOWRA-APP/
 ├── docs/                    ← 16 design documents
 ├── server/
-│   ├── prisma/              ← Schema + migrations + seed
+│   ├── prisma/              ← SQL schemas + migrations + seed
 │   └── src/
 │       ├── engines/         ← Core intelligence (6 engines)
 │       ├── modules/         ← API routes + services
 │       ├── middleware/      ← Auth, validation, error handling
-│       └── lib/             ← Prisma client, logger
+│       └── lib/             ← DB pool, logger
 ├── shared/                  ← Constants shared across packages
 ├── mobile/                  ← React Native app (not yet scaffolded)
 ├── docker-compose.yml       ← Local dev stack

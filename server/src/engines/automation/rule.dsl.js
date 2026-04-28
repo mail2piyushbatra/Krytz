@@ -92,7 +92,7 @@ function validateRule(rule) {
     if (!rule.name || typeof rule.name !== 'string') errors.push('name required');
     validateCondition(rule.condition);
     validateAction(rule.action);
-    if (rule.cooldown_seconds !== null && (typeof rule.cooldown_seconds !== 'number' || rule.cooldown_seconds < 0)) {
+    if (rule.cooldown_seconds != null && (typeof rule.cooldown_seconds !== 'number' || rule.cooldown_seconds < 0)) {
       errors.push('cooldown_seconds must be non-negative number');
     }
   } catch (e) {

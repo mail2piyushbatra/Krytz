@@ -10,8 +10,10 @@ export default function TimelineScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [flash, setFlash] = useState(null);
+  const observerRef = useRef(null);
 
   const fetchEntries = useCallback(async (pg = 1, append = false) => {
     if (pg === 1) setLoading(true);
@@ -20,6 +22,7 @@ export default function TimelineScreen() {
     try {
       const params = { page: pg, limit: 20 };
       if (dateFilter) params.date = dateFilter;
+      if (debouncedSearch) params.q = debouncedSearch;
 
       const data = await entries.list(params);
       const fetched = data?.entries || [];
@@ -37,9 +40,28 @@ export default function TimelineScreen() {
 
     setLoading(false);
     setLoadingMore(false);
-  }, [dateFilter]);
+  }, [dateFilter, debouncedSearch]);
 
-  useEffect(() => { fetchEntries(1, false); }, [dateFilter, fetchEntries]);
+  useEffect(() => { fetchEntries(1, false); }, [dateFilter, debouncedSearch, fetchEntries]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const handleObserver = useCallback((entries) => {
+    const target = entries[0];
+    if (target.isIntersecting && hasMore && !loading && !loadingMore) {
+      handleLoadMore();
+    }
+  }, [hasMore, loading, loadingMore]);
+
+  useEffect(() => {
+    const option = { root: null, rootMargin: '20px', threshold: 0 };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   function handleLoadMore() {
     fetchEntries(page + 1, true);
@@ -70,13 +92,8 @@ export default function TimelineScreen() {
     }
   }
 
-  // Filter by search locally
-  const filtered = search.trim()
-    ? allEntries.filter(e => {
-        const text = (e.rawText || e.raw_text || e.text || '').toLowerCase();
-        return text.includes(search.toLowerCase());
-      })
-    : allEntries;
+  // Entries are filtered server-side now
+  const filtered = allEntries;
 
   // Group by date
   const grouped = {};
@@ -153,15 +170,9 @@ export default function TimelineScreen() {
             ))}
           </div>
 
-          {hasMore && !search && (
-            <div className="tl-load-more">
-              <button
-                className="btn btn-secondary"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? <span className="spinner" /> : 'Load More ↓'}
-              </button>
+          {hasMore && (
+            <div className="tl-load-more" ref={observerRef}>
+              {loadingMore && <span className="spinner" />}
             </div>
           )}
         </>
@@ -172,7 +183,7 @@ export default function TimelineScreen() {
           <div className="empty-desc">
             {search
               ? 'Try a different search term.'
-              : 'Start capturing on the Today tab to see your timeline build up.'}
+              : 'Capture items in the Command Center to see your timeline here.'}
           </div>
           {(search || dateFilter) && (
             <button className="btn btn-secondary" onClick={() => { setSearch(''); setDateFilter(''); }}>

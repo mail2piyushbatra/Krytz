@@ -86,6 +86,7 @@ services:
       NODE_ENV: development
       PORT: 8000
       DATABASE_URL: postgresql://flowra:flowra_dev_password@postgres:5432/flowra?schema=public
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: dev-jwt-secret-not-for-production
       JWT_REFRESH_SECRET: dev-refresh-secret-not-for-production
       JWT_EXPIRES_IN: 15m
@@ -107,6 +108,28 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  # ─── Flowra Extraction Worker ────────────────────────────
+  worker:
+    build:
+      context: .
+      target: development
+    container_name: flowra2-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://flowra:flowra_dev_password@postgres:5432/flowra?schema=public
+      REDIS_URL: redis://redis:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-api-key}
+      LOG_LEVEL: debug
+    command: npm run worker
+    volumes:
+      - ./server/src:/app/server/src
+      - ./shared:/app/shared
 
 volumes:
   flowra2_pgdata:

@@ -7,22 +7,23 @@ const logger = require('../lib/logger');
 function errorHandler(err, req, res, next) {
   logger.error(err.message, { error: err, path: req.path, method: req.method });
 
-  // Prisma known errors
-  if (err.code === 'P2002') {
+  // PostgreSQL unique violation (was Prisma P2002)
+  if (err.code === '23505') {
     return res.status(409).json({
       success: false,
       error: {
         code: 'CONFLICT',
         message: 'A record with this value already exists.',
-        details: err.meta,
+        details: err.detail,
       },
     });
   }
 
-  if (err.code === 'P2025') {
+  // PostgreSQL foreign key violation
+  if (err.code === '23503') {
     return res.status(404).json({
       success: false,
-      error: { code: 'NOT_FOUND', message: 'Record not found.' },
+      error: { code: 'NOT_FOUND', message: 'Referenced record not found.' },
     });
   }
 

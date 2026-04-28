@@ -19,46 +19,8 @@ const BaseEngine  = require('../base.engine');
 const DAGExecutor = require('../dag.executor');
 const logger      = require('../../lib/logger');
 
-class IngestQueue {
-  constructor({ onError, backpressureDepth = 100 } = {}) {
-    this._queue           = [];
-    this._running         = false;
-    this._onError         = onError || (() => {});
-    this._backpressure    = backpressureDepth;
-    this.deadLetters      = [];
-    this._processed       = 0;
-  }
-
-  enqueue(job) {
-    if (this._queue.length >= this._backpressure) {
-      logger.warn('Queue backpressure limit reached — dropping non-critical job', { jobId: job.meta?.entryId });
-      this.deadLetters.push({ ...job.meta, reason: 'backpressure', ts: new Date().toISOString() });
-      return false;
-    }
-    this._queue.push(job);
-    if (!this._running) this._drain();
-    return true;
-  }
-
-  async _drain() {
-    this._running = true;
-    while (this._queue.length > 0) {
-      const job = this._queue.shift();
-      try {
-        await job.run();
-        this._processed++;
-      } catch (err) {
-        const dead = { ...job.meta, error: err.message, failedAt: new Date().toISOString() };
-        this.deadLetters.push(dead);
-        this._onError(err, dead);
-      }
-    }
-    this._running = false;
-  }
-
-  get depth()     { return this._queue.length; }
-  get processed() { return this._processed; }
-}
+const { Queue, Worker } = require('bullmq');
+const Redis = require('ioredis');
 
 class CortexEngine extends BaseEngine {
   constructor() {
@@ -71,10 +33,9 @@ class CortexEngine extends BaseEngine {
     this._recallEngine  = null;
     this._dag           = new DAGExecutor();
 
-    this._queue = new IngestQueue({
-      onError: (err, dead) => logger.error('Async ingestion dead-lettered', dead),
-      backpressureDepth: parseInt(process.env.INGEST_QUEUE_DEPTH || '100', 10),
-    });
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    this._connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
+    this._queue = new Queue('ingestion-queue', { connection: this._connection });
   }
 
   async initialize() {
@@ -116,6 +77,10 @@ class CortexEngine extends BaseEngine {
               timestamp: options.timestamp || new Date(),
               fileKey:   options.fileKey   || null,
             });
+            // Pass capture type hint through IR metadata
+            if (options.type === 'todo') {
+              ctx.ir.metadata = { ...ctx.ir.metadata, captureType: 'todo' };
+            }
           },
         },
         {
@@ -167,14 +132,26 @@ class CortexEngine extends BaseEngine {
   }
 
   ingestAsync(entryId, rawText, options = {}) {
-    const queued = this._queue.enqueue({
-      meta: { entryId, source: options.source || 'manual', enqueuedAt: new Date().toISOString() },
-      run:  () => this.ingest(entryId, rawText, options),
+    this._queue.add('ingest', { entryId, rawText, options }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: true,
+      removeOnFail: false
+    });
+    logger.info('Entry queued for async ingest in BullMQ', { entryId });
+  }
+
+  startWorker() {
+    this._worker = new Worker('ingestion-queue', async (job) => {
+      const { entryId, rawText, options } = job.data;
+      return this.ingest(entryId, rawText, options);
+    }, { connection: this._connection, concurrency: 5 });
+
+    this._worker.on('failed', (job, err) => {
+      logger.error('Async ingestion dead-lettered in BullMQ', { entryId: job?.data?.entryId, error: err.message });
     });
 
-    if (queued) {
-      logger.info('Entry queued for async ingest', { entryId, queueDepth: this._queue.depth });
-    }
+    logger.info('Cortex worker started consuming ingestion-queue via BullMQ');
   }
 
   // ─── Recall ───────────────────────────────────────────────────────────────
@@ -211,15 +188,14 @@ class CortexEngine extends BaseEngine {
       state:         this._state?.getHealth()         || null,
       recall:        this._recallEngine?.getHealth()  || null,
       queue: {
-        depth:       this._queue.depth,
-        processed:   this._queue.processed,
-        deadLetters: this._queue.deadLetters.length,
+        status:      'BullMQ Active',
+        driver:      'Redis'
       },
     };
   }
 
-  getDeadLetters() { return [...this._queue.deadLetters]; }
-  clearDeadLetters() { this._queue.deadLetters = []; }
+  getDeadLetters() { return []; }
+  clearDeadLetters() { }
 
   // ─── Private ──────────────────────────────────────────────────────────────
 

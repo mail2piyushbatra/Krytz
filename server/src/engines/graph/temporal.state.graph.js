@@ -1,9 +1,16 @@
 /**
- * ✦ TEMPORAL STATE GRAPH (TSG)
+ * ✦ TEMPORAL STATE GRAPH (TSG) — v2 (DB-backed)
  *
  * Tracks every action item as a node in a persistent state graph.
  * Items transition through states; confidence decays without evidence
  * and reinforces on reappearance.
+ *
+ * v2 changes:
+ *   - All mutations write through to the `items` + `item_events` tables
+ *   - `loadFromDB(userId)` hydrates in-memory cache from PostgreSQL
+ *   - `loadAllFromDB()` bulk-loads on server startup (warm cache)
+ *   - In-memory map is still the hot path for reads (zero latency)
+ *   - Falls back gracefully to in-memory-only if DB unavailable
  *
  * State machine:
  *   OPEN → IN_PROGRESS → DONE
@@ -14,10 +21,12 @@
  *   - Fuzzy item matching (token overlap — swap for cosine when pgvector available)
  *   - Bayesian-style confidence decay + reinforcement
  *   - Priority scoring: recency × frequency × blocker weight × deadline proximity
- *   - Lifecycle events recorded for audit + training
+ *   - Lifecycle events recorded for audit + training (to `item_events` table)
  */
 
 'use strict';
+
+const logger = require('../../lib/logger');
 
 // ─── Item states ──────────────────────────────────────────────────────────────
 const ItemState = Object.freeze({
@@ -66,12 +75,13 @@ function deadlineProximityScore(dueDateStr) {
 
 // ─── TSGNode ──────────────────────────────────────────────────────────────────
 class TSGNode {
-  constructor({ id, text, project = 'general', dueDate = null, source = null }) {
+  constructor({ id, text, project = 'general', dueDate = null, source = null, userId = null }) {
     this.id         = id;
     this.text       = text;
     this.project    = project;
     this.dueDate    = dueDate;
     this.source     = source;    // entryId of first mention
+    this.userId     = userId;
 
     this.state      = ItemState.OPEN;
     this.confidence = 0.7;       // initial
@@ -159,6 +169,61 @@ class TemporalStateGraph {
     this._items    = new Map();          // itemId → TSGNode
     this._opts     = { ...DEFAULTS, ...opts };
     this._events   = [];                 // event log (event sourcing)
+    this._db       = null;               // pg Pool — injected via setDB()
+  }
+
+  // ─── DB wiring ────────────────────────────────────────────────────────────
+
+  /**
+   * Inject the pg Pool for persistence. Call once at startup.
+   * If never called, TSG operates in memory-only mode (tests, offline).
+   */
+  setDB(pool) {
+    this._db = pool;
+  }
+
+  /**
+   * Load all items from the DB into memory. Call once at server startup.
+   * Hydrates the in-memory Map from the `items` table.
+   */
+  async loadAllFromDB() {
+    if (!this._db) return;
+    try {
+      const { rows } = await this._db.query(
+        `SELECT * FROM items WHERE state IN ('OPEN', 'IN_PROGRESS') ORDER BY last_seen DESC LIMIT 10000`
+      );
+      for (const row of rows) {
+        const node = this._rowToNode(row);
+        this._items.set(node.id, node);
+      }
+      logger.info('TSG hydrated from database', { itemCount: rows.length });
+    } catch (err) {
+      logger.warn('TSG failed to hydrate from DB — running in-memory only', { error: err.message });
+    }
+  }
+
+  /**
+   * Load items for a specific user from the DB.
+   * Used when a user first interacts and their items aren't in cache yet.
+   */
+  async loadUserFromDB(userId) {
+    if (!this._db) return;
+    try {
+      const { rows } = await this._db.query(
+        `SELECT * FROM items WHERE user_id = $1 AND state IN ('OPEN', 'IN_PROGRESS') ORDER BY last_seen DESC LIMIT 1000`,
+        [userId]
+      );
+      let loaded = 0;
+      for (const row of rows) {
+        if (!this._items.has(row.id)) {
+          this._items.set(row.id, this._rowToNode(row));
+          loaded++;
+        }
+      }
+      if (loaded > 0) logger.info('TSG loaded user items', { userId, loaded });
+    } catch (err) {
+      logger.warn('TSG failed to load user items', { userId, error: err.message });
+    }
   }
 
   // ─── Ingest new evidence ──────────────────────────────────────────────────
@@ -172,15 +237,17 @@ class TemporalStateGraph {
    * @param {Object} opts
    * @param {string} opts.entryId
    * @param {string} opts.project
+   * @param {string} opts.userId
    */
-  ingestEvidence(extractedState, { entryId, project = 'general' } = {}) {
+  async ingestEvidence(extractedState, { entryId, project = 'general', userId } = {}) {
     const { actionItems = [], completions = [], blockers = [] } = extractedState;
 
     // 1. Match / create nodes for each action item
     for (const item of actionItems) {
-      const existing = this._findMatch(item.text);
+      const existing = this._findMatch(item.text, userId);
 
       if (existing) {
+        const prevState = existing.state;
         existing.reinforce();
         if (existing.state === ItemState.OPEN) {
           // Check if there's motion (re-mention after a gap = in progress)
@@ -188,6 +255,7 @@ class TemporalStateGraph {
           if (gap > 0.5) existing.transitionTo(ItemState.IN_PROGRESS, existing.confidence + 0.1);
         }
         this._emit('BELIEF_UPDATED', { itemId: existing.id, state: existing.state, confidence: existing.confidence, entryId });
+        await this._persistItem(existing, prevState !== existing.state ? prevState : null);
       } else {
         const node = new TSGNode({
           id:       `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -195,26 +263,31 @@ class TemporalStateGraph {
           project,
           dueDate:  item.dueDate || null,
           source:   entryId,
+          userId,
         });
         this._items.set(node.id, node);
         this._emit('ITEM_CREATED', { itemId: node.id, text: node.text, entryId });
+        await this._persistNewItem(node);
       }
     }
 
     // 2. Process completions — mark matching open items DONE
     for (const completion of completions) {
-      const match = this._findMatch(completion.text);
+      const match = this._findMatch(completion.text, userId);
       if (match && match.state !== ItemState.DONE) {
+        const prevState = match.state;
         match.transitionTo(ItemState.DONE, 1.0);
         this._emit('BELIEF_UPDATED', { itemId: match.id, state: ItemState.DONE, confidence: 1.0, entryId });
+        await this._persistItem(match, prevState);
       }
     }
 
     // 3. Blockers mentioned → boost priority of blocked items
     for (const blocker of blockers) {
-      const match = this._findMatch(blocker.text);
+      const match = this._findMatch(blocker.text, userId);
       if (match) {
         match.reinforce(0.05);  // small boost — being a blocker increases salience
+        await this._persistItem(match, null);
       }
     }
   }
@@ -225,7 +298,7 @@ class TemporalStateGraph {
    * Run daily decay and drop detection.
    * Call once per day from a cron job or StateEngine.
    */
-  runDailyMaintenance() {
+  async runDailyMaintenance() {
     const dropped = [];
 
     for (const node of this._items.values()) {
@@ -238,9 +311,29 @@ class TemporalStateGraph {
 
       // Drop if too old without mention
       if (silent >= this._opts.dropThresholdDays && node.state !== ItemState.DONE) {
+        const prevState = node.state;
         node.transitionTo(ItemState.DROPPED, node.confidence * 0.3);
         dropped.push(node.id);
         this._emit('BELIEF_UPDATED', { itemId: node.id, state: ItemState.DROPPED, confidence: node.confidence });
+        await this._persistItem(node, prevState);
+      } else if (silent >= 1) {
+        // Persist decayed confidence
+        await this._persistItem(node, null);
+      }
+    }
+
+    // Evict DONE/DROPPED items from memory — but keep DONE for 7 days
+    // so the completion ledger can serve recent completions from cache.
+    // DB is the ultimate source of truth for older history.
+    const evictionThresholdDays = 7;
+    for (const [id, node] of this._items) {
+      if (node.state === ItemState.DROPPED) {
+        this._items.delete(id);
+      } else if (node.state === ItemState.DONE) {
+        const doneDays = daysSince(node.lastSeen);
+        if (doneDays >= evictionThresholdDays) {
+          this._items.delete(id);
+        }
       }
     }
 
@@ -249,21 +342,23 @@ class TemporalStateGraph {
 
   // ─── Query interface ──────────────────────────────────────────────────────
 
-  getOpenItems(project) {
-    return this._getByState([ItemState.OPEN, ItemState.IN_PROGRESS], project)
+  getOpenItems(project, userId) {
+    return this._getByState([ItemState.OPEN, ItemState.IN_PROGRESS], project, userId)
       .sort((a, b) => b.priority - a.priority);
   }
 
-  getDoneItems(project) {
-    return this._getByState([ItemState.DONE], project);
+  getDoneItems(project, userId) {
+    return this._getByState([ItemState.DONE], project, userId);
   }
 
-  getDroppedItems(project) {
-    return this._getByState([ItemState.DROPPED], project);
+  getDroppedItems(project, userId) {
+    return this._getByState([ItemState.DROPPED], project, userId);
   }
 
-  getAllItems() {
-    return [...this._items.values()].map(n => n.toJSON());
+  getAllItems(userId) {
+    const items = [...this._items.values()];
+    if (userId) return items.filter(n => n.userId === userId).map(n => n.toJSON());
+    return items.map(n => n.toJSON());
   }
 
   getItem(itemId) {
@@ -278,10 +373,10 @@ class TemporalStateGraph {
   /**
    * Compute a project-level snapshot (for StateEngine).
    */
-  getProjectSnapshot(project) {
-    const items = project
-      ? [...this._items.values()].filter(n => n.project === project)
-      : [...this._items.values()];
+  getProjectSnapshot(project, userId) {
+    let items = [...this._items.values()];
+    if (userId) items = items.filter(n => n.userId === userId);
+    if (project) items = items.filter(n => n.project === project);
 
     const byState = { OPEN: 0, IN_PROGRESS: 0, DONE: 0, DROPPED: 0 };
     for (const n of items) byState[n.state]++;
@@ -295,7 +390,7 @@ class TemporalStateGraph {
     return { project: project || 'all', counts: byState, topPriority };
   }
 
-  // ─── Serialization (for persistence) ─────────────────────────────────────
+  // ─── Serialization (kept for backwards compat / export) ───────────────────
 
   serialize() {
     return {
@@ -315,14 +410,88 @@ class TemporalStateGraph {
     return tsg;
   }
 
+  // ─── DB Persistence (write-through) ───────────────────────────────────────
+
+  /**
+   * Insert a new item into the `items` table + initial `item_events` record.
+   */
+  async _persistNewItem(node) {
+    if (!this._db) return;
+    try {
+      await this._db.query(
+        `INSERT INTO items(id, user_id, canonical_text, state, priority, confidence, deadline,
+                           mention_count, first_seen, last_seen, source_entry_id)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (id) DO NOTHING`,
+        [node.id, node.userId, node.text, node.state, node.priority, node.confidence,
+         node.dueDate, node.mentions, node.firstSeen, node.lastSeen, node.source]
+      );
+      await this._db.query(
+        `INSERT INTO item_events(item_id, from_state, to_state, confidence, reason)
+         VALUES($1, NULL, $2, $3, 'created')`,
+        [node.id, node.state, node.confidence]
+      );
+    } catch (err) {
+      logger.warn('TSG: failed to persist new item', { itemId: node.id, error: err.message });
+    }
+  }
+
+  /**
+   * Update an existing item in the `items` table.
+   * If `prevState` is provided, also logs a state transition to `item_events`.
+   */
+  async _persistItem(node, prevState) {
+    if (!this._db) return;
+    try {
+      await this._db.query(
+        `UPDATE items SET
+           state = $1, priority = $2, confidence = $3,
+           mention_count = $4, last_seen = $5, updated_at = now()
+         WHERE id = $6`,
+        [node.state, node.priority, node.confidence, node.mentions, node.lastSeen, node.id]
+      );
+      if (prevState && prevState !== node.state) {
+        await this._db.query(
+          `INSERT INTO item_events(item_id, from_state, to_state, confidence, reason)
+           VALUES($1, $2, $3, $4, 'auto')`,
+          [node.id, prevState, node.state, node.confidence]
+        );
+      }
+    } catch (err) {
+      logger.warn('TSG: failed to persist item update', { itemId: node.id, error: err.message });
+    }
+  }
+
+  /**
+   * Convert a DB row from `items` table into a TSGNode.
+   */
+  _rowToNode(row) {
+    const node = new TSGNode({
+      id:       row.id,
+      text:     row.canonical_text,
+      project:  'general',
+      dueDate:  row.deadline,
+      source:   row.source_entry_id,
+      userId:   row.user_id,
+    });
+    node.state      = row.state;
+    node.confidence = row.confidence;
+    node.firstSeen  = row.first_seen;
+    node.lastSeen   = row.last_seen;
+    node.mentions   = row.mention_count;
+    node.transitions = []; // not loaded from DB — use item_events table for history
+    return node;
+  }
+
   // ─── Private ──────────────────────────────────────────────────────────────
 
-  _findMatch(text) {
+  _findMatch(text, userId) {
     let bestNode  = null;
     let bestScore = this._opts.matchThreshold;
 
     for (const node of this._items.values()) {
       if (node.state === ItemState.DONE || node.state === ItemState.DROPPED) continue;
+      if (userId && node.userId && node.userId !== userId) continue;
       const score = tokenOverlap(text, node.text);
       if (score > bestScore) {
         bestScore = score;
@@ -333,9 +502,13 @@ class TemporalStateGraph {
     return bestNode;
   }
 
-  _getByState(states, project) {
+  _getByState(states, project, userId) {
     return [...this._items.values()]
-      .filter(n => states.includes(n.state) && (!project || n.project === project))
+      .filter(n =>
+        states.includes(n.state) &&
+        (!project || n.project === project) &&
+        (!userId || n.userId === userId)
+      )
       .map(n => n.toJSON());
   }
 

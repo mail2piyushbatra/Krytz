@@ -128,3 +128,68 @@
   background: var(--bg-glass);
 }
 .recall-history-icon { font-size: 0.85rem; opacity: 0.5; }
+
+/* ── Mode tabs ────────────────────────────────────── */
+.recall-mode-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+.recall-mode-tab {
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-family: var(--font-family);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.recall-mode-tab:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.recall-mode-tab.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Semantic results ─────────────────────────────── */
+.recall-semantic-results { margin-bottom: var(--space-6); }
+.recall-semantic-item {
+  margin-bottom: var(--space-2);
+  padding: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-2);
+  animation: slideUp var(--dur-normal) var(--ease-out) both;
+}
+.recall-semantic-score {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--status-done);
+  background: rgba(75, 155, 107, 0.1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.recall-semantic-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.5;
+  width: 100%;
+}
+
+/* ── Mobile ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  .recall-search { flex-direction: column; }
+  .recall-mode-tabs { flex-wrap: wrap; }
+}

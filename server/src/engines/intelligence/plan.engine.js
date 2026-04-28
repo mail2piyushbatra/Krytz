@@ -6,7 +6,7 @@
  */
 'use strict';
 
-const logger = { info: (msg, m = {}) => console.log(JSON.stringify({ level: 'info', ts: new Date().toISOString(), system: 'plan-engine', msg, ...m })) };
+const logger = require('../../lib/logger');
 
 const CACHE_TTL_MINUTES = 5;
 
@@ -14,33 +14,63 @@ async function buildTodayPlan(db, userId, timezone = 'UTC') {
   const cached = await _getCachedPlan(db, userId, timezone);
   if (cached) { logger.info('Plan cache hit', { userId }); return { ...cached, fromCache: true }; }
 
+  // ─── Phase 4: Decision Engine Integration ───
+  const { computeDecisions, Decision } = require('../decision/decision.engine');
+  
+  // Ask decision engine to classify the active items into DO_NOW, DEFER, IGNORE
+  const context = { timeOfDay: _getTimeOfDay(timezone) };
+  const { decisions, summary } = await computeDecisions(db, userId, context, { maxDoNow: 5 });
+
+  // Get raw items for serialization
   const { rows: items } = await db.query(
-    `SELECT i.*,
+    `SELECT i.*, 
             EXTRACT(EPOCH FROM (now() - i.last_seen))  / 86400 AS recency_days,
             EXTRACT(EPOCH FROM (now() - i.first_seen)) / 86400 AS persistence_days,
             EXTRACT(EPOCH FROM (i.deadline - now()))   / 86400 AS deadline_days,
-            (SELECT count(*) FROM item_edges e JOIN items d ON d.id = e.to_item WHERE e.from_item = i.id AND d.state NOT IN ('DONE','DROPPED')) AS downstream_open,
-            EXISTS(SELECT 1 FROM snoozes s WHERE s.item_id = i.id AND s.user_id = $1 AND s.snooze_until > now()) AS snoozed
-     FROM items i WHERE i.user_id = $1 AND i.state IN ('OPEN', 'IN_PROGRESS') ORDER BY i.priority DESC`,
+            (SELECT count(*) FROM item_edges e JOIN items d ON d.id = e.to_item WHERE e.from_item = i.id AND d.state NOT IN ('DONE','DROPPED')) AS downstream_open
+     FROM items i WHERE i.user_id = $1 AND i.state IN ('OPEN', 'IN_PROGRESS')`,
     [userId]
   );
+  
+  const itemMap = new Map(items.map(i => [i.id, i]));
 
-  const active = items.filter(i => !i.snoozed);
-  if (active.length === 0) return _emptyPlan(userId, timezone);
+  if (summary.total === 0) return _emptyPlan(userId, timezone);
 
-  const scored   = active.map(i => ({ ...i, _score: _scoreItem(i) })).sort((a, b) => b._score - a._score);
-  const blockers  = scored.filter(i => i.blocker);
-  const actionable = scored.filter(i => !i.blocker);
-  const inProgress = actionable.filter(i => i.state === 'IN_PROGRESS');
-  const focus      = inProgress[0] || actionable[0] || null;
-  const next       = actionable.filter(i => i.id !== focus?.id).slice(0, 5);
-  const carryovers = actionable.filter(i => i.id !== focus?.id && parseFloat(i.persistence_days) > 2).slice(0, 3);
-  const confidence = _computePlanConfidence(active.length, focus);
+  const doNowItems  = decisions.filter(d => d.decision === Decision.DO_NOW).map(d => ({ ...itemMap.get(d.itemId), _score: d.score }));
+  const deferItems  = decisions.filter(d => d.decision === Decision.DEFER).map(d => ({ ...itemMap.get(d.itemId), _score: d.score }));
+  
+  const blockers  = items.filter(i => i.blocker);
+  
+  // Focus is highest scored DO_NOW item
+  const focus      = doNowItems[0] || null;
+  const next       = doNowItems.slice(1);
+  
+  // Carryovers are DEFER items that are persistent
+  const carryovers = deferItems.filter(i => parseFloat(i.persistence_days) > 2).slice(0, 3);
+  const confidence = _computePlanConfidence(summary.total, focus);
 
-  const plan = { userId, timezone, focus: focus ? _serializeItem(focus) : null, next: next.map(_serializeItem), blockers: blockers.slice(0, 3).map(_serializeItem), carryovers: carryovers.map(_serializeItem), totalOpen: active.length, confidence, generatedAt: new Date().toISOString() };
+  const plan = { 
+    userId, 
+    timezone, 
+    focus: focus ? _serializeItem(focus) : null, 
+    next: next.map(_serializeItem), 
+    blockers: blockers.slice(0, 3).map(_serializeItem), 
+    carryovers: carryovers.map(_serializeItem), 
+    totalOpen: summary.total, 
+    confidence, 
+    generatedAt: new Date().toISOString() 
+  };
+  
   await _cachePlan(db, userId, timezone, plan);
-  logger.info('Plan built', { userId, totalOpen: active.length });
+  logger.info('Plan built via Decision Engine', { userId, totalOpen: summary.total, doNow: doNowItems.length });
   return plan;
+}
+
+function _getTimeOfDay(timezone) {
+  const hour = new Date(new Date().toLocaleString('en-US', { timeZone: timezone })).getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
 }
 
 async function explainItem(db, userId, itemId) {

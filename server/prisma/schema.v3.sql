@@ -20,6 +20,13 @@ ALTER TABLE users
   ADD COLUMN IF NOT EXISTS daily_cost_usd REAL    NOT NULL DEFAULT 0.10,
   ADD COLUMN IF NOT EXISTS onboarded      BOOLEAN NOT NULL DEFAULT false;
 
+-- 1b-2. Search Vector Indices (FTS)
+ALTER TABLE entries ADD COLUMN IF NOT EXISTS search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(raw_text, ''))) STORED;
+CREATE INDEX IF NOT EXISTS idx_entries_search_vector ON entries USING GIN (search_vector);
+
+ALTER TABLE items ADD COLUMN IF NOT EXISTS search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(canonical_text, ''))) STORED;
+CREATE INDEX IF NOT EXISTS idx_items_search_vector ON items USING GIN (search_vector);
+
 -- 1c. Plan cache (Today screen results, short TTL, 5 min in code)
 CREATE TABLE IF NOT EXISTS plan_cache (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

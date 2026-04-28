@@ -1,11 +1,11 @@
 /**
- * ✦ FLOWRA REPOSITORY — v2
+ * ✦ FLOWRA REPOSITORY — v3
  *
- * Decouples all engines from Prisma.
- * Engines depend on this interface — NEVER on Prisma directly.
+ * Decouples all engines from the database driver.
+ * Engines depend on this interface — NEVER on pg or SQL directly.
  *
  * Implementations:
- *   PrismaRepository   — production (PostgreSQL via Prisma ORM)
+ *   PgRepository       — production (PostgreSQL via pg Pool)
  *   InMemoryRepository — tests / local dev without DB
  *
  * Interface methods required by engines:
@@ -28,28 +28,49 @@
 
 'use strict';
 
-const prisma = require('../lib/prisma');
+const db = require('../lib/db');
 
-// ─── PrismaRepository (production) ───────────────────────────────────────────
-class PrismaRepository {
+// ─── PgRepository (production) ───────────────────────────────────────────────
+class PgRepository {
 
   // ── Entry ─────────────────────────────────────────────────────────────────
 
   async findEntry(entryId) {
-    return prisma.entry.findUnique({
-      where:   { id: entryId },
-      include: { extractedState: true },
-    });
+    const { rows } = await db.query(
+      `SELECT e.*, row_to_json(es.*) AS extracted_state
+       FROM entries e
+       LEFT JOIN extracted_states es ON es.entry_id = e.id
+       WHERE e.id = $1`,
+      [entryId]
+    );
+    if (rows.length === 0) return null;
+    return this._mapEntry(rows[0]);
   }
 
   async upsertExtractedState(entryId, state) {
     // Strip internal fields before persisting
     const { confidence, _local, ...clean } = state;
-    return prisma.extractedState.upsert({
-      where:  { entryId },
-      update: { ...clean, processedAt: new Date() },
-      create: { entryId, ...clean },
-    });
+    const json = {
+      actionItems: clean.actionItems || [],
+      blockers:    clean.blockers || [],
+      completions: clean.completions || [],
+      deadlines:   clean.deadlines || [],
+      tags:        clean.tags || [],
+      sentiment:   clean.sentiment || null,
+    };
+
+    const { rows } = await db.query(
+      `INSERT INTO extracted_states(entry_id, action_items, blockers, completions, deadlines, tags, sentiment, processed_at)
+       VALUES($1, $2, $3, $4, $5, $6, $7, now())
+       ON CONFLICT (entry_id) DO UPDATE SET
+         action_items = $2, blockers = $3, completions = $4,
+         deadlines = $5, tags = $6, sentiment = $7, processed_at = now()
+       RETURNING *`,
+      [entryId, JSON.stringify(json.actionItems), JSON.stringify(json.blockers),
+       JSON.stringify(json.completions), JSON.stringify(json.deadlines),
+       JSON.stringify(json.tags), json.sentiment]
+    );
+    return rows[0];
   }
 
   /**
@@ -57,14 +78,16 @@ class PrismaRepository {
    * Used by StateEngine.recomputeDaily.
    */
   async getEntriesForDay(userId, dayStart, dayEnd, opts = {}) {
-    return prisma.entry.findMany({
-      where: {
-        userId,
-        timestamp: { gte: dayStart, lte: dayEnd },
-      },
-      include:  opts.includeExtracted !== false ? { extractedState: true } : undefined,
-      orderBy:  { timestamp: opts.orderBy === 'asc' ? 'asc' : 'desc' },
-    });
+    const order = opts.orderBy === 'asc' ? 'ASC' : 'DESC';
+    const { rows } = await db.query(
+      `SELECT e.*, row_to_json(es.*) AS extracted_state
+       FROM entries e
+       LEFT JOIN extracted_states es ON es.entry_id = e.id
+       WHERE e.user_id = $1 AND e.timestamp >= $2 AND e.timestamp <= $3
+       ORDER BY e.timestamp ${order}`,
+      [userId, dayStart, dayEnd]
+    );
+    return rows.map(r => this._mapEntry(r));
   }
 
   /**
@@ -72,62 +95,134 @@ class PrismaRepository {
    * Used by RecallEngine and StateEngine.
    */
   async getEntriesRange(userId, from, to, opts = {}) {
-    return prisma.entry.findMany({
-      where: {
-        userId,
-        timestamp: { gte: from, lte: to },
-      },
-      include:  opts.includeExtracted ? { extractedState: true } : undefined,
-      orderBy:  { timestamp: opts.orderBy === 'asc' ? 'asc' : 'desc' },
-      take:     opts.limit || 200,
-    });
+    const order = opts.orderBy === 'asc' ? 'ASC' : 'DESC';
+    const limit = opts.limit || 200;
+    const { rows } = await db.query(
+      `SELECT e.*, row_to_json(es.*) AS extracted_state
+       FROM entries e
+       LEFT JOIN extracted_states es ON es.entry_id = e.id
+       WHERE e.user_id = $1 AND e.timestamp >= $2 AND e.timestamp <= $3
+       ORDER BY e.timestamp ${order}
+       LIMIT $4`,
+      [userId, from, to, limit]
+    );
+    return rows.map(r => this._mapEntry(r));
   }
 
   /**
-   * Keyword search entries (case-insensitive LIKE).
+   * Keyword search entries (case-insensitive ILIKE).
    * Used by RecallEngine when time-range retrieval returns sparse results.
    */
   async searchEntriesByKeywords(userId, keywords, opts = {}) {
     if (!keywords || keywords.length === 0) return [];
-    return prisma.entry.findMany({
-      where: {
-        userId,
-        OR: keywords.map(kw => ({ rawText: { contains: kw, mode: 'insensitive' } })),
-      },
-      include:  opts.includeExtracted ? { extractedState: true } : undefined,
-      orderBy:  { timestamp: 'desc' },
-      take:     opts.limit || 20,
-    });
+    const limit = opts.limit || 20;
+    const kwConditions = keywords.map((_, i) => `e.raw_text ILIKE $${i + 2}`);
+    const params = [userId, ...keywords.map(kw => `%${kw}%`)];
+
+    const { rows } = await db.query(
+      `SELECT e.*, row_to_json(es.*) AS extracted_state
+       FROM entries e
+       LEFT JOIN extracted_states es ON es.entry_id = e.id
+       WHERE e.user_id = $1 AND (${kwConditions.join(' OR ')})
+       ORDER BY e.timestamp DESC
+       LIMIT $${params.length + 1}`,
+      [...params, limit]
+    );
+    return rows.map(r => this._mapEntry(r));
   }
 
   // ── Daily state ────────────────────────────────────────────────────────────
 
   async getDailyState(userId, date) {
-    return prisma.dailyState.findUnique({
-      where: { userId_date: { userId, date } },
-    });
+    const { rows } = await db.query(
+      'SELECT * FROM daily_states WHERE user_id = $1 AND date = $2',
+      [userId, date]
+    );
+    if (rows.length === 0) return null;
+    return this._mapDailyState(rows[0]);
   }
 
   async upsertDailyState(userId, date, data) {
-    return prisma.dailyState.upsert({
-      where:  { userId_date: { userId, date } },
-      update: { ...data, computedAt: new Date() },
-      create: { userId, date, ...data },
-    });
+    const { rows } = await db.query(
+      `INSERT INTO daily_states(user_id, date, open_items, blocker_count, completed_count, deadlines, summary, computed_at)
+       VALUES($1, $2, $3, $4, $5, $6, $7, now())
+       ON CONFLICT (user_id, date) DO UPDATE SET
+         open_items = $3, blocker_count = $4, completed_count = $5,
+         deadlines = $6, summary = $7, computed_at = now()
+       RETURNING *`,
+      [userId, date, data.openItems || 0, data.blockerCount || 0,
+       data.completedCount || 0, JSON.stringify(data.deadlines || []), data.summary || null]
+    );
+    return this._mapDailyState(rows[0]);
   }
 
   async getDailyStatesRange(userId, from, to) {
-    return prisma.dailyState.findMany({
-      where:   { userId, date: { gte: from, lte: to || new Date() } },
-      orderBy: { date: 'asc' },
-    });
+    const { rows } = await db.query(
+      `SELECT * FROM daily_states
+       WHERE user_id = $1 AND date >= $2 AND date <= $3
+       ORDER BY date ASC`,
+      [userId, from, to || new Date()]
+    );
+    return rows.map(r => this._mapDailyState(r));
   }
 
   // ── Entry count ───────────────────────────────────────────────────────────
 
   async countEntries(userId) {
-    return prisma.entry.count({ where: { userId } });
+    const { rows } = await db.query(
+      'SELECT count(*) AS n FROM entries WHERE user_id = $1', [userId]
+    );
+    return parseInt(rows[0].n);
   }
+
+  // ── Mappers ───────────────────────────────────────────────────────────────
+
+  _mapEntry(row) {
+    const es = row.extracted_state;
+    return {
+      id:        row.id,
+      userId:    row.user_id,
+      rawText:   row.raw_text,
+      source:    row.source,
+      hasFiles:  row.has_files,
+      timestamp: row.timestamp,
+      project:   row.project || null,
+      extractedState: es ? {
+        id:          es.id,
+        entryId:     es.entry_id,
+        actionItems: _parseJson(es.action_items, []),
+        blockers:    _parseJson(es.blockers, []),
+        completions: _parseJson(es.completions, []),
+        deadlines:   _parseJson(es.deadlines, []),
+        tags:        _parseJson(es.tags, []),
+        sentiment:   es.sentiment,
+        processedAt: es.processed_at,
+      } : null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  _mapDailyState(row) {
+    return {
+      id:             row.id,
+      userId:         row.user_id,
+      date:           row.date,
+      openItems:      row.open_items,
+      blockerCount:   row.blocker_count,
+      completedCount: row.completed_count,
+      deadlines:      _parseJson(row.deadlines, []),
+      summary:        row.summary,
+      byProject:      _parseJson(row.by_project, {}),
+      computedAt:     row.computed_at,
+    };
+  }
+}
+
+function _parseJson(val, fallback) {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === 'object') return val; // already parsed
+  try { return JSON.parse(val); } catch { return fallback; }
 }
 
 // ─── InMemoryRepository (tests / local dev without DB) ───────────────────────
@@ -252,8 +347,8 @@ class InMemoryRepository {
 }
 
 // Default singleton — production use
-const defaultRepository = new PrismaRepository();
+const defaultRepository = new PgRepository();
 
 module.exports = defaultRepository;
-module.exports.PrismaRepository   = PrismaRepository;
+module.exports.PgRepository       = PgRepository;
 module.exports.InMemoryRepository = InMemoryRepository;

@@ -13,8 +13,6 @@ RUN npm install --workspace=server --workspace=shared --production=false
 COPY shared/ ./shared/
 COPY server/ ./server/
 
-# Generate Prisma client
-RUN cd server && npx prisma generate
 
 # ─── Development ───────────────────────────────────────────────
 FROM base AS development
@@ -24,7 +22,7 @@ ENV NODE_ENV=development
 EXPOSE 8000
 
 # Run migrations then start dev server
-CMD ["sh", "-c", "cd server && npx prisma migrate deploy && cd /app && npm run dev:server"]
+CMD ["sh", "-c", "cd /app && npm run dev:server"]
 
 # ─── Production ────────────────────────────────────────────────
 FROM node:20-alpine AS production
@@ -42,7 +40,6 @@ RUN npm install --workspace=server --workspace=shared --production=true
 COPY shared/ ./shared/
 COPY server/ ./server/
 
-RUN cd server && npx prisma generate
 
 # Entrypoint script: migrate then start
 COPY server/docker-entrypoint.sh /app/docker-entrypoint.sh

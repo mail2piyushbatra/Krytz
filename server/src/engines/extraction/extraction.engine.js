@@ -22,6 +22,10 @@ const logger     = require('../../lib/logger');
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
 const EXTRACTION_SYSTEM_PROMPT = `You are a state extraction engine for Flowra, a personal tracking app.
+Users capture two kinds of input:
+1. Brain dumps — longer text describing their day, blockers, progress
+2. Quick todos — short direct items like "buy milk", "call dentist", "review PR"
+
 Given a user's text, extract structured state information.
 
 Return ONLY valid JSON with this exact schema:
@@ -35,6 +39,7 @@ Return ONLY valid JSON with this exact schema:
 }
 
 Rules:
+- If the input is a short direct statement (1-2 lines), treat it as an action item
 - Extract ONLY what is explicitly stated or strongly implied
 - NEVER hallucinate tasks, deadlines, or information not in the text
 - Keep each item under 15 words
@@ -54,6 +59,8 @@ const LOCAL_PATTERNS = {
   actionItems: [
     /(?:todo|to-do|to do|need to|must|should|will)\s*:?\s*(.{5,80})/gi,
     /(?:^|\n)\s*[-*•]\s*(?!\[x\])(.{5,80})/g,  // unchecked bullet points
+    // Verb-leading patterns: "buy milk", "call John", "fix the bug", etc.
+    /^((?:buy|call|send|fix|review|update|check|book|schedule|cancel|prepare|finish|submit|write|read|pick up|set up|follow up|reach out|clean|organize|order|pay|return|reply|respond|ship|push|deploy|test|debug|refactor|merge|create|build|design|plan|discuss|meet|email|message|text|ask|confirm|remind)\b.{3,80})$/gim,
   ],
   completions: [
     /(?:done|finished|completed|shipped|merged|deployed)\s*:?\s*(.{5,80})/gi,
@@ -67,10 +74,14 @@ const LOCAL_PATTERNS = {
   ],
 };
 
+// Patterns that indicate the text is NOT a simple todo
+const NON_TODO_SIGNALS = /\b(done|finished|completed|shipped|blocked|blocker|waiting on|stuck|can't)\b/i;
+
 function localExtract(text) {
   const state = { actionItems: [], blockers: [], completions: [], deadlines: [], tags: [], sentiment: null };
 
   for (const pattern of LOCAL_PATTERNS.actionItems) {
+    pattern.lastIndex = 0;  // reset regex state
     for (const m of text.matchAll(pattern)) {
       const t = m[1].trim();
       if (t.length > 4 && !state.actionItems.find(i => i.text === t)) {
@@ -79,6 +90,7 @@ function localExtract(text) {
     }
   }
   for (const pattern of LOCAL_PATTERNS.completions) {
+    pattern.lastIndex = 0;
     for (const m of text.matchAll(pattern)) {
       const t = m[1].trim();
       if (t.length > 4 && !state.completions.find(i => i.text === t)) {
@@ -87,10 +99,37 @@ function localExtract(text) {
     }
   }
   for (const pattern of LOCAL_PATTERNS.blockers) {
+    pattern.lastIndex = 0;
     for (const m of text.matchAll(pattern)) {
       const t = m[1].trim();
       if (t.length > 4 && !state.blockers.find(i => i.text === t)) {
         state.blockers.push({ text: t, since: null, _local: true });
+      }
+    }
+  }
+
+  // ── Short direct-todo detection ──────────────────────────────────────────
+  // If the input is short, single-line, and no patterns matched yet,
+  // treat the entire text as an implicit action item.
+  // This handles bare captures like "buy milk", "call dentist at 3pm", "review PR #42".
+  const trimmed = text.trim();
+  const lines = trimmed.split('\n').filter(l => l.trim().length > 0);
+  const isShortDirect = (
+    lines.length <= 2 &&
+    trimmed.length <= 120 &&
+    trimmed.length >= 3 &&
+    state.actionItems.length === 0 &&
+    state.completions.length === 0 &&
+    state.blockers.length === 0 &&
+    !NON_TODO_SIGNALS.test(trimmed)
+  );
+
+  if (isShortDirect) {
+    // Each non-empty line becomes a todo
+    for (const line of lines) {
+      const l = line.trim();
+      if (l.length >= 3) {
+        state.actionItems.push({ text: l, dueDate: null, _local: true, _implicit: true });
       }
     }
   }
@@ -200,7 +239,12 @@ class ExtractionEngine extends BaseEngine {
 
     try {
       let result;
-      if (ir.metadata?.requiresVision && ir.metadata?.fileKey) {
+
+      // Fast path: explicit todo capture — skip LLM, local extraction only
+      if (ir.metadata?.captureType === 'todo') {
+        result = this._extractDirectTodo(ir.content);
+        logger.info('Todo fast-path extraction', { items: result.actionItems.length });
+      } else if (ir.metadata?.requiresVision && ir.metadata?.fileKey) {
         result = await this._extractFromImage(ir);
       } else {
         result = await this._extractFromText(ir.content, ir.metadata);
@@ -360,6 +404,40 @@ class ExtractionEngine extends BaseEngine {
       tags:        llm.tags,
       sentiment:   llm.sentiment,
     };
+  }
+
+  // ─── Direct todo extraction (no LLM, zero cost) ─────────────────────────
+
+  /**
+   * Treats each line of input as a direct action item.
+   * Used when the client explicitly sets type='todo'.
+   * Also runs local pattern matching for completions/blockers in case
+   * the user writes "done: X" or "blocked by Y" in todo mode.
+   */
+  _extractDirectTodo(text) {
+    if (!text || text.trim().length < 1) return this._emptyState();
+
+    // Start with local pattern matching (catches "done:", "blocked:", deadlines)
+    const local = localExtract(text);
+
+    // If local didn't already produce action items (e.g. text is just "buy milk"),
+    // treat each non-empty line as an action item
+    if (local.actionItems.length === 0) {
+      const lines = text.trim().split('\n').filter(l => l.trim().length >= 2);
+      for (const line of lines) {
+        const cleaned = line.trim()
+          .replace(/^[-*•]\s*/, '')       // strip bullet prefix
+          .replace(/^\[[ x]?\]\s*/i, '') // strip checkbox prefix
+          .trim();
+        if (cleaned.length >= 2) {
+          local.actionItems.push({ text: cleaned, dueDate: null, _local: true, _implicit: true });
+        }
+      }
+    }
+
+    local.confidence = 'local';
+    local.sentiment = local.sentiment || 'neutral';
+    return local;
   }
 
   // ─── PII stripping ─────────────────────────────────────────────────────────

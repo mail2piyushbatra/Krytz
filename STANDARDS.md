@@ -34,7 +34,7 @@
 ║   If a function's entire body is calling another function         ║
 ║   and returning its result — THAT IS A WRAPPER, NOT CODE.         ║
 ║                                                                   ║
-║   If an "engine" is just prisma.findMany() + a for-loop,          ║
+║   If an "engine" is just db.query('SELECT...') + a for-loop,     ║
 ║   THAT IS A DATABASE QUERY WITH EXTRA STEPS, NOT AN ENGINE.       ║
 ║                                                                   ║
 ║   If an "AI engine" is one openai.chat.completions.create()       ║
@@ -57,7 +57,7 @@
 | ❌ WRAPPER (Forbidden) | ✅ REAL (Required) |
 |---|---|
 | Function calls one other function, returns result | Function contains transformation, validation, fallback, or computation |
-| "Engine" that's just `prisma.findMany()` + loop | Engine that computes derived state, detects patterns, makes decisions |
+| "Engine" that's just `db.query()` + loop | Engine that computes derived state, detects patterns, makes decisions |
 | "AI engine" that's a single API call | AI pipeline with local fast-pass, validation, caching, fallback |
 | "Framework" with `throw 'not implemented'` | Concrete implementation that handles real data |
 | Orchestrator that calls A→B→C in sequence | Orchestrator with retry, error recovery, circuit breaking, event emission |
@@ -138,7 +138,7 @@ Every engine MUST deliver:
 - MUST have: local fast extraction (regex), cloud deep extraction, merge logic, caching, cost tracking, confidence scoring
 
 ### State Engine
-- NOT just prisma.findMany() + counting
+- NOT just db.query() + counting
 - MUST have: timezone-aware aggregation, project-level breakdown, carry-over intelligence (not just 2-day lookback), trend detection, item lifecycle tracking
 
 ### Recall Engine
@@ -164,7 +164,7 @@ Every engine MUST deliver:
 | `return mockData;` | Mock ≠ real |
 | `throw new Error('not implemented')` | Then delete the function |
 | `console.log` in production code | Use structured logger |
-| Direct Prisma imports in engines | Breaks testability and separation |
+| Direct db.query() imports in engines | Breaks testability and separation — use repository |
 | `setImmediate()` for async work | Use proper job queue |
 | Deferred `require()` inside functions | Import at module level |
 | Duplicate schemas across files | Single source of truth |

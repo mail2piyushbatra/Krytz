@@ -10,6 +10,8 @@ const fileMetaSchema = z.object({
 const createEntrySchema = z.object({
   rawText: z.string().min(1, 'Text is required').max(MAX_TEXT_LENGTH, `Text too long (max ${MAX_TEXT_LENGTH} chars)`),
   source: z.enum(['manual', 'calendar', 'gmail', 'notion']).default('manual'),
+  type: z.enum(['capture', 'todo', 'done', 'blocked', 'note']).default('capture'),
+  category: z.string().max(100).optional(),
   fileKeys: z.array(z.string()).max(5).optional(),
   fileMeta: z.array(fileMetaSchema).max(5).optional(),
   timestamp: z.string().datetime().optional(),

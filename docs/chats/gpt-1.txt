@@ -1,0 +1,114 @@
+﻿
+• 
+• 
+• 
+• 
+• 
+o 
+o 
+o 
+o 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+
+
+
+Edit
+
+
+8
+
+
+[Errno fetch http://image-gen-service.openai.svc.cluster.local:8081/chatgpt/worker_convo2im failed: 429: b'{\n "error": {\n "message": "You're generating images too quickly. To ensure the best experience for everyone, we have rate limits in place. Please wait for 2 minutes before generating more images.",\n "type": "images",\n "param": null,\n "code": "rate_limit_exceeded"\n }\n}'] b'{\n "error": {\n "message": "You're generating images too quickly. To ensure the best experience for everyone, we have rate limits in place. Please wait for 2 minutes before generating more images.",\n "type": "images",\n "param": null,\n "code": "rate_limit_exceeded"\n }\n}'
+
+
+┌───────────────────────────────────────────────────┐ │ Mobile App (React Native + Expo) │ │ │ │ ┌──────────┐ ┌──────────┐ ┌────────────────┐ │ │ │ Capture │ │ Timeline │ │ State Dashboard│ │ │ │ Screen │ │ Screen │ │ Screen │ │ │ └──────────┘ └──────────┘ └────────────────┘ │ └───────────────────────┬───────────────────────────┘ │ HTTPS / REST ┌───────────────────────┼───────────────────────────┐ │ Backend (Node.js + Express) │ │ │ │ ┌─────────────── Modules ──────────────────────┐ │ │ │ auth/ │ entries/ │ ai/ │ files/ │ state/ │ │ │ └─────────────────────────────────────────────┘ │ │ │ │ │ │ │ ┌──────┴──────┐ │ ┌────┴─────┐ │ │ │ PostgreSQL │ │ │ S3 / R2 │ │ │ │ (Prisma) │ │ │ (Files) │ │ │ └─────────────┘ │ └──────────┘ │ └─────────────────────────┼────────────────────────┘ │ ┌───────┴────────┐ │ LLM API │ │ (OpenAI/Claude)│ └────────────────┘ 
+
+
+BLUF
+Convert this into a clean pitch-grade architecture narrative slide
+→ remove engineering clutter
+→ keep only flow + meaning + system role
+
+🎯 SLIDE 4 — ARCHITECTURE (NARRATIVE VERSION)
+🧠 TITLE (BIG)
+Built for depth.
+Designed for clarity.
+
+🔷 CENTER VISUAL (SIMPLIFIED SYSTEM FLOW)
+        INPUT
+   (Capture / Connect)
+           ↓
+     STRUCTURE
+   (Understanding Layer)
+           ↓
+        STATE
+   (Reality Engine)
+           ↓
+     INTELLIGENCE
+   (AI + Reasoning)
+           ↓
+        OUTPUT
+ (Timeline / Decisions)
+
+🔹 SIDE ELEMENTS (MINIMAL, NOT BOXES)
+Mobile App
+→ Where you interact
+
+Backend System
+→ Where logic runs
+
+Memory + Storage
+→ Where everything is remembered
+
+AI Layer
+→ Where insights emerge
+
+🔻 CORE LINE (MOST IMPORTANT)
+Flowra doesn’t just process data.
+It reconstructs your reality.
+
+🚫 WHAT TO REMOVE FROM YOUR CURRENT DIAGRAM
+From your original:
+❌ React Native / Expo
+❌ Express / Prisma
+❌ PostgreSQL / S3
+❌ REST / HTTPS
+👉 These are implementation details, not pitch-layer artifacts
+
+✅ WHAT TO KEEP (ABSTRACTION)
+OldReplace WithMobile AppInterface LayerBackendProcessing LayerDBMemory LayerLLM APIIntelligence Layer
+🧠
+Top of Form
+Bottom of Form
+

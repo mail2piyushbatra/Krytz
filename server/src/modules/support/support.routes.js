@@ -11,7 +11,6 @@
  * POST   /api/v1/notifications/read-all  — mark all read
  *
  * GET    /api/v1/stats              — total entries, items by state, streak, cost
- * PATCH  /api/v1/profile            — update name, timezone, daily_cost_usd
  */
 
 'use strict';
@@ -196,40 +195,6 @@ function supportRoutes(pool) {
       streak:   parseInt(streak.rows[0]?.streak || 0),
       costs: { todayUsd: parseFloat(costs.rows[0].today_usd).toFixed(4) },
     });
-  }));
-
-  // ── PROFILE ──────────────────────────────────────────────────────────────────
-
-  // PATCH /profile
-  router.patch('/profile', asyncHandler(async (req, res) => {
-    const userId = req.user.id;
-    const { name, timezone, daily_cost_usd } = req.body;
-
-    const fields = [], vals = [];
-    let idx = 1;
-
-    if (name !== undefined) {
-      if (typeof name !== 'string' || name.trim().length < 1) return res.status(400).json({ error: 'name must be a non-empty string' });
-      fields.push(`name=$${idx++}`); vals.push(name.trim());
-    }
-
-    if (timezone !== undefined) {
-      try { Intl.DateTimeFormat(undefined, { timeZone: timezone }); }
-      catch (_) { return res.status(400).json({ error: `Invalid timezone: ${timezone}` }); }
-      fields.push(`timezone=$${idx++}`); vals.push(timezone);
-    }
-
-    if (daily_cost_usd !== undefined) {
-      const budget = parseFloat(daily_cost_usd);
-      if (isNaN(budget) || budget < 0 || budget > 10) return res.status(400).json({ error: 'daily_cost_usd must be between 0 and 10' });
-      fields.push(`daily_cost_usd=$${idx++}`); vals.push(budget);
-    }
-
-    if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
-
-    vals.push(userId);
-    await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id=$${idx}`, vals);
-    res.json({ ok: true });
   }));
 
   // ── Error handler ─────────────────────────────────────────────────────────────

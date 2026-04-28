@@ -1,0 +1,100 @@
+.tasks-screen {
+  max-width: 800px;
+  padding-bottom: 96px;
+}
+
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-8);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.tasks-header h1 {
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.tasks-filters {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--bg-secondary);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-primary);
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+}
+
+.task-check-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-tertiary);
+  transition: all var(--dur-fast) var(--ease-out);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.task-check-btn:hover {
+  color: var(--accent-primary);
+  transform: scale(1.1);
+}
+
+.task-icon-done {
+  color: var(--status-done);
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.task-text {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.task-done {
+  opacity: 0.6;
+  background: var(--bg-secondary);
+}
+
+.task-done .task-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}

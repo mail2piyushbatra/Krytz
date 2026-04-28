@@ -21,10 +21,7 @@
 
 'use strict';
 
-const logger = {
-  info:  (msg, m = {}) => console.log(JSON.stringify({ level: 'info',  ts: new Date().toISOString(), system: 'optimizer', msg, ...m })),
-  warn:  (msg, m = {}) => console.warn(JSON.stringify({ level: 'warn',  ts: new Date().toISOString(), system: 'optimizer', msg, ...m })),
-};
+const logger = require('../../lib/logger');
 
 // ─── In-memory outcome store (upgrade to DB later) ────────────────────────────
 const _outcomes = new Map();  // ruleId → [{ fired, useful, cost, ts }]

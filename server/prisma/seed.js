@@ -1,152 +1,141 @@
-const { PrismaClient } = require('@prisma/client');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://flowra:flowra_dev_password@localhost:5544/flowra?schema=public',
+});
+
+const firstNames = ['Alex', 'Jordan', 'Taylor', 'Casey', 'Sam', 'Riley', 'Jamie', 'Morgan', 'Quinn', 'Avery'];
+const domains = ['techcorp.io', 'startup.co', 'designstudio.net', 'freelance.app', 'venture.capital'];
+
+const seedUsers = firstNames.map((name, index) => ({
+  name,
+  email: `${name.toLowerCase()}@${domains[index % domains.length]}`,
+}));
+
+const demoUser = {
+  email: 'demo@flowra.app',
+  name: 'Demo User',
+  items: [
+    { text: 'Fix Token Interceptor', state: 'OPEN', category: 'engineering', priority: 0.9, blocker: false },
+    { text: 'Build Image Upload', state: 'OPEN', category: 'engineering', priority: 0.8, blocker: false },
+    { text: 'Review Snooze PR', state: 'DONE', category: 'review', priority: 0.5, blocker: false },
+  ],
+};
+
+function generateSyntheticData() {
+  return {
+    entries: [
+      'Had a great sync with the design team today. We need to finalize the Q3 mockups by Friday, and I promised to review the copy.',
+      'Just realized my passport expires in 2 months. I need to book an appointment to renew it ASAP.',
+      "Client call went well, but they asked for an expedited timeline. I'm blocked on the backend API being ready.",
+      'Feeling a bit burnt out. Going to take tomorrow morning off and go for a hike.',
+      'Brainstorming for the new marketing site: we should use more dynamic animations and a darker theme.',
+    ],
+    items: [
+      { text: 'Finalize Q3 mockups', state: 'OPEN', category: 'work', priority: 0.9, blocker: false },
+      { text: 'Review design copy', state: 'OPEN', category: 'work', priority: 0.7, blocker: false },
+      { text: 'Renew passport', state: 'IN_PROGRESS', category: 'personal', priority: 0.8, blocker: true },
+      { text: 'Expedite client timeline', state: 'OPEN', category: 'work', priority: 0.9, blocker: true },
+      { text: 'Take morning off for hike', state: 'DONE', category: 'health', priority: 0.5, blocker: false },
+      { text: 'Draft marketing site animations', state: 'OPEN', category: 'design', priority: 0.6, blocker: false },
+    ],
+  };
+}
 
 async function main() {
-  console.log('✦ Seeding Flowra database...\n');
+  console.log('Seeding Flowra database with deterministic synthetic users...\n');
 
-  // Create demo user
-  const passwordHash = await bcrypt.hash('flowra123', 12);
+  const passwordHash = await bcrypt.hash('flowra123', 10);
 
-  const user = await prisma.user.upsert({
-    where: { email: 'demo@flowra.app' },
-    update: {},
-    create: {
-      email: 'demo@flowra.app',
-      passwordHash,
-      name: 'Demo User',
-      settings: { theme: 'dark' },
-    },
-  });
+  await pool.query('BEGIN');
+  try {
+    for (let i = 0; i < seedUsers.length; i += 1) {
+      const { name, email } = seedUsers[i];
+      const userId = await upsertSeedUser(email, name, passwordHash);
+      await resetSeedUserRows(userId);
+      await insertSeedEntriesAndItems(userId, generateSyntheticData());
+      console.log(`Seeded user ${i + 1}/${seedUsers.length}: ${name} (${email}) - Password: flowra123`);
+    }
 
-  console.log(`✦ Created user: ${user.email} (password: flowra123)`);
+    const demoUserId = await upsertSeedUser(demoUser.email, demoUser.name, passwordHash);
+    await resetSeedUserRows(demoUserId);
+    await insertItems(demoUserId, demoUser.items);
+    await grantDemoFounder(demoUserId);
 
-  // Create sample entries
-  const sampleEntries = [
-    {
-      rawText: 'Had a productive morning. Finished the auth module and wrote tests for login/register flows.',
-      source: 'manual',
-      timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-    },
-    {
-      rawText: 'Call with Rajesh about API pricing. He wants a proposal by Friday. Need to crunch numbers tonight.',
-      source: 'manual',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    },
-    {
-      rawText: 'Blocked on the file upload feature. S3 presigned URLs keep expiring too fast. Need to check the config.',
-      source: 'manual',
-      timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-    },
-    {
-      rawText: 'Merged 3 PRs. Code review done for the state aggregation service.',
-      source: 'manual',
-      timestamp: new Date(), // now
-    },
-  ];
+    await pool.query('COMMIT');
+    console.log(`Seeded primary demo: ${demoUser.name} (${demoUser.email}) - Password: flowra123`);
+    console.log('\nCold start complete. Database is primed.');
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    throw error;
+  }
+}
 
-  for (const entry of sampleEntries) {
-    const created = await prisma.entry.create({
-      data: {
-        userId: user.id,
-        ...entry,
-      },
-    });
+async function upsertSeedUser(email, name, passwordHash) {
+  const { rows } = await pool.query(
+    `INSERT INTO users (email, name, password_hash, onboarded)
+     VALUES ($1, $2, $3, true)
+     ON CONFLICT (email) DO UPDATE SET
+       name = EXCLUDED.name,
+       password_hash = EXCLUDED.password_hash,
+       onboarded = true,
+       updated_at = now()
+     RETURNING id`,
+    [email, name, passwordHash]
+  );
 
-    console.log(`✦ Created entry: "${entry.rawText.slice(0, 50)}..."`);
+  return rows[0].id;
+}
+
+async function resetSeedUserRows(userId) {
+  await pool.query('DELETE FROM entries WHERE user_id = $1', [userId]);
+  await pool.query('DELETE FROM items WHERE user_id = $1', [userId]);
+}
+
+async function insertSeedEntriesAndItems(userId, data) {
+  for (const entryText of data.entries) {
+    await pool.query(
+      `INSERT INTO entries (user_id, raw_text, source)
+       VALUES ($1, $2, 'manual')`,
+      [userId, entryText]
+    );
   }
 
-  // Create sample extracted states (normally done by AI)
-  const entries = await prisma.entry.findMany({
-    where: { userId: user.id },
-    orderBy: { timestamp: 'asc' },
-  });
+  await insertItems(userId, data.items);
+}
 
-  const sampleStates = [
-    {
-      actionItems: [],
-      blockers: [],
-      completions: [
-        { text: 'Finished auth module' },
-        { text: 'Wrote login/register tests' },
-      ],
-      deadlines: [],
-      tags: ['auth', 'testing'],
-      sentiment: 'productive',
-    },
-    {
-      actionItems: [
-        { text: 'Send API pricing proposal to Rajesh', dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-        { text: 'Crunch pricing numbers tonight' },
-      ],
-      blockers: [],
-      completions: [],
-      deadlines: [
-        { task: 'API pricing proposal', date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-      ],
-      tags: ['meeting', 'rajesh', 'api'],
-      sentiment: 'focused',
-    },
-    {
-      actionItems: [{ text: 'Check S3 presigned URL config' }],
-      blockers: [{ text: 'S3 presigned URLs expiring too fast' }],
-      completions: [],
-      deadlines: [],
-      tags: ['file-upload', 's3', 'blocker'],
-      sentiment: 'stressed',
-    },
-    {
-      actionItems: [],
-      blockers: [],
-      completions: [
-        { text: 'Merged 3 PRs' },
-        { text: 'Code review for state aggregation' },
-      ],
-      deadlines: [],
-      tags: ['code-review', 'prs'],
-      sentiment: 'productive',
-    },
-  ];
-
-  for (let i = 0; i < entries.length; i++) {
-    await prisma.extractedState.create({
-      data: {
-        entryId: entries[i].id,
-        ...sampleStates[i],
-      },
-    });
+async function insertItems(userId, items) {
+  for (const item of items) {
+    await pool.query(
+      `INSERT INTO items (user_id, canonical_text, state, category, priority, blocker)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [userId, item.text, item.state, item.category, item.priority, item.blocker]
+    );
   }
+}
 
-  console.log(`\n✦ Created ${sampleStates.length} extracted states`);
+async function grantDemoFounder(userId) {
+  const { rows: [org] } = await pool.query(
+    `INSERT INTO organizations(name, slug)
+     VALUES('Flowra Local Ops', 'flowra-local-ops')
+     ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+     RETURNING id`
+  );
 
-  // Create daily state
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  await prisma.dailyState.upsert({
-    where: { userId_date: { userId: user.id, date: today } },
-    update: {},
-    create: {
-      userId: user.id,
-      date: today,
-      openItems: 3,
-      blockerCount: 1,
-      completedCount: 4,
-      deadlines: sampleStates[1].deadlines,
-      summary: 'Productive day — 4 items completed, 1 blocker on S3 config, API proposal due Friday.',
-    },
-  });
-
-  console.log('✦ Created daily state\n');
-  console.log('✦ Seeding complete!\n');
+  await pool.query(
+    `INSERT INTO organization_members(org_id, user_id, role)
+     VALUES($1, $2, 'founder')
+     ON CONFLICT (org_id, user_id) DO UPDATE SET role = EXCLUDED.role`,
+    [org.id, userId]
+  );
 }
 
 main()
-  .catch((e) => {
-    console.error('Seed failed:', e);
+  .catch(error => {
+    console.error('Seed failed:', error);
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await pool.end();
   });

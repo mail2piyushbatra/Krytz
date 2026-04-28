@@ -1,53 +1,780 @@
+/* ✦ FLOWRA — Strategy Screen CSS
+   Executive lens: category health, velocity, blockers. */
+
 .strategy-screen {
-  max-width: 1080px;
+  max-width: 1000px;
+  padding-bottom: 96px;
 }
 
-.strategy-screen h1 {
-  font-size: clamp(2.4rem, 7vw, 5.4rem);
-  line-height: 0.92;
-  max-width: 860px;
-  margin: var(--space-2) 0 var(--space-8);
+/* ── Eyebrow + Headline ──────────────────────────── */
+
+.strategy-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-3);
 }
 
-.strategy-grid {
+.strategy-headline {
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-primary);
+  margin-bottom: var(--space-8);
+}
+
+/* ── KPI Strip ───────────────────────────────────── */
+
+.strategy-kpis {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
 }
 
-.strategy-card {
-  min-height: 220px;
+.strategy-kpi {
+  background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
-  border-radius: 32px;
-  background:
-    radial-gradient(circle at top right, rgba(46, 213, 115, 0.11), transparent 34%),
-    var(--bg-secondary);
-  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  box-shadow: var(--shadow-sm);
 }
 
-.strategy-card.wide {
+.strategy-kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.strategy-kpi-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.strategy-kpi--warn .strategy-kpi-value  { color: var(--status-blocker); }
+.strategy-kpi--danger .strategy-kpi-value { color: var(--status-action); }
+.strategy-kpi--done .strategy-kpi-value   { color: var(--status-done); }
+
+/* ── Velocity Bar ────────────────────────────────── */
+
+.strategy-velocity-wrap {
+  margin-bottom: var(--space-8);
+}
+
+.strategy-velocity-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.strategy-velocity-pct {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.strategy-velocity-track {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.strategy-velocity-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: var(--radius-full);
+  transition: width 0.8s var(--ease-out);
+  min-width: 2px;
+}
+
+/* ── Category Health Grid ────────────────────────── */
+
+.strategy-health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.strategy-empty {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  padding: var(--space-6);
   grid-column: 1 / -1;
 }
 
-.strategy-card span {
-  color: var(--text-secondary);
+.strategy-health-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--cat-color, var(--border-subtle));
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-sm);
+}
+
+.strategy-health-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.strategy-health-open {
+  border-color: var(--border-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.strategy-health-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.strategy-cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.strategy-health-name {
+  flex: 1;
+  font-weight: 600;
   font-size: var(--text-sm);
+  text-transform: capitalize;
 }
 
-.strategy-card strong {
-  display: block;
-  font-size: clamp(2rem, 5vw, 4rem);
-  line-height: 1;
-  margin: var(--space-5) 0;
+.strategy-health-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.strategy-card p {
+.strategy-tag-at-risk { color: var(--status-blocker); }
+.strategy-tag-heavy   { color: var(--status-deadline); }
+.strategy-tag-active  { color: var(--status-done); }
+.strategy-tag-clear   { color: var(--text-tertiary); }
+
+.strategy-health-stats {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  max-width: 620px;
 }
+
+.strategy-blocked-count {
+  color: var(--status-blocker);
+  font-weight: 600;
+}
+
+/* ── Drill-down panel ─────────────────────────────── */
+
+.strategy-drill {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+  animation: fadeIn var(--dur-fast) var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.strategy-drill-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.strategy-drill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.strategy-drill-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.strategy-drill-item {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.strategy-drill-bullet {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.strategy-drill-empty {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* ── Top Items ───────────────────────────────────── */
+
+.strategy-top-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.strategy-top-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.strategy-top-item:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.strategy-top-rank {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  min-width: 28px;
+  text-align: center;
+}
+
+.strategy-top-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.strategy-top-text {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.strategy-top-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.strategy-priority-bar {
+  width: 60px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.strategy-priority-bar span {
+  height: 100%;
+  background: var(--gold-gradient);
+  border-radius: var(--radius-full);
+  min-width: 2px;
+}
+
+/* ── Blockers ────────────────────────────────────── */
+
+.strategy-blockers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.strategy-blocker-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(212, 155, 75, 0.06);
+  border: 1px solid rgba(212, 155, 75, 0.2);
+  border-radius: var(--radius-lg);
+}
+
+.strategy-blocker-icon {
+  color: var(--status-blocker);
+  font-size: var(--text-base);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.strategy-blocker-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.strategy-blocker-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ── Mobile ──────────────────────────────────────── */
 
 @media (max-width: 760px) {
-  .strategy-grid {
+  .strategy-headline {
+    font-size: clamp(1.5rem, 7vw, 2rem);
+    margin-bottom: var(--space-6);
+  }
+
+  .strategy-kpis {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+  }
+
+  /* Last two KPIs span bottom row */
+  .strategy-kpi:nth-child(4),
+  .strategy-kpi:nth-child(5) {
+    grid-column: span 1;
+  }
+
+  .strategy-kpi-value { font-size: 1.5rem; }
+
+  .strategy-health-grid {
     grid-template-columns: 1fr;
   }
+
+  .strategy-top-item {
+    flex-wrap: wrap;
+  }
+
+  .strategy-priority-bar { display: none; }
 }
+
+@media (max-width: 480px) {
+  .strategy-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Week delta badge ────────────────────────────── */
+
+.strategy-kpi-delta {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+.delta-up   { color: var(--status-done); }
+.delta-down { color: var(--status-action); }
+
+/* ── Intelligence toggle bar ─────────────────────── */
+
+.strategy-intel-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.strategy-intel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+
+.strategy-intel-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.strategy-intel-btn.active {
+  background: var(--bg-tertiary);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.strategy-intel-count {
+  background: var(--status-blocker);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  min-width: 16px;
+  text-align: center;
+}
+
+.strategy-intel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.strategy-intel-healthy    { background: var(--status-done); }
+.strategy-intel-stretched  { background: var(--status-deadline); }
+.strategy-intel-overloaded { background: var(--status-action); }
+.strategy-intel-underloaded { background: var(--text-tertiary); }
+
+/* ── Intelligence panels ─────────────────────────── */
+
+.strategy-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.strategy-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.strategy-panel-header h3 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.strategy-panel-count {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--bg-tertiary);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+
+.strategy-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.strategy-panel-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strategy-panel-stat-val {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.strategy-danger-val {
+  color: var(--status-action) !important;
+}
+
+.strategy-panel-stat-lbl {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.strategy-panel-insight {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+  line-height: 1.5;
+}
+
+.strategy-panel-rec {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  margin: 0;
+  padding: var(--space-3);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--status-deadline);
+}
+
+.strategy-panel-empty {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin: 0;
+}
+
+.strategy-panel-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.strategy-signal-tag {
+  font-size: var(--text-xs);
+  color: var(--status-blocker);
+  background: rgba(212, 155, 75, 0.08);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+/* Capacity status badge */
+.strategy-capacity-status {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+.strategy-cap-healthy    { color: var(--status-done); background: rgba(76,175,80,0.1); }
+.strategy-cap-stretched  { color: var(--status-deadline); background: rgba(212,155,75,0.1); }
+.strategy-cap-overloaded { color: var(--status-action); background: rgba(239,83,80,0.1); }
+.strategy-cap-underloaded { color: var(--text-tertiary); background: var(--bg-tertiary); }
+
+/* ── Contradiction cards ─────────────────────────── */
+
+.strategy-contradiction-card {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+  border-left: 3px solid var(--status-blocker);
+  background: rgba(212, 155, 75, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.strategy-sev-high { border-left-color: var(--status-action); background: rgba(239,83,80,0.04); }
+.strategy-sev-medium { border-left-color: var(--status-deadline); }
+
+.strategy-contradiction-type {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+}
+
+.strategy-contradiction-msg {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Commitment cards ────────────────────────────── */
+
+.strategy-commitment-card {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-2);
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.strategy-commitment-overdue {
+  border-left: 3px solid var(--status-action);
+  background: rgba(239,83,80,0.04);
+}
+
+.strategy-commitment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.strategy-commitment-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.strategy-commitment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.strategy-urgency-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.strategy-urgency-overdue  { color: var(--status-action); }
+.strategy-urgency-due_soon { color: var(--status-deadline); }
+.strategy-urgency-open     { color: var(--text-tertiary); }
+
+/* ── Action buttons ──────────────────────────────── */
+
+.strategy-action-btn {
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.strategy-action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.strategy-action-done {
+  color: var(--status-done);
+  border-color: rgba(76,175,80,0.3);
+}
+.strategy-action-done:hover { background: rgba(76,175,80,0.1); }
+
+.strategy-action-snooze {
+  color: var(--text-tertiary);
+  border-color: var(--border-subtle);
+}
+.strategy-action-snooze:hover { background: var(--bg-tertiary); }
+
+.strategy-action-resolve {
+  color: var(--status-blocker);
+  border-color: rgba(212,155,75,0.3);
+}
+.strategy-action-resolve:hover { background: rgba(212,155,75,0.1); }
+
+.strategy-top-actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* ── Drill-down pagination ───────────────────────── */
+
+.strategy-drill-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.strategy-drill-pagination button {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.strategy-drill-pagination button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.strategy-drill-item {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  align-items: center;
+}
+
+.strategy-drill-item-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strategy-drill-done-btn {
+  background: none;
+  border: 1px solid rgba(76,175,80,0.3);
+  border-radius: var(--radius-full);
+  color: var(--status-done);
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity var(--dur-fast);
+  flex-shrink: 0;
+}
+.strategy-drill-done-btn:hover { opacity: 1; }
+
+/* Estimate badge */
+.badge-estimate {
+  background: rgba(100, 149, 237, 0.1);
+  color: cornflowerblue;
+  font-weight: 600;
+}
+
+/* ── Mobile overrides for new components ──────────── */
+
+@media (max-width: 760px) {
+  .strategy-panel-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .strategy-intel-bar {
+    flex-wrap: wrap;
+  }
+
+  .strategy-commitment-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .strategy-top-actions {
+    margin-left: 28px;
+  }
+}
+A d d i n g   s o m e   f l e x   s t y l e s   t o   S t r a t e g y S c r e e n . c s s  
+ 

@@ -20,6 +20,7 @@ function platformRoutes(pool) {
   });
 
   router.get('/platform/overview', asyncHandler(async (req, res) => {
+    await requirePlatformRole(pool, req.user.id, ['founder', 'operator', 'devops', 'coder', 'support']);
     const [tableRows, selectedCounts, userRows, storageRows, membershipRows, accountRows, auditRows] = await Promise.all([
       pool.query(
         `SELECT table_name
@@ -511,8 +512,14 @@ async function requireDashboardAccess(pool, userId, requestedRole) {
     err.status = 403;
     throw err;
   }
-  const canViewAny = ['founder', 'operator'].includes(membership.role);
-  if (!canViewAny && membership.role !== requestedRole) {
+  const roleAccess = {
+    founder: ['founder', 'operator', 'devops', 'coder', 'support'],
+    operator: ['operator', 'support'],
+    devops: ['devops'],
+    coder: ['coder'],
+    support: ['support'],
+  };
+  if (!roleAccess[membership.role]?.includes(requestedRole)) {
     const err = new Error(`Dashboard access denied for role ${requestedRole}`);
     err.status = 403;
     throw err;
@@ -801,7 +808,7 @@ async function getSelectedCounts(pool) {
     try {
       const { rows } = await pool.query(`SELECT count(*)::int AS n FROM ${table}`);
       result[table] = rows[0]?.n || 0;
-    } catch (_) {
+    } catch {
       result[table] = null;
     }
   }

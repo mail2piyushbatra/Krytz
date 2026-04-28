@@ -1,7 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { platform } from '../services/api';
+import { analytics, categories, dataExport, inspector, items, platform } from '../services/api';
+import useAuthStore from '../stores/authStore';
+import { Card, MetricCard, ProgressRing } from '../components/ui/UiKit';
+import { Database, Users, FileText, LayoutList } from 'lucide-react';
 import './PlatformScreen.css';
+
+// Role hierarchy — who can see which dashboards
+const ROLE_ACCESS = {
+  founder:  ['founder', 'operator', 'devops', 'coder', 'support'],
+  operator: ['operator', 'support'],
+  devops:   ['devops'],
+  coder:    ['coder'],
+  support:  ['support'],
+  member:   [], // no platform access
+};
+
+const PLATFORM_ROLES = ['founder', 'operator', 'devops', 'coder', 'support'];
 
 const roleMeta = {
   founder: {
@@ -63,22 +78,93 @@ const roleMeta = {
 
 export default function PlatformScreen() {
   const { role } = useParams();
-  const activeRole = roleMeta[role] ? role : null;
-  const [state, setState] = useState({ loading: true, overview: null, rolePayload: null, actionResult: null, actionLoading: '', error: '' });
+  const user = useAuthStore(s => s.user);
+  const userRole = user?.platformRole || user?.role || 'member';
+  const allowedRoles = ROLE_ACCESS[userRole] || [];
+  const hasPlatformAccess = allowedRoles.length > 0 || PLATFORM_ROLES.includes(userRole);
+  const activeRole = roleMeta[role] && allowedRoles.includes(role) ? role : null;
+  const blockedRole = roleMeta[role] && !allowedRoles.includes(role) ? role : null;
+  const [state, setState] = useState({ loading: true, overview: null, rolePayload: null, workspace: null, actionResult: null, actionLoading: '', error: '', accounts: [] });
+  const healthIntervalRef = useRef(null);
+
+  // Fetch accounts for dynamic email resolution (replaces hardcoded emails)
+  const loadAccounts = useCallback(async () => {
+    try {
+      const res = await platform.accounts();
+      return res?.accounts || res || [];
+    } catch { return []; }
+  }, []);
 
   useEffect(() => {
     async function load() {
+      if (!hasPlatformAccess) {
+        setState(prev => ({ ...prev, loading: false, error: 'Access denied: insufficient platform privileges.' }));
+        return;
+      }
+      if (blockedRole) {
+        setState(prev => ({ ...prev, loading: false, overview: null, rolePayload: null, workspace: null, error: '' }));
+        return;
+      }
       try {
         setState(prev => ({ ...prev, loading: true, error: '', actionResult: null }));
-        const overview = await platform.overview();
+        const [overview, accounts, workspace] = await Promise.all([
+          platform.overview(),
+          loadAccounts(),
+          activeRole ? loadRoleWorkspace(activeRole) : Promise.resolve(null),
+        ]);
         const rolePayload = activeRole ? await platform.roleDashboard(activeRole) : null;
-        setState(prev => ({ ...prev, loading: false, overview, rolePayload, error: '' }));
+        setState(prev => ({ ...prev, loading: false, overview, rolePayload, workspace, accounts, error: '' }));
       } catch (error) {
-        setState(prev => ({ ...prev, loading: false, rolePayload: null, error: error.message }));
+        setState(prev => ({ ...prev, loading: false, rolePayload: null, workspace: null, error: error.message }));
       }
     }
     load();
+  }, [activeRole, blockedRole, hasPlatformAccess, loadAccounts]);
+
+  // Auto-refresh service health every 30s when on devops dashboard
+  useEffect(() => {
+    if (activeRole === 'devops' || activeRole === 'operator') {
+      healthIntervalRef.current = setInterval(async () => {
+        try {
+          const health = await platform.serviceHealth();
+          setState(prev => ({
+            ...prev,
+            overview: prev.overview ? { ...prev.overview, serviceHealth: health } : prev.overview,
+          }));
+        } catch { /* silent */ }
+      }, 30_000);
+    }
+    return () => clearInterval(healthIntervalRef.current);
   }, [activeRole]);
+
+  // Auth gate: block unauthorized users
+  if (!hasPlatformAccess) {
+    return (
+      <div className="platform-screen page-container">
+        <div className="platform-gate">
+          <div className="platform-gate-icon">🔒</div>
+          <h2>Platform Access Required</h2>
+          <p>Your account ({user?.email || 'unknown'}) does not have platform privileges.</p>
+          <p className="platform-gate-hint">Contact a founder or operator to request access.</p>
+          <Link to="/" className="btn btn-primary">← Back to Command Center</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (blockedRole) {
+    return (
+      <div className="platform-screen page-container">
+        <div className="platform-gate">
+          <div className="platform-gate-icon">LOCKED</div>
+          <h2>Access denied</h2>
+          <p>Your {userRole} role cannot open the {roleMeta[blockedRole].label} dashboard.</p>
+          <p className="platform-gate-hint">Use an allowed dashboard or ask a founder to update your platform role.</p>
+          <Link to="/platform" className="btn btn-primary">Back to Platform</Link>
+        </div>
+      </div>
+    );
+  }
 
   const overview = state.overview;
 
@@ -107,34 +193,36 @@ export default function PlatformScreen() {
 
       {overview && (
         <>
-          <RoleSwitch activeRole={activeRole} />
-
-          <section className="platform-grid">
-            <Metric title="Tables" value={overview.storage.database.tableCount} note="Postgres public schema" />
-            <Metric title="Users" value={overview.storage.database.selectedCounts.users} note="local dev database" />
-            <Metric title="Entries" value={overview.storage.database.selectedCounts.entries} note="raw captured memory" />
-            <Metric title="Items" value={overview.storage.database.selectedCounts.items} note="computed operating state" />
-          </section>
+          <RoleSwitch activeRole={activeRole} allowedRoles={allowedRoles} />
 
           {activeRole ? (
             <RoleDashboard
               role={activeRole}
               overview={overview}
               rolePayload={state.rolePayload}
+              workspace={state.workspace}
               actionResult={state.actionResult}
               actionLoading={state.actionLoading}
+              accounts={state.accounts}
               onRunAction={async action => {
                 setState(prev => ({ ...prev, actionLoading: action, actionResult: null, error: '' }));
                 try {
-                  const result = await runPlatformAction(action, activeRole);
-                  setState(prev => ({ ...prev, actionLoading: '', actionResult: { action, result }, error: '' }));
+                  const result = await runPlatformAction(action, activeRole, state.accounts, state.workspace);
+                  const [overview, workspace] = await Promise.all([
+                    platform.overview(),
+                    loadRoleWorkspace(activeRole),
+                  ]);
+                  setState(prev => ({ ...prev, overview, workspace, actionLoading: '', actionResult: { action, result }, error: '' }));
                 } catch (error) {
                   setState(prev => ({ ...prev, actionLoading: '', actionResult: null, error: error.message }));
                 }
               }}
             />
           ) : (
-            <PlatformHub overview={overview} />
+            <>
+              <PlatformDataStrip overview={overview} />
+              <PlatformHub overview={overview} allowedRoles={allowedRoles} />
+            </>
           )}
         </>
       )}
@@ -142,30 +230,138 @@ export default function PlatformScreen() {
   );
 }
 
-async function runPlatformAction(action, role) {
+async function safeCall(fn, fallback) {
+  try {
+    return await fn();
+  } catch (error) {
+    return { error: error.message, fallback };
+  }
+}
+
+async function loadRoleWorkspace(role) {
+  const wantsOps = ['founder', 'operator', 'devops', 'coder', 'support'].includes(role);
+  if (!wantsOps) return null;
+
+  const [
+    analyticsOverview,
+    activeItems,
+    blockers,
+    completions,
+    categoryList,
+    inspectorHealth,
+    traces,
+    decisions,
+    anomalies,
+    graph,
+    connectors,
+  ] = await Promise.all([
+    safeCall(() => analytics.overview(), null),
+    safeCall(() => items.list({ limit: 8, sort: 'priority' }), { items: [], meta: {} }),
+    safeCall(() => items.list({ blocker: 'true', limit: 8, sort: 'recent' }), { items: [], meta: {} }),
+    safeCall(() => items.completions(7), null),
+    safeCall(() => categories.list(), { categories: [] }),
+    safeCall(() => inspector.health(), null),
+    safeCall(() => inspector.traces(8), { traces: [] }),
+    safeCall(() => inspector.decisions(8), { decisions: [] }),
+    safeCall(() => inspector.anomalies(8), { anomalies: [] }),
+    safeCall(() => inspector.graph(), { nodes: [], edges: [] }),
+    safeCall(() => inspector.connectors(), { connectors: [] }),
+  ]);
+
+  return {
+    analytics: analyticsOverview?.fallback ?? analyticsOverview,
+    activeItems: activeItems?.fallback ?? activeItems,
+    blockers: blockers?.fallback ?? blockers,
+    completions: completions?.fallback ?? completions,
+    categories: categoryList?.fallback ?? categoryList,
+    inspectorHealth: inspectorHealth?.fallback ?? inspectorHealth,
+    traces: traces?.fallback ?? traces,
+    decisions: decisions?.fallback ?? decisions,
+    anomalies: anomalies?.fallback ?? anomalies,
+    graph: graph?.fallback ?? graph,
+    connectors: connectors?.fallback ?? connectors,
+    errors: [
+      analyticsOverview,
+      activeItems,
+      blockers,
+      completions,
+      categoryList,
+      inspectorHealth,
+      traces,
+      decisions,
+      anomalies,
+      graph,
+      connectors,
+    ].filter(result => result?.error).map(result => result.error),
+  };
+}
+
+// Resolve a real account email dynamically instead of hardcoded synthetic emails
+function resolveAccountEmail(accounts, index = 0) {
+  if (accounts?.length > index) return accounts[index].email;
+  return `user.${Date.now()}@flowra.local`; // fallback
+}
+
+function resolveGrantTargetEmail(accounts) {
+  const supportAccount = accounts?.find(account => account.role === 'support');
+  if (supportAccount) return supportAccount.email;
+
+  const nonOwnerAccount = accounts?.find(account => !['founder', 'operator'].includes(account.role));
+  if (nonOwnerAccount) return nonOwnerAccount.email;
+
+  throw new Error('No safe non-owner account available for grant testing');
+}
+
+async function runPlatformAction(action, role, accounts = [], workspace = {}) {
   if (action === 'accounts') return platform.accounts();
   if (action === 'audit') return platform.audit();
   if (action === 'schema') return platform.schema();
   if (action === 'health') return platform.serviceHealth();
   if (action === 'role') return platform.roleDashboard(role);
   if (action === 'invite') return platform.invite(`invite.${Date.now()}@flowra.local`, role === 'founder' ? 'operator' : role);
-  if (action === 'grant') return platform.grant('support.platform@flowra.local', 'support');
-  if (action === 'support-note') return platform.supportNote('flowra.synthetic.1.20260426121047@example.com', `Support diagnostic note from ${role} dashboard`);
-  if (action === 'export-request') return platform.exportRequest('flowra.synthetic.1.20260426121047@example.com', `Export review requested from ${role} dashboard`);
-  if (action === 'delete-request') return platform.deleteRequest('flowra.synthetic.2.20260426121047@example.com', `Deletion review requested from ${role} dashboard`);
+  if (action === 'grant') return platform.grant(resolveGrantTargetEmail(accounts), 'support');
+  if (action === 'support-note') return platform.supportNote(resolveAccountEmail(accounts, 0), `Support diagnostic note from ${role} dashboard`);
+  if (action === 'export-request') return platform.exportRequest(resolveAccountEmail(accounts, 0), `Export review requested from ${role} dashboard`);
+  if (action === 'delete-request') return platform.deleteRequest(resolveAccountEmail(accounts, 1), `Deletion review requested from ${role} dashboard`);
   if (action === 'backup-run') return platform.backupRun();
-  if (action === 'deploy-run') return platform.deployRun('local', 'api', 'context-package');
-  if (action === 'observability-event') return platform.observabilityEvent(`Synthetic observability event from ${role} dashboard`, 'info');
+  if (action === 'deploy-run') return platform.deployRun('local', 'api', 'role-workflow');
+  if (action === 'observability-event') return platform.observabilityEvent(`Observability event from ${role} dashboard`, 'info');
+  if (action === 'analytics-overview') return analytics.overview();
+  if (action === 'categories') return categories.list();
+  if (action === 'export-json') return dataExport.download();
+  if (action === 'export-csv') return dataExport.downloadCSV();
+  if (action === 'inspector-health') return inspector.health();
+  if (action === 'inspector-traces') return inspector.traces(20);
+  if (action === 'inspector-decisions') return inspector.decisions(20);
+  if (action === 'inspector-graph') return inspector.graph();
+  if (action === 'inspector-anomalies') return inspector.anomalies(20);
+  if (action === 'connector-gmail') return inspector.registerConnector('gmail', { source: 'platform-workflow', role });
+  if (action === 'connector-calendar') return inspector.registerConnector('google_calendar', { source: 'platform-workflow', role });
+  if (action === 'complete-first-open') {
+    const first = workspace?.activeItems?.items?.[0];
+    if (!first) throw new Error('No open item available to complete');
+    return items.markDone(first.id);
+  }
+  if (action === 'clear-first-blocker') {
+    const first = workspace?.blockers?.items?.[0];
+    if (!first) throw new Error('No blocker item available to clear');
+    return items.toggleBlocker(first.id, false);
+  }
+  if (action === 'create-operator-item') {
+    return items.create({ text: `Platform follow-up from ${role} workflow`, category: 'operations', priority: 0.7 });
+  }
   throw new Error(`Unknown platform action: ${action}`);
 }
 
-function PlatformHub({ overview }) {
+function PlatformHub({ overview, allowedRoles }) {
   return (
     <>
+      <PlatformOperatingMap overview={overview} allowedRoles={allowedRoles} />
+
       <section className="platform-section">
         <div className="platform-section-head">
           <h2>Role logins</h2>
-          <span>real local accounts</span>
+          <span>platform accounts</span>
         </div>
         <div className="login-table">
           {overview.platformAccounts.map(account => (
@@ -173,7 +369,8 @@ function PlatformHub({ overview }) {
               <span>{account.role}</span>
               <h3>{account.email}</h3>
               <p>{account.name || 'Unnamed platform account'} / {account.orgName}</p>
-              <code>password: Platform123!</code>
+              {/* Credentials hidden — no raw passwords in UI */}
+              <code className="login-credential-masked">●●●●●●●●●●</code>
             </article>
           ))}
         </div>
@@ -182,12 +379,14 @@ function PlatformHub({ overview }) {
       <section className="platform-section">
         <div className="platform-section-head">
           <h2>Dashboard routes</h2>
-          <span>separate work surfaces</span>
+          <span>accessible work surfaces</span>
         </div>
         <div className="dashboard-grid">
-          {Object.keys(roleMeta).map(key => (
-            <RoleRouteCard key={key} role={key} />
-          ))}
+          {Object.keys(roleMeta)
+            .filter(key => allowedRoles.includes(key))
+            .map(key => (
+              <RoleRouteCard key={key} role={key} />
+            ))}
         </div>
       </section>
 
@@ -196,15 +395,91 @@ function PlatformHub({ overview }) {
   );
 }
 
-function RoleSwitch({ activeRole }) {
+function PlatformDataStrip({ overview }) {
+  return (
+    <section className="platform-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
+      <MetricCard title="Tables" value={overview.storage.database.tableCount} trendValue="Postgres public schema" icon={Database} />
+      <MetricCard title="Users" value={overview.storage.database.selectedCounts.users} trendValue="local dev database" icon={Users} />
+      <MetricCard title="Entries" value={overview.storage.database.selectedCounts.entries} trendValue="raw captured memory" icon={FileText} />
+      <MetricCard title="Items" value={overview.storage.database.selectedCounts.items} trendValue="computed operating state" icon={LayoutList} />
+    </section>
+  );
+}
+
+function PlatformOperatingMap({ overview, allowedRoles }) {
+  const counts = overview.storage?.database?.selectedCounts || {};
+  const rows = [
+    {
+      plane: 'customer operations',
+      owner: allowedRoles.includes('operator') ? 'operator' : 'founder',
+      signal: counts.users ?? 0,
+      label: 'accounts',
+      detail: 'Activation, support load, export/delete requests, and account state.',
+      route: allowedRoles.includes('operator') ? '/platform/operator' : '/platform/founder',
+    },
+    {
+      plane: 'product intelligence',
+      owner: allowedRoles.includes('coder') ? 'coder' : 'founder',
+      signal: counts.items ?? 0,
+      label: 'items',
+      detail: 'Capture to extraction to decision output must be inspectable and fixable.',
+      route: allowedRoles.includes('coder') ? '/platform/coder' : '/platform/founder',
+    },
+    {
+      plane: 'runtime control',
+      owner: allowedRoles.includes('devops') ? 'devops' : 'founder',
+      signal: overview.serviceHealth?.status || 'local',
+      label: 'health',
+      detail: 'Deploys, backups, connectors, and observability need explicit ownership.',
+      route: allowedRoles.includes('devops') ? '/platform/devops' : '/platform/founder',
+    },
+    {
+      plane: 'trust and governance',
+      owner: allowedRoles.includes('support') ? 'support' : 'founder',
+      signal: overview.auditEvents?.length ?? 0,
+      label: 'audit rows',
+      detail: 'Every privileged action should leave evidence and route to the right owner.',
+      route: allowedRoles.includes('support') ? '/platform/support' : '/platform/founder',
+    },
+  ];
+
+  return (
+    <section className="platform-operating-map">
+      <div className="platform-section-head">
+        <div>
+          <h2>Platform operating map</h2>
+          <p>Backend-side depth should be ownership plus action paths, not only KPI cards.</p>
+        </div>
+        <span>{rows.length} operating planes</span>
+      </div>
+      <div className="platform-plane-grid">
+        {rows.map(row => (
+          <Link className="platform-plane-card" key={row.plane} to={row.route}>
+            <span>{row.plane}</span>
+            <div>
+              <strong>{row.signal}</strong>
+              <em>{row.label}</em>
+            </div>
+            <p>{row.detail}</p>
+            <code>owner: {row.owner}</code>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RoleSwitch({ activeRole, allowedRoles }) {
   return (
     <nav className="role-switch" aria-label="Platform role dashboards">
       <Link className={!activeRole ? 'active' : ''} to="/platform">Hub</Link>
-      {Object.entries(roleMeta).map(([key, meta]) => (
-        <Link className={activeRole === key ? 'active' : ''} key={key} to={`/platform/${key}`}>
-          {meta.label}
-        </Link>
-      ))}
+      {Object.entries(roleMeta)
+        .filter(([key]) => allowedRoles.includes(key))
+        .map(([key, meta]) => (
+          <Link className={activeRole === key ? 'active' : ''} key={key} to={`/platform/${key}`}>
+            {meta.label}
+          </Link>
+        ))}
     </nav>
   );
 }
@@ -221,27 +496,253 @@ function RoleRouteCard({ role }) {
   );
 }
 
-function RoleDashboard({ role, overview, rolePayload, actionResult, actionLoading, onRunAction }) {
+function RoleDashboard({ role, overview, rolePayload, workspace, actionResult, actionLoading, onRunAction }) {
   const meta = roleMeta[role];
-  const dashboardKey = role === 'operator' ? 'founder' : role;
-  const dashboard = overview.dashboards?.[dashboardKey] || overview.dashboards?.founder;
   return (
     <>
-      <section className="platform-section role-dashboard-shell">
+      <RoleKpiDashboard
+        role={role}
+        overview={overview}
+        rolePayload={rolePayload}
+        workspace={workspace}
+        onRunAction={onRunAction}
+        actionLoading={actionLoading}
+      />
+      <section className="platform-section role-workflow-shell">
         <div className="platform-section-head">
-          <h2>{meta.label} dashboard</h2>
-          <span>dedicated route /platform/{role}</span>
+          <h2>{meta.label} workflow console</h2>
+          <span>live queues + executable actions</span>
         </div>
-        <div className="role-dashboard-grid">
-          <DashboardPanel dashboard={dashboard} />
-          <RoleOperatingModel role={role} rolePayload={rolePayload} onRunAction={onRunAction} actionLoading={actionLoading} />
-        </div>
+        <RoleWorkflow
+          role={role}
+          overview={overview}
+          rolePayload={rolePayload}
+          workspace={workspace}
+          onRunAction={onRunAction}
+          actionLoading={actionLoading}
+        />
       </section>
-      <RoleToolbelt role={role} overview={overview} actionLoading={actionLoading} onRunAction={onRunAction} />
       <ActionResultPanel actionResult={actionResult} />
       <SharedPlatformSections overview={overview} compact />
     </>
   );
+}
+
+function RoleKpiDashboard({ role, overview, rolePayload, workspace, onRunAction, actionLoading }) {
+  const model = buildRoleKpiModel(role, overview, rolePayload, workspace);
+  return (
+    <section className={`role-kpi-board role-kpi-board--${role}`}>
+      <div className="role-kpi-topline">
+        <div>
+          <span>{model.kicker}</span>
+          <h2>{model.title}</h2>
+          <p>{model.subtitle}</p>
+        </div>
+        <button
+          className="btn btn-primary"
+          disabled={actionLoading === model.primaryAction}
+          onClick={() => onRunAction(model.primaryAction)}
+        >
+          {actionLoading === model.primaryAction ? 'Running...' : model.primaryActionLabel}
+        </button>
+      </div>
+
+      <div className="role-kpi-layout">
+        <article className="role-kpi-gauge-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <ProgressRing 
+            percentage={model.gauge.percent} 
+            size={160} 
+            strokeWidth={14}
+            label={model.gauge.value}
+            sublabel={model.gauge.label}
+            color="var(--accent-primary)"
+          />
+        </article>
+
+        <div className="role-kpi-card-grid">
+          {model.cards.map(card => (
+            <article className="role-kpi-card" key={card.label}>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <p>{card.note}</p>
+            </article>
+          ))}
+        </div>
+
+        <article className="role-kpi-chart">
+          <div className="role-kpi-chart-head">
+            <span>{model.chart.title}</span>
+            <strong>{model.chart.value}</strong>
+          </div>
+          <div className="role-kpi-bars">
+            {model.chart.rows.map(row => (
+              <button
+                key={row.label}
+                disabled={!row.action || actionLoading === row.action}
+                onClick={() => row.action && onRunAction(row.action)}
+              >
+                <span>{row.label}</span>
+                <i><b style={{ width: `${row.percent}%` }} /></i>
+                <strong>{row.value}</strong>
+              </button>
+            ))}
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function buildRoleKpiModel(role, overview, rolePayload, workspace) {
+  const counts = overview.storage?.database?.selectedCounts || {};
+  const analyticsSummary = workspace?.analytics?.summary || {};
+  const activeItems = workspace?.activeItems?.items || [];
+  const blockers = workspace?.blockers?.items || [];
+  const traces = workspace?.traces?.traces || [];
+  const decisions = workspace?.decisions?.decisions || [];
+  const anomalies = workspace?.anomalies?.anomalies || [];
+  const connectors = workspace?.connectors?.connectors || [];
+  const auditCount = overview.auditEvents?.length || 0;
+  const tableCount = overview.storage?.database?.tableCount || 0;
+  const serviceCount = overview.serviceHealth?.services?.length || overview.services?.length || 0;
+  const workflowCards = rolePayload?.cards || [];
+
+  const percent = (value, max) => Math.max(4, Math.min(100, Math.round((Number(value || 0) / Math.max(Number(max || 1), 1)) * 100)));
+  const rowsFrom = (rows, fallbackAction) => rows.map(row => ({
+    label: row.label,
+    value: row.value,
+    percent: row.percent ?? percent(row.value, rows.reduce((max, r) => Math.max(max, Number(r.value) || 0), 1)),
+    action: row.action || fallbackAction,
+  }));
+
+  const models = {
+    founder: {
+      kicker: 'founder cockpit',
+      title: 'Growth, risk, and governance at a glance.',
+      subtitle: 'Founder should see business health first, then drill into operations, roles, and audit.',
+      primaryAction: 'audit',
+      primaryActionLabel: 'Review audit',
+      gauge: { value: counts.users ?? 0, label: 'users', percent: percent(counts.users, 50), note: 'Activation base in the local platform database.' },
+      cards: [
+        { label: 'Entries', value: counts.entries ?? 0, note: 'Raw captured memory volume.' },
+        { label: 'Items', value: counts.items ?? 0, note: 'Computed product state.' },
+        { label: 'Audit', value: auditCount, note: 'Governance events visible.' },
+        { label: 'Roles', value: overview.platformAccounts?.length ?? 0, note: 'Seeded platform accounts.' },
+      ],
+      chart: {
+        title: 'Business mix',
+        value: 'live',
+        rows: rowsFrom([
+          { label: 'Users', value: counts.users ?? 0, action: 'accounts' },
+          { label: 'Entries', value: counts.entries ?? 0, action: 'analytics-overview' },
+          { label: 'Items', value: counts.items ?? 0, action: 'analytics-overview' },
+          { label: 'Audit', value: auditCount, action: 'audit' },
+        ]),
+      },
+    },
+    operator: {
+      kicker: 'operator board',
+      title: 'Daily execution, customer health, and blocker movement.',
+      subtitle: 'Operator dashboard starts with queues and throughput, not schema table counts.',
+      primaryAction: 'create-operator-item',
+      primaryActionLabel: 'Create ops item',
+      gauge: { value: activeItems.length, label: 'active', percent: percent(activeItems.length, 20), note: 'Open work available for operational triage.' },
+      cards: [
+        { label: 'Blockers', value: blockers.length, note: 'Items needing operator movement.' },
+        { label: 'Completed 7d', value: workspace?.completions?.totalCompleted ?? 0, note: 'Recent throughput.' },
+        { label: 'Accounts', value: counts.users ?? 0, note: 'Customer state to support.' },
+        { label: 'Categories', value: workspace?.categories?.categories?.length ?? 0, note: 'Work routing lanes.' },
+      ],
+      chart: {
+        title: 'Ops pressure',
+        value: analyticsSummary.openItems ?? activeItems.length,
+        rows: rowsFrom([
+          { label: 'Open work', value: activeItems.length, action: 'complete-first-open' },
+          { label: 'Blockers', value: blockers.length, action: 'clear-first-blocker' },
+          { label: 'Completed', value: workspace?.completions?.totalCompleted ?? 0, action: 'analytics-overview' },
+          { label: 'Accounts', value: counts.users ?? 0, action: 'accounts' },
+        ]),
+      },
+    },
+    devops: {
+      kicker: 'devops board',
+      title: 'Runtime, deploy, backup, and integration readiness.',
+      subtitle: 'DevOps should land on service health and operational controls, not user totals.',
+      primaryAction: 'health',
+      primaryActionLabel: 'Run health check',
+      gauge: { value: overview.serviceHealth?.status || 'local', label: 'health', percent: overview.serviceHealth?.status === 'ok' ? 100 : 64, note: 'Current local service health posture.' },
+      cards: [
+        { label: 'Services', value: serviceCount, note: 'API, DB, cache, object storage.' },
+        { label: 'Connectors', value: connectors.length, note: 'Registered integrations.' },
+        { label: 'Anomalies', value: anomalies.length, note: 'Runtime signals returned.' },
+        { label: 'Tables', value: tableCount, note: 'Backup and schema scope.' },
+      ],
+      chart: {
+        title: 'Runtime lanes',
+        value: serviceCount,
+        rows: rowsFrom([
+          { label: 'Services', value: serviceCount, action: 'health' },
+          { label: 'Traces', value: traces.length, action: 'inspector-traces' },
+          { label: 'Connectors', value: connectors.length, action: 'connector-gmail' },
+          { label: 'Anomalies', value: anomalies.length, action: 'inspector-anomalies' },
+        ]),
+      },
+    },
+    coder: {
+      kicker: 'coder board',
+      title: 'Implementation evidence, schema, traces, and decision replay.',
+      subtitle: 'Coder dashboard should expose the contract and failing paths before generic metrics.',
+      primaryAction: 'schema',
+      primaryActionLabel: 'Inspect schema',
+      gauge: { value: tableCount, label: 'tables', percent: percent(tableCount, 60), note: 'API/data contract footprint.' },
+      cards: [
+        { label: 'Traces', value: traces.length, note: 'Engine and action traces.' },
+        { label: 'Decisions', value: decisions.length, note: 'Decision engine replay surface.' },
+        { label: 'Categories', value: workspace?.categories?.categories?.length ?? 0, note: 'User-facing taxonomy.' },
+        { label: 'Audit', value: auditCount, note: 'Platform action evidence.' },
+      ],
+      chart: {
+        title: 'Engineering evidence',
+        value: traces.length + decisions.length,
+        rows: rowsFrom([
+          { label: 'Tables', value: tableCount, action: 'schema' },
+          { label: 'Traces', value: traces.length, action: 'inspector-traces' },
+          { label: 'Decisions', value: decisions.length, action: 'inspector-decisions' },
+          { label: 'Audit', value: auditCount, action: 'audit' },
+        ]),
+      },
+    },
+    support: {
+      kicker: 'support board',
+      title: 'Customer diagnostics, notes, and data request intake.',
+      subtitle: 'Support starts from accounts and safe workflow actions, not infrastructure metrics.',
+      primaryAction: 'accounts',
+      primaryActionLabel: 'Open accounts',
+      gauge: { value: counts.users ?? 0, label: 'accounts', percent: percent(counts.users, 50), note: 'Customers available for diagnostics.' },
+      cards: [
+        { label: 'Entries', value: counts.entries ?? 0, note: 'Context available to inspect.' },
+        { label: 'Items', value: counts.items ?? 0, note: 'Customer task footprint.' },
+        { label: 'Blockers', value: blockers.length, note: 'Support-relevant blockers.' },
+        { label: 'Audit', value: auditCount, note: 'Support action trail.' },
+      ],
+      chart: {
+        title: 'Support load',
+        value: counts.users ?? 0,
+        rows: rowsFrom([
+          { label: 'Accounts', value: counts.users ?? 0, action: 'accounts' },
+          { label: 'Entries', value: counts.entries ?? 0, action: 'analytics-overview' },
+          { label: 'Items', value: counts.items ?? 0, action: 'analytics-overview' },
+          { label: 'Audit', value: auditCount, action: 'audit' },
+        ]),
+      },
+    },
+  };
+
+  const model = models[role] || models.support;
+  if (workflowCards.length > 0 && role === 'founder') {
+    model.cards = workflowCards.slice(0, 4).map(card => ({ label: card.label, value: card.value, note: card.note }));
+  }
+  return model;
 }
 
 const actionLabels = {
@@ -258,133 +759,466 @@ const actionLabels = {
   'backup-run': 'Create backup manifest',
   'deploy-run': 'Queue deploy',
   'observability-event': 'Emit observability event',
+  'analytics-overview': 'Refresh analytics',
+  categories: 'Open categories',
+  'export-json': 'Download JSON export',
+  'export-csv': 'Download CSV export',
+  'inspector-health': 'Inspect engines',
+  'inspector-traces': 'Open traces',
+  'inspector-decisions': 'Open decisions',
+  'inspector-graph': 'Open graph',
+  'inspector-anomalies': 'Open anomalies',
+  'connector-gmail': 'Register Gmail connector',
+  'connector-calendar': 'Register Calendar connector',
+  'complete-first-open': 'Complete top item',
+  'clear-first-blocker': 'Clear top blocker',
+  'create-operator-item': 'Create ops item',
 };
 
-function RoleOperatingModel({ role, rolePayload, onRunAction, actionLoading }) {
-  const model = rolePayload?.dashboard;
-  if (!model) return <RoleModules role={role} />;
-  const records = Object.entries(model.records || {}).filter(([, rows]) => rows?.length);
+function RoleWorkflow({ role, overview, rolePayload, workspace, onRunAction, actionLoading }) {
+  const workflow = buildRoleWorkflow(role, overview, rolePayload, workspace);
   return (
-    <article className="platform-card role-operating-model">
-      <span>{role} operating model</span>
-      <h3>{model.mission}</h3>
-
-      <div className="role-queue-grid">
-        {(model.liveQueues || []).map(queue => (
-          <button className="queue-action" key={queue.label} onClick={() => onRunAction(queue.action)} disabled={actionLoading === queue.action}>
-            <span>{queue.label}</span>
-            <strong>{queue.value ?? 'n/a'}</strong>
-            <small>{actionLoading === queue.action ? 'Running...' : actionLabels[queue.action] || queue.action}</small>
-          </button>
-        ))}
-      </div>
-
-      <div className="role-need-list">
-        <h4>What this role needs</h4>
-        {model.needs.map(need => <p key={need}>{need}</p>)}
-      </div>
-
-      <div className="role-action-row">
-        {(model.primaryActions || []).map(action => (
-          <button className="btn btn-secondary btn-sm" key={action} disabled={actionLoading === action} onClick={() => onRunAction(action)}>
-            {actionLoading === action ? 'Running...' : actionLabels[action] || action}
-          </button>
-        ))}
-      </div>
-
-      {records.length > 0 && (
-        <div className="role-records">
-          <h4>Recent live records</h4>
-          {records.slice(0, 3).map(([name, rows]) => (
-            <section key={name}>
-              <strong>{name.replace(/([A-Z])/g, ' $1').trim()}</strong>
-              {rows.slice(0, 2).map((row, index) => (
-                <p key={`${name}-${index}`}>{summarizeRecord(row)}</p>
-              ))}
-            </section>
+    <div className="role-workflow">
+      <div className="workflow-command">
+        <div>
+          <span>{workflow.mode}</span>
+          <h3>{workflow.title}</h3>
+          <p>{workflow.brief}</p>
+        </div>
+        <div className="workflow-action-row">
+          {workflow.primaryActions.map(action => (
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={actionLoading === action}
+              key={action}
+              onClick={() => onRunAction(action)}
+            >
+              {actionLoading === action ? 'Running...' : actionLabels[action] || action}
+            </button>
           ))}
         </div>
-      )}
-    </article>
-  );
-}
-
-function summarizeRecord(row) {
-  if (row.invited_email) return `${row.invited_email} / ${row.role} / ${row.status}`;
-  if (row.subject_email && row.type) return `${row.subject_email} / ${row.type} / ${row.status}`;
-  if (row.subject_email && row.note) return `${row.subject_email} / ${row.category}: ${row.note}`;
-  if (row.component) return `${row.environment}/${row.component} / ${row.status} / ${row.ref}`;
-  if (row.severity) return `${row.severity} / ${row.source}: ${row.message}`;
-  if (row.status && row.id) return `${row.id} / ${row.status}`;
-  return JSON.stringify(row).slice(0, 160);
-}
-
-function RoleModules({ role }) {
-  return (
-    <article className="platform-card role-modules">
-      <span>{role} modules</span>
-      <h3>Work areas</h3>
-      <div>
-        {roleMeta[role].modules.map(([title, body]) => (
-          <section key={title}>
-            <strong>{title}</strong>
-            <p>{body}</p>
-          </section>
-        ))}
       </div>
-    </article>
-  );
-}
 
-function RoleToolbelt({ role, overview, actionLoading, onRunAction }) {
-  const rows = {
-    founder: [
-      ['Create operator invite', `${overview.platformAccounts.length} platform logins`, 'invite'],
-      ['Grant support access', 'idempotently ensures support platform role exists', 'grant'],
-      ['Open governance board', `${overview.governanceGaps.length} unresolved gaps`, 'audit'],
-    ],
-    operator: [
-      ['Check activation pool', `${overview.storage.database.selectedCounts.users} local accounts`, 'accounts'],
-      ['Create export request', 'records a data export workflow request', 'export-request'],
-      ['Write support note', 'records operator diagnostic context', 'support-note'],
-    ],
-    devops: [
-      ['Run service health', 'http://localhost:8301/health', 'health'],
-      ['Create backup manifest', 'records DB/object/cache backup run metadata', 'backup-run'],
-      ['Queue local deploy run', 'records environment/component/ref deploy intent', 'deploy-run'],
-    ],
-    coder: [
-      ['Inspect schema', `${overview.storage.database.tableCount} public tables`, 'schema'],
-      ['Emit observability event', 'writes a platform observability row', 'observability-event'],
-      ['Inspect backend audit', 'reads implementation/action history', 'audit'],
-    ],
-    support: [
-      ['Account diagnostics', `${overview.storage.database.selectedCounts.users} users visible locally`, 'accounts'],
-      ['Write support note', 'adds a note to a synthetic user record', 'support-note'],
-      ['Create delete request', 'records deletion review without deleting data', 'delete-request'],
-    ],
-  };
-
-  return (
-    <section className="platform-section">
-      <div className="platform-section-head">
-        <h2>{roleMeta[role].label} toolbelt</h2>
-        <span>role-specific actions</span>
-      </div>
-      <div className="toolbelt-grid">
-        {(rows[role] || []).map(([label, value, action]) => (
-          <article className="platform-card" key={label}>
-            <span>tool</span>
-            <h3>{label}</h3>
-            <p>{value}</p>
-            <button className="btn btn-secondary btn-sm platform-action-btn" disabled={actionLoading === action} onClick={() => onRunAction(action)}>
-              {actionLoading === action ? 'Running...' : 'Run connected check'}
-            </button>
+      <div className="workflow-lane-grid">
+        {workflow.lanes.map(lane => (
+          <article className="workflow-lane" key={lane.title}>
+            <div className="workflow-lane-head">
+              <div>
+                <span>{lane.kicker}</span>
+                <h3>{lane.title}</h3>
+              </div>
+              <strong>{lane.value}</strong>
+            </div>
+            <p>{lane.description}</p>
+            <div className="workflow-metrics">
+              {lane.metrics.map(metric => (
+                <div key={metric.label}>
+                  <span>{metric.label}</span>
+                  <strong>{metric.value}</strong>
+                </div>
+              ))}
+            </div>
+            <div className="workflow-queue">
+              {lane.queue.length > 0 ? lane.queue.slice(0, 4).map(item => (
+                <button
+                  className="workflow-queue-item"
+                  disabled={!lane.action || actionLoading === lane.action}
+                  key={item.id || item.label}
+                  onClick={() => lane.action && onRunAction(lane.action)}
+                >
+                  <strong>{item.label}</strong>
+                  <span>{item.meta}</span>
+                </button>
+              )) : (
+                <div className="workflow-empty">{lane.empty}</div>
+              )}
+            </div>
+            <div className="workflow-action-row">
+              {lane.actions.map(action => (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  disabled={actionLoading === action}
+                  key={action}
+                  onClick={() => onRunAction(action)}
+                >
+                  {actionLoading === action ? 'Running...' : actionLabels[action] || action}
+                </button>
+              ))}
+            </div>
           </article>
         ))}
       </div>
-    </section>
+
+      <div className="workflow-evidence">
+        <div className="platform-section-head">
+          <h2>Live evidence</h2>
+          <span>{workflow.evidenceLabel}</span>
+        </div>
+        <div className="workflow-evidence-grid">
+          {workflow.evidence.map(item => (
+            <article className="evidence-card" key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+              <p>{item.note}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
   );
+}
+
+function buildRoleWorkflow(role, overview, rolePayload, workspace = {}) {
+  const analyticsSummary = workspace?.analytics?.summary || {};
+  const activeItems = workspace?.activeItems?.items || [];
+  const blockers = workspace?.blockers?.items || [];
+  const categoriesList = workspace?.analytics?.categories || workspace?.categories?.categories || [];
+  const traces = workspace?.traces?.traces || [];
+  const decisions = workspace?.decisions?.decisions || [];
+  const anomalies = workspace?.anomalies?.anomalies || [];
+  const connectors = workspace?.connectors?.connectors || [];
+  const graph = workspace?.graph || {};
+  const counts = overview.storage?.database?.selectedCounts || {};
+  const roleModel = rolePayload?.dashboard || {};
+  const fallbackMission = roleModel.mission || roleMeta[role].promise;
+
+  const itemQueue = activeItems.map(item => ({
+    id: item.id,
+    label: item.canonical_text || item.text || 'Untitled item',
+    meta: `${item.state || 'OPEN'} / ${item.category || 'uncategorized'} / p${formatNumber(item.priority)}`,
+  }));
+  const blockerQueue = blockers.map(item => ({
+    id: item.id,
+    label: item.canonical_text || item.text || 'Blocked item',
+    meta: `${item.category || 'uncategorized'} / ${formatDate(item.deadline || item.dueDate || item.createdAt)}`,
+  }));
+  const categoryQueue = categoriesList.map(category => ({
+    id: category.id || category.name,
+    label: category.name || category.category || 'Uncategorized',
+    meta: `${category.open ?? category.total ?? category.count ?? 0} active / ${category.done ?? 0} done`,
+  }));
+  const traceQueue = traces.map(trace => ({
+    id: trace.id,
+    label: trace.engine || trace.type || trace.source || 'Trace',
+    meta: formatDate(trace.created_at || trace.createdAt),
+  }));
+  const decisionQueue = decisions.map(decision => ({
+    id: decision.id,
+    label: decision.decision_type || decision.action || decision.strategy || 'Decision',
+    meta: `${decision.confidence ?? decision.score ?? 'n/a'} confidence / ${formatDate(decision.created_at || decision.createdAt)}`,
+  }));
+  const connectorQueue = connectors.map(connector => ({
+    id: connector.id || connector.platform,
+    label: connector.platform || 'Connector',
+    meta: `${connector.status || 'unknown'} / ${formatDate(connector.created_at || connector.createdAt)}`,
+  }));
+  const anomalyQueue = anomalies.map(anomaly => ({
+    id: anomaly.id,
+    label: anomaly.type || anomaly.source || 'Anomaly',
+    meta: `${anomaly.severity || 'info'} / ${formatDate(anomaly.detected_at || anomaly.createdAt)}`,
+  }));
+
+  const baseEvidence = [
+    { label: 'Open items', value: analyticsSummary.openItems ?? activeItems.length ?? 0, note: 'From items + analytics overview.' },
+    { label: 'Blockers', value: analyticsSummary.blockers ?? blockers.length ?? 0, note: 'Actionable queue, not a static stat.' },
+    { label: 'Graph nodes', value: graph.nodes?.length ?? 0, note: `${graph.edges?.length ?? graph.totalDependencies ?? 0} dependency edges.` },
+    { label: 'Inspector traces', value: traces.length, note: `${decisions.length} decisions and ${anomalies.length} anomalies loaded.` },
+  ];
+
+  const workflows = {
+    founder: {
+      mode: 'governance cockpit',
+      title: 'Decide what can ship, who has power, and what data leaves the platform.',
+      brief: fallbackMission,
+      evidenceLabel: 'business + control signals',
+      primaryActions: ['analytics-overview', 'invite', 'grant', 'export-json'],
+      evidence: [
+        ...baseEvidence,
+        { label: 'Platform logins', value: overview.platformAccounts?.length ?? 0, note: 'Current privileged accounts.' },
+        { label: 'Governance gaps', value: overview.governanceGaps?.length ?? 0, note: 'Production blockers that still need closure.' },
+      ],
+      lanes: [
+        {
+          kicker: 'access control',
+          title: 'Grant, invite, and review platform operators',
+          value: overview.platformAccounts?.length ?? 0,
+          description: 'Founder workflow needs account power, audit visibility, and explicit role movement.',
+          metrics: [
+            { label: 'Logins', value: overview.platformAccounts?.length ?? 0 },
+            { label: 'Audit rows', value: overview.auditEvents?.length ?? 0 },
+          ],
+          queue: (overview.platformAccounts || []).map(account => ({ id: account.email, label: account.email, meta: `${account.role} / ${account.orgName}` })),
+          empty: 'No platform accounts returned.',
+          action: 'accounts',
+          actions: ['invite', 'grant', 'audit'],
+        },
+        {
+          kicker: 'product pressure',
+          title: 'Turn user work into product decisions',
+          value: analyticsSummary.openItems ?? activeItems.length,
+          description: 'Open items, blockers, and category pressure show what the app is actually managing.',
+          metrics: [
+            { label: 'Users', value: counts.users ?? 'n/a' },
+            { label: 'Entries', value: counts.entries ?? 'n/a' },
+          ],
+          queue: blockerQueue.length ? blockerQueue : itemQueue,
+          empty: 'No open product pressure found.',
+          action: blockerQueue.length ? 'clear-first-blocker' : 'complete-first-open',
+          actions: ['analytics-overview', 'clear-first-blocker', 'create-operator-item'],
+        },
+        {
+          kicker: 'data control',
+          title: 'Export and deletion governance',
+          value: counts.items ?? 0,
+          description: 'The platform owner must be able to inspect storage and run export workflows.',
+          metrics: [
+            { label: 'Items', value: counts.items ?? 0 },
+            { label: 'Tables', value: overview.storage?.database?.tableCount ?? 0 },
+          ],
+          queue: categoryQueue,
+          empty: 'No categories available for export scoping.',
+          action: 'export-json',
+          actions: ['export-json', 'export-csv', 'export-request'],
+        },
+      ],
+    },
+    operator: {
+      mode: 'daily operations',
+      title: 'Triage the live ledger, move blockers, and hand off customer work.',
+      brief: fallbackMission,
+      evidenceLabel: 'queue + handoff signals',
+      primaryActions: ['accounts', 'analytics-overview', 'create-operator-item', 'support-note'],
+      evidence: baseEvidence,
+      lanes: [
+        {
+          kicker: 'todo ledger',
+          title: 'Move active work forward',
+          value: activeItems.length,
+          description: 'Operators should work from the item ledger directly, not from read-only totals.',
+          metrics: [
+            { label: 'Open', value: analyticsSummary.openItems ?? activeItems.length },
+            { label: 'Blocked', value: analyticsSummary.blockers ?? blockers.length },
+          ],
+          queue: itemQueue,
+          empty: 'No active items to triage.',
+          action: 'complete-first-open',
+          actions: ['complete-first-open', 'create-operator-item', 'analytics-overview'],
+        },
+        {
+          kicker: 'customer handoff',
+          title: 'Account and support workflow',
+          value: overview.platformAccounts?.length ?? 0,
+          description: 'Support notes and export requests must be connected to real platform records.',
+          metrics: [
+            { label: 'Users', value: counts.users ?? 'n/a' },
+            { label: 'Audit', value: overview.auditEvents?.length ?? 0 },
+          ],
+          queue: (overview.platformAccounts || []).map(account => ({ id: account.email, label: account.email, meta: `${account.role} / ${account.name || 'unnamed'}` })),
+          empty: 'No account records returned.',
+          action: 'accounts',
+          actions: ['accounts', 'support-note', 'export-request'],
+        },
+        {
+          kicker: 'release gate',
+          title: 'Health before operational changes',
+          value: overview.serviceHealth?.status || 'check',
+          description: 'Operators need a release gate before creating customer-visible process changes.',
+          metrics: [
+            { label: 'Services', value: overview.serviceHealth?.services?.length ?? overview.services?.length ?? 0 },
+            { label: 'Gaps', value: overview.governanceGaps?.length ?? 0 },
+          ],
+          queue: traceQueue,
+          empty: 'No recent traces returned.',
+          action: 'inspector-traces',
+          actions: ['health', 'inspector-health', 'audit'],
+        },
+      ],
+    },
+    devops: {
+      mode: 'runtime operations',
+      title: 'Operate health, backups, deploys, connectors, and engine observability.',
+      brief: fallbackMission,
+      evidenceLabel: 'runtime + inspector signals',
+      primaryActions: ['health', 'backup-run', 'deploy-run', 'inspector-health', 'observability-event'],
+      evidence: [
+        ...baseEvidence,
+        { label: 'Connectors', value: connectors.length, note: 'Registered integration state.' },
+        { label: 'Service health', value: overview.serviceHealth?.status || 'unknown', note: 'Local API/runtime health check result.' },
+      ],
+      lanes: [
+        {
+          kicker: 'health',
+          title: 'Runtime checkover',
+          value: overview.serviceHealth?.status || 'run',
+          description: 'DevOps owns live service checks and engine health, not dashboard-only status.',
+          metrics: [
+            { label: 'Services', value: overview.serviceHealth?.services?.length ?? overview.services?.length ?? 0 },
+            { label: 'Inspector', value: workspace?.inspectorHealth?.status || workspace?.inspectorHealth?.ok || 'loaded' },
+          ],
+          queue: traceQueue,
+          empty: 'No traces available yet.',
+          action: 'inspector-traces',
+          actions: ['health', 'inspector-health', 'inspector-traces'],
+        },
+        {
+          kicker: 'release',
+          title: 'Backup and deploy control',
+          value: overview.auditEvents?.length ?? 0,
+          description: 'Backup manifests and deploy runs must be executable from the platform surface.',
+          metrics: [
+            { label: 'Audit rows', value: overview.auditEvents?.length ?? 0 },
+            { label: 'Tables', value: overview.storage?.database?.tableCount ?? 0 },
+          ],
+          queue: anomalyQueue,
+          empty: 'No anomalies returned.',
+          action: 'inspector-anomalies',
+          actions: ['backup-run', 'deploy-run', 'observability-event'],
+        },
+        {
+          kicker: 'integrations',
+          title: 'Connector readiness',
+          value: connectors.length,
+          description: 'Connector registration is a workflow, because integrations change runtime behavior.',
+          metrics: [
+            { label: 'Connectors', value: connectors.length },
+            { label: 'Graph edges', value: graph.edges?.length ?? graph.totalDependencies ?? 0 },
+          ],
+          queue: connectorQueue,
+          empty: 'No connectors registered.',
+          action: 'connector-gmail',
+          actions: ['connector-gmail', 'connector-calendar', 'inspector-graph'],
+        },
+      ],
+    },
+    coder: {
+      mode: 'implementation console',
+      title: 'Inspect contracts, schema, traces, graph state, and failing decision paths.',
+      brief: fallbackMission,
+      evidenceLabel: 'schema + engine evidence',
+      primaryActions: ['schema', 'inspector-traces', 'inspector-decisions', 'inspector-graph'],
+      evidence: [
+        ...baseEvidence,
+        { label: 'Categories', value: categoriesList.length, note: 'Schema-backed item grouping surface.' },
+        { label: 'Decisions', value: decisions.length, note: 'Decision engine records available for replay work.' },
+      ],
+      lanes: [
+        {
+          kicker: 'contracts',
+          title: 'Schema and route contract',
+          value: overview.storage?.database?.tableCount ?? 0,
+          description: 'Coder workflow starts from real tables, categories, and API contracts.',
+          metrics: [
+            { label: 'Tables', value: overview.storage?.database?.tableCount ?? 0 },
+            { label: 'Categories', value: categoriesList.length },
+          ],
+          queue: categoryQueue,
+          empty: 'No category rows returned.',
+          action: 'categories',
+          actions: ['schema', 'categories', 'analytics-overview'],
+        },
+        {
+          kicker: 'debug',
+          title: 'Trace and decision replay',
+          value: traces.length + decisions.length,
+          description: 'Engine behavior must be inspectable through traces and decisions, not guessed from UI.',
+          metrics: [
+            { label: 'Traces', value: traces.length },
+            { label: 'Decisions', value: decisions.length },
+          ],
+          queue: decisionQueue.length ? decisionQueue : traceQueue,
+          empty: 'No traces or decisions returned.',
+          action: decisionQueue.length ? 'inspector-decisions' : 'inspector-traces',
+          actions: ['inspector-traces', 'inspector-decisions', 'inspector-graph'],
+        },
+        {
+          kicker: 'observability',
+          title: 'Write and inspect platform events',
+          value: anomalies.length,
+          description: 'The engineering console needs a write path to prove audit and observability plumbing.',
+          metrics: [
+            { label: 'Anomalies', value: anomalies.length },
+            { label: 'Audit rows', value: overview.auditEvents?.length ?? 0 },
+          ],
+          queue: anomalyQueue,
+          empty: 'No anomalies returned.',
+          action: 'inspector-anomalies',
+          actions: ['observability-event', 'inspector-anomalies', 'audit'],
+        },
+      ],
+    },
+    support: {
+      mode: 'customer diagnostics',
+      title: 'Diagnose accounts, add notes, and create export/delete requests without unsafe mutation.',
+      brief: fallbackMission,
+      evidenceLabel: 'support-safe records',
+      primaryActions: ['accounts', 'support-note', 'export-request', 'delete-request'],
+      evidence: [
+        ...baseEvidence,
+        { label: 'Accounts', value: counts.users ?? 0, note: 'Customer records available to inspect.' },
+        { label: 'Audit rows', value: overview.auditEvents?.length ?? 0, note: 'Support actions must leave evidence.' },
+      ],
+      lanes: [
+        {
+          kicker: 'diagnostics',
+          title: 'Account lookup and account-safe checks',
+          value: counts.users ?? 0,
+          description: 'Support needs account context without developer-only database access.',
+          metrics: [
+            { label: 'Users', value: counts.users ?? 0 },
+            { label: 'Entries', value: counts.entries ?? 0 },
+          ],
+          queue: (overview.platformAccounts || []).map(account => ({ id: account.email, label: account.email, meta: `${account.role} / ${account.orgName}` })),
+          empty: 'No account rows returned.',
+          action: 'accounts',
+          actions: ['accounts', 'analytics-overview', 'support-note'],
+        },
+        {
+          kicker: 'data requests',
+          title: 'Export and delete request intake',
+          value: counts.items ?? 0,
+          description: 'Support should create review requests, not directly delete or export user data silently.',
+          metrics: [
+            { label: 'Items', value: counts.items ?? 0 },
+            { label: 'Files', value: overview.storage?.objectStorage?.indexedFiles ?? 0 },
+          ],
+          queue: categoryQueue,
+          empty: 'No categories returned for scoping requests.',
+          action: 'export-request',
+          actions: ['export-request', 'delete-request', 'audit'],
+        },
+        {
+          kicker: 'resolution',
+          title: 'Blocker note and escalation loop',
+          value: blockers.length,
+          description: 'A support dashboard should expose blockers and let support record context.',
+          metrics: [
+            { label: 'Blockers', value: blockers.length },
+            { label: 'Traces', value: traces.length },
+          ],
+          queue: blockerQueue,
+          empty: 'No blockers returned.',
+          action: 'clear-first-blocker',
+          actions: ['clear-first-blocker', 'support-note', 'accounts'],
+        },
+      ],
+    },
+  };
+
+  return workflows[role] || workflows.support;
+}
+
+function formatNumber(value) {
+  if (value === undefined || value === null || value === '') return 'n/a';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  return numeric % 1 === 0 ? numeric : numeric.toFixed(2);
+}
+
+function formatDate(value) {
+  if (!value) return 'no date';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString();
 }
 
 function ActionResultPanel({ actionResult }) {
@@ -594,26 +1428,6 @@ function SharedPlatformSections({ overview, compact = false }) {
         </div>
       </section>
     </>
-  );
-}
-
-function DashboardPanel({ dashboard }) {
-  return (
-    <article className="platform-card dashboard-panel">
-      <h3>{dashboard.title}</h3>
-      <div className="mini-metrics">
-        {dashboard.cards.map(card => (
-          <div key={card.label}>
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
-            <p>{card.note}</p>
-          </div>
-        ))}
-      </div>
-      <ul>
-        {dashboard.focus.map(item => <li key={item}>{item}</li>)}
-      </ul>
-    </article>
   );
 }
 

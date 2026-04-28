@@ -40,7 +40,7 @@
 ```
 server/
 ├── prisma/
-│   ├── schema.prisma          ← 5 models (User, Entry, ExtractedState, FileAttachment, DailyState)
+│   ├── schema.prisma          ← (legacy — kept for reference, not used at runtime)
 │   └── seed.js                ← Demo data
 ├── src/
 │   ├── index.js               ← Express server + engine init
@@ -54,7 +54,7 @@ server/
 │   │   ├── recall/            ← Time parsing, keyword search, LLM answering
 │   │   └── connector/         ← Pluggable adapter framework + BaseConnector
 │   ├── lib/
-│   │   ├── prisma.js          ← DB client
+│   │   ├── db.js              ← pg Pool singleton (replaced Prisma)
 │   │   └── logger.js          ← Structured JSON logging
 │   ├── middleware/
 │   │   ├── auth.js            ← JWT verification
@@ -98,7 +98,7 @@ shared/constants.js            ← Shared constants
 3. **`entry.schema.js`** — Missing `fileMeta` validation
 4. **`errorHandler.js`** — Uses `console.error` not logger
 5. **`docker-compose.yml`** — MinIO healthcheck wrong (`mc ready` → use `curl`)
-6. **No Prisma migration step** in Docker entrypoint
+6. **Prisma removed** — all data access now uses raw pg Pool via `lib/db.js`
 7. **No graceful shutdown** (SIGTERM handler)
 8. **Shared constants not imported** by any server file
 
@@ -151,7 +151,7 @@ shared/constants.js            ← Shared constants
 1. Install Node.js 20+
 2. `npm install`
 3. `docker-compose up` (spins up PG + Redis + MinIO)
-4. `npx prisma migrate dev`
+4. `psql $DATABASE_URL -f server/prisma/schema.v3.sql`
 5. `npm run db:seed`
 6. `npm run dev` → verify server starts
 

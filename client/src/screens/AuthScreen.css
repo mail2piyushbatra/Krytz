@@ -108,3 +108,92 @@
   animation: spin 0.6s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.auth-success {
+  background: var(--success-muted, rgba(46, 204, 113, 0.1));
+  color: var(--success, #2ecc71);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: var(--space-6) 0 var(--space-4);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.auth-divider span {
+  padding: 0 var(--space-4);
+}
+
+.oauth-buttons {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.btn-oauth {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btn-oauth:hover {
+  background: var(--bg-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.oauth-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.apple-icon {
+  fill: var(--text-primary);
+}
+
+.auth-footer-links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.auth-forgot-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.auth-forgot-btn:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}

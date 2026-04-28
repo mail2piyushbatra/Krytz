@@ -4,42 +4,45 @@ const cors    = require('cors');
 const helmet  = require('helmet');
 const rateLimit = require('express-rate-limit');
 
-const logger      = require('./lib/logger');
-const authRoutes  = require('./modules/auth/auth.routes');
-const entryRoutes = require('./modules/entries/entry.routes');
-const stateRoutes = require('./modules/state/state.routes');
-const fileRoutes  = require('./modules/files/file.routes');
-const recallRoutes = require('./modules/ai/recall.routes');
+const logger         = require('./lib/logger');
+const authRoutes     = require('./modules/auth/auth.routes');
+const entryRoutes    = require('./modules/entries/entry.routes');
+const stateRoutes    = require('./modules/state/state.routes');
+const fileRoutes     = require('./modules/files/file.routes');
+const recallRoutes   = require('./modules/recall/recall.routes');
+const itemRoutes     = require('./modules/items/item.routes');
+const categoryRoutes = require('./modules/categories/category.routes');
+const analyticsRoutes = require('./modules/analytics/analytics.routes');
+const exportRoutes   = require('./modules/export/export.routes');
 const { errorHandler } = require('./middleware/errorHandler');
-const prisma = require('./lib/prisma');
+const db = require('./lib/db');
 
 // ─── V3 Infrastructure ────────────────────────────────────────────
 const { intelligenceRoutes, stripeWebhookRoute } = require('./modules/intelligence/intelligence.routes');
 const productRoutesV2 = require('./modules/product/product.routes.v2');
 const supportRoutes   = require('./modules/support/support.routes');
 const platformRoutes  = require('./modules/platform/platform.routes');
+const inspectorRoutes = require('./modules/inspector/inspector.routes');
 const { rlsMiddleware, withUserContext } = require('./middleware/rls.middleware');
 const { tierMiddleware } = require('./lib/tiers');
 const { startCron }     = require('./lib/cron');
+const { runBootMigrations } = require('./lib/bootMigrations');
 
-// pg Pool for direct SQL (intelligence modules use pool, not Prisma)
-let pool;
-try {
-  const { Pool } = require('pg');
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  pool.on('error', (err) => logger.error('pg pool error', { error: err.message }));
-} catch (_) {
-  logger.warn('pg module not found — intelligence routes will be unavailable');
-}
+// Single shared pg Pool — all modules use lib/db.js
+const pool = db;
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 // ─── Global Middleware ────────────────────────────────────────────
 
+const { requestId } = require('./middleware/requestId');
+app.use(requestId);
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')
+    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8088', 'http://localhost:19006'],
   credentials: true,
 }));
 app.use(logger.requestLogger());
@@ -47,9 +50,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
+const apiRateLimitMax = Number(process.env.API_RATE_LIMIT_MAX || 600);
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100,
+  max: apiRateLimitMax,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -96,6 +100,10 @@ if (pool) app.use('/api/v1', stripeWebhookRoute(pool));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/entries', entryRoutes);
+app.use('/api/v1/items', itemRoutes);
+app.use('/api/v1/categories', categoryRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/state', stateRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/recall', aiLimiter, recallRoutes);
@@ -106,17 +114,21 @@ if (pool) {
   app.use('/api/v1', tierMiddleware(pool));
 
   // Intelligence routes: contradictions, commitments, simulate, estimate, capacity, billing, gdpr, plan/week
-  app.use('/api/v1', intelligenceRoutes(pool));
+  // Mounted at /intelligence sub-path to match documented API surface and avoid collisions
+  app.use('/api/v1/intelligence', intelligenceRoutes(pool));
 
   // Product v2: capture, plan/today, explain, action, undo, feedback, metrics
   const { engines } = require('./engines');
   app.use('/api/v1', productRoutesV2(engines, pool));
 
-  // Support routes: rules CRUD, notifications, stats, profile
+  // Support routes: rules CRUD, notifications, stats
   app.use('/api/v1', supportRoutes(pool));
 
   // Platform console: read-only operator/devops/coder visibility
   app.use('/api/v1', platformRoutes(pool));
+
+  // Inspector: traces, replay, anomalies, decisions, graph, connectors
+  app.use('/api/v1/inspector', inspectorRoutes(pool));
 }
 
 // ─── 404 Handler ──────────────────────────────────────────────────
@@ -140,8 +152,11 @@ let server;
 
 async function start() {
   // Verify database connection
-  await prisma.$connect();
+  await db.verifyConnection();
   logger.info('Database connected');
+
+  await runBootMigrations(db);
+  logger.info('Database schema ready');
 
   // Initialize all engines before accepting requests
   await initializeEngines();
@@ -172,7 +187,7 @@ async function shutdown(signal) {
 
   // Disconnect database
   try {
-    await prisma.$disconnect();
+    await db.closePool();
     logger.info('Database disconnected');
   } catch (err) {
     logger.error('Error disconnecting database', { error: err });

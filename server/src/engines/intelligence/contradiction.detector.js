@@ -6,7 +6,7 @@
 'use strict';
 
 const { v4: uuid } = require('uuid');
-const logger = { info: (msg, m={}) => console.log(JSON.stringify({level:'info',ts:new Date().toISOString(),system:'contradiction-detector',msg,...m})), warn: (msg, m={}) => console.warn(JSON.stringify({level:'warn',ts:new Date().toISOString(),system:'contradiction-detector',msg,...m})) };
+const logger = require('../../lib/logger');
 
 async function scanForContradictions(db, userId, newItemIds = []) {
   const [type1, type2, type3] = await Promise.all([detectDeadlineConflicts(db, userId, newItemIds), detectScheduleClashes(db, userId), detectCommitmentConflicts(db, userId, newItemIds)]);

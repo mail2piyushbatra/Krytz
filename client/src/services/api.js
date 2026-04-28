@@ -1,5 +1,5 @@
 /** ✦ FLOWRA — API Client
- *  Connects to the Express backend on localhost:3001.
+ *  Connects to the Express backend (default: localhost:8301).
  *  Handles JWT auth, auto-refresh, and response unwrapping.
  */
 
@@ -46,7 +46,7 @@ async function request(path, options = {}) {
   if (res.status === 204) return null;
   const body = await res.json();
 
-  // Unwrap { success, data } envelope used by Prisma routes
+  // Unwrap { success, data } envelope used by API routes
   if (body && body.success !== undefined && body.data !== undefined) {
     return body.data;
   }
@@ -101,22 +101,58 @@ export const auth = {
   logout() {
     clearTokens();
   },
+  async forgotPassword(email) {
+    const data = await request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+    return data;
+  },
+  async resetPassword(token, newPassword) {
+    const data = await request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+    return data;
+  },
 };
 
 // ── Capture / Entries ─────────────────────────────────────
 export const entries = {
-  async capture(rawInput) {
-    try {
-      return await request('/capture', {
+  /**
+   * Free-form capture → /capture (AI pipeline, async 202).
+   * Structured types (todo/done/blocked/note) → /entries (instant handling).
+   */
+  async capture(rawInput, opts = {}) {
+    const type = opts.type || 'capture';
+    if (type === 'capture') {
+      // AI-pipeline path — POST /capture
+      return request('/capture', {
         method: 'POST',
-        body: JSON.stringify({ raw_input: rawInput, source: 'manual' }),
-      });
-    } catch {
-      return request('/entries', {
-        method: 'POST',
-        body: JSON.stringify({ rawText: rawInput }),
+        body: JSON.stringify({ raw_input: rawInput, source: 'manual', ...opts }),
       });
     }
+    // Structured type — direct entry with instant state handling
+    return request('/entries', {
+      method: 'POST',
+      body: JSON.stringify({ rawText: rawInput, type, category: opts.category }),
+    });
+  },
+  /** Direct todo items — skips LLM, zero latency */
+  async todo(rawInput, category) {
+    return this.capture(rawInput, { type: 'todo', category });
+  },
+  /** Mark something as done — instant state update */
+  async done(rawInput, category) {
+    return this.capture(rawInput, { type: 'done', category });
+  },
+  /** Flag something as blocked — instant state update */
+  async blocked(rawInput, category) {
+    return this.capture(rawInput, { type: 'blocked', category });
+  },
+  /** Store a note — no extraction, pure journal */
+  async note(rawInput, category) {
+    return this.capture(rawInput, { type: 'note', category });
   },
   async list(params = {}) {
     const qs = new URLSearchParams(params).toString();
@@ -167,8 +203,10 @@ export const files = {
 // ── Plan / State ──────────────────────────────────────────
 export const plan = {
   async today() { return request('/plan/today'); },
-  async capacity() { return request('/capacity'); },
+  async week()  { return request('/intelligence/plan/week'); },
   async explain(itemId) { return request(`/explain/${itemId}`); },
+  // capacity lives under /intelligence/capacity, NOT /capacity
+  async capacity() { return request('/intelligence/capacity'); },
 };
 
 export const actions = {
@@ -180,11 +218,29 @@ export const actions = {
   },
   async undo() { return request('/action/undo', { method: 'POST' }); },
   async history() { return request('/action/history'); },
+  async feedback(type, targetType, targetId, reason) {
+    return request('/feedback', { method: 'POST', body: JSON.stringify({ type, targetType, targetId, reason }) });
+  },
 };
 
 // ── Stats ─────────────────────────────────────────────────
 export const stats = {
   async get() { return request('/stats'); },
+};
+
+// ── Intelligence (advanced features) ──────────────────────
+export const intelligence = {
+  async contradictions()             { return request('/intelligence/contradictions'); },
+  async resolveContradiction(id)     { return request(`/intelligence/contradictions/${id}/resolve`, { method: 'POST' }); },
+  async commitments()                { return request('/intelligence/commitments'); },
+  async fulfillCommitment(id)        { return request(`/intelligence/commitments/${id}/fulfill`, { method: 'POST' }); },
+  async simulate(mutation)           { return request('/intelligence/simulate', { method: 'POST', body: JSON.stringify({ mutation }) }); },
+  async estimateTime(itemId)         { return request(`/intelligence/items/${itemId}/estimate`); },
+  async recordTime(itemId, mins)     { return request(`/intelligence/items/${itemId}/time`, { method: 'POST', body: JSON.stringify({ actualMins: mins }) }); },
+  async estimationStats()            { return request('/intelligence/estimation/stats'); },
+  // /metrics/* routes are on productRoutesV2, not /intelligence prefix
+  async metricsSuggestions(days = 7) { return request(`/metrics/suggestions?days=${days}`); },
+  async metricsCosts()               { return request('/metrics/costs'); },
 };
 
 // ── Recall ────────────────────────────────────────────────
@@ -226,14 +282,25 @@ export const notifications = {
 };
 
 // ── Billing ───────────────────────────────────────────────
+// Lives under /intelligence/billing/tier, NOT /billing/tier
 export const billing = {
-  async tier() { return request('/billing/tier'); },
+  async tier() { return request('/intelligence/billing/tier'); },
+  async checkout(priceId, successUrl, cancelUrl) {
+    return request('/intelligence/billing/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ priceId, successUrl, cancelUrl }),
+    });
+  },
 };
 
 // ── Profile ───────────────────────────────────────────────
 export const profile = {
   async update(fields) {
-    return request('/profile', { method: 'PATCH', body: JSON.stringify(fields) });
+    // Backend route is PATCH /auth/me, not /profile
+    return request('/auth/me', { method: 'PATCH', body: JSON.stringify(fields) });
+  },
+  async changePassword(currentPassword, newPassword) {
+    return request('/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
   },
 };
 
@@ -273,4 +340,122 @@ export const platform = {
   },
 };
 
-export default { auth, entries, files, plan, actions, stats, recall, rules, notifications, billing, profile, platform };
+// ── Items (Todo Ledger) ───────────────────────────────────────
+export const items = {
+  async list(filters = {}) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(filters)) {
+      if (v !== undefined && v !== null) params.set(k, v);
+    }
+    const qs = params.toString();
+    return request(`/items${qs ? '?' + qs : ''}`);
+  },
+  async get(id) { return request(`/items/${id}`); },
+  async create(data) {
+    return request('/items', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async update(id, updates) {
+    return request(`/items/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+  },
+  async remove(id) {
+    return request(`/items/${id}`, { method: 'DELETE' });
+  },
+  async completions(days = 7) {
+    return request(`/items/completions?days=${days}`);
+  },
+  // Convenience: mark done
+  async markDone(id) {
+    return request(`/items/${id}`, { method: 'PATCH', body: JSON.stringify({ state: 'DONE' }) });
+  },
+  // Convenience: toggle blocker
+  async toggleBlocker(id, isBlocked) {
+    return request(`/items/${id}`, { method: 'PATCH', body: JSON.stringify({ blocker: isBlocked }) });
+  },
+  // Semantic vector search
+  async semanticSearch(query, limit = 10) {
+    return request('/items/search', {
+      method: 'POST',
+      body: JSON.stringify({ query, limit }),
+    });
+  },
+};
+
+// ── Categories ────────────────────────────────────────────────
+export const categories = {
+  async list() { return request('/categories'); },
+  async create(data) {
+    return request('/categories', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async update(id, updates) {
+    return request(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+  },
+  async remove(id) {
+    return request(`/categories/${id}`, { method: 'DELETE' });
+  },
+};
+
+// ── Analytics ─────────────────────────────────────────────────
+export const analytics = {
+  async overview() { return request('/analytics/overview'); },
+  async category(name) { return request(`/analytics/category/${encodeURIComponent(name)}`); },
+};
+
+// ── Export ─────────────────────────────────────────────────────
+export const dataExport = {
+  async download() {
+    const res = await request('/export');
+    // Trigger browser download
+    const blob = new Blob([JSON.stringify(res.data || res, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flowra-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return res;
+  },
+
+  async downloadCSV() {
+    const res = await request('/export');
+    const data = res.data || res;
+    // Build CSV from items array
+    const items = data.items || [];
+    const headers = ['id', 'text', 'state', 'category', 'blocker', 'priority', 'dueDate', 'createdAt'];
+    const escape = v => {
+      if (v == null) return '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = [
+      headers.join(','),
+      ...items.map(it => headers.map(h =>
+        escape(h === 'text' ? (it.canonical_text || it.text || '') : it[h])
+      ).join(',')),
+    ];
+    const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flowra-items-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return { count: items.length };
+  },
+};
+
+// ── Inspector (observability & engine introspection) ───────
+export const inspector = {
+  async traces(limit = 50)       { return request(`/inspector/traces?limit=${limit}`); },
+  async replay(traceId)          { return request(`/inspector/replay/${traceId}`); },
+  async anomalies(limit = 30)    { return request(`/inspector/anomalies?limit=${limit}`); },
+  async decisions(limit = 30)    { return request(`/inspector/decisions?limit=${limit}`); },
+  async graph()                  { return request('/inspector/graph'); },
+  async health()                 { return request('/inspector/health'); },
+  async connectors()             { return request('/inspector/connectors'); },
+  async registerConnector(platform, config = {}) {
+    return request('/inspector/connectors', { method: 'POST', body: JSON.stringify({ platform, config }) });
+  },
+};
+
+export default { auth, entries, files, plan, actions, stats, recall, rules, notifications, billing, profile, platform, items, categories, analytics, dataExport, intelligence, inspector };

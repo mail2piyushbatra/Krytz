@@ -52,6 +52,11 @@ const useAuthStore = create((set, get) => ({
     set({ user: null });
   },
 
+  /** Merge updated fields into the in-memory user object after a profile PATCH */
+  updateUser: (fields) => set((state) => ({
+    user: state.user ? { ...state.user, ...fields } : state.user,
+  })),
+
   clearError: () => set({ error: null }),
 }));
 

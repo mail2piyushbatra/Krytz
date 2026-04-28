@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Inspector Screen
+/** ✦ FLOWRA — Inspector Screen (v3: premium data platform UI)
  *
  * Observability, causality graph, and engine health.
  * Also manages connectors (Layer 5 gap).
@@ -7,9 +7,23 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { inspector } from '../services/api';
 import useAuthStore from '../stores/authStore';
+import { Card, MetricCard, Badge, ActionBtn, PageLoader, EmptyState, ProgressRing } from '../components/ui/UiKit';
+import { 
+  Heart, GitBranch, Activity, AlertTriangle, Plug, Lock,
+  Server, Database, Cpu, Wifi, Clock, CheckCircle2, XCircle, 
+  ArrowRight, Plus, RefreshCw
+} from 'lucide-react';
 import './InspectorScreen.css';
 
 const PLATFORM_ROLES = ['founder', 'operator', 'devops', 'coder', 'support'];
+
+const TABS = [
+  { key: 'health', label: 'Health', Icon: Heart },
+  { key: 'graph', label: 'Graph', Icon: GitBranch },
+  { key: 'traces', label: 'Traces', Icon: Activity },
+  { key: 'anomalies', label: 'Anomalies', Icon: AlertTriangle },
+  { key: 'connectors', label: 'Connectors', Icon: Plug },
+];
 
 export default function InspectorScreen() {
   const user = useAuthStore(s => s.user);
@@ -72,39 +86,56 @@ export default function InspectorScreen() {
 
   if (!hasPlatformAccess) {
     return (
-      <div className="inspector-access-card page-container">
-        <div className="inspector-access-icon">lock</div>
-        <h2>Platform Access Required</h2>
-        <p>
-          Your account ({user?.email || 'current user'}) does not have platform
-          privileges for Inspector observability.
-        </p>
-        <p>Contact a founder or operator to request access.</p>
-        <Link to="/" className="btn btn-secondary">Back to Command Center</Link>
+      <div className="inspector-screen page-container">
+        <EmptyState
+          icon={Lock}
+          title="Platform Access Required"
+          description={`Your account (${user?.email || 'current user'}) does not have platform privileges for Inspector observability. Contact a founder or operator to request access.`}
+          action={<Link to="/" className="btn btn-secondary">Back to Command Center</Link>}
+        />
       </div>
     );
   }
 
   return (
-    <div className="inspector-screen page-container">
-      <header className="page-header">
-        <h1 className="page-title">Inspector</h1>
-        <p className="page-subtitle">Engine fleet observability and connector management.</p>
+    <div className="inspector-screen page-container animate-fadeIn">
+      <header className="inspector-header">
+        <div>
+          <p className="eyebrow">Observability</p>
+          <h1 className="page-title">Inspector</h1>
+        </div>
+        <ActionBtn variant="ghost" icon={RefreshCw} onClick={loadData} className="btn-sm">
+          Refresh
+        </ActionBtn>
       </header>
 
+      {/* Tab navigation */}
       <nav className="inspector-tabs">
-        <button className={`tab-btn ${activeTab === 'health' ? 'active' : ''}`} onClick={() => setActiveTab('health')}>Health</button>
-        <button className={`tab-btn ${activeTab === 'graph' ? 'active' : ''}`} onClick={() => setActiveTab('graph')}>Graph</button>
-        <button className={`tab-btn ${activeTab === 'traces' ? 'active' : ''}`} onClick={() => setActiveTab('traces')}>Traces</button>
-        <button className={`tab-btn ${activeTab === 'anomalies' ? 'active' : ''}`} onClick={() => setActiveTab('anomalies')}>Anomalies</button>
-        <button className={`tab-btn ${activeTab === 'connectors' ? 'active' : ''}`} onClick={() => setActiveTab('connectors')}>Connectors</button>
+        {TABS.map(tab => {
+          const TabIcon = tab.Icon;
+          return (
+            <button
+              key={tab.key}
+              className={`inspector-tab ${activeTab === tab.key ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              <TabIcon size={16} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </nav>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <Card className="inspector-error">
+          <AlertTriangle size={16} />
+          <span>{error}</span>
+        </Card>
+      )}
 
       <div className="inspector-content">
         {loading ? (
-          <div className="inspector-loading">Loading {activeTab}...</div>
+          <PageLoader text={`Loading ${activeTab}...`} />
         ) : (
           <>
             {activeTab === 'health' && <HealthTab health={data.health} />}
@@ -119,112 +150,197 @@ export default function InspectorScreen() {
   );
 }
 
+/* ── Health Tab ── */
 function HealthTab({ health }) {
-  if (!health) return <div>No health data</div>;
+  if (!health) return <EmptyState icon={Heart} title="No health data" description="Engine fleet has not reported yet." />;
+
+  const sections = [
+    { key: 'engines', title: 'Engine Fleet', Icon: Cpu, data: health.engines },
+    { key: 'tsg', title: 'Temporal State Graph', Icon: GitBranch, data: health.tsg },
+    { key: 'embedding', title: 'Embedding Pipeline', Icon: Database, data: health.embedding },
+    { key: 'phase4to7', title: 'Phase 4-7 Subsystems', Icon: Server, data: health.phase4to7 },
+  ];
+
   return (
     <div className="health-grid">
-      <div className="health-card">
-        <h3>Engines</h3>
-        <pre>{JSON.stringify(health.engines, null, 2)}</pre>
-      </div>
-      <div className="health-card">
-        <h3>TSG (Temporal State Graph)</h3>
-        <pre>{JSON.stringify(health.tsg, null, 2)}</pre>
-      </div>
-      <div className="health-card">
-        <h3>Embedding</h3>
-        <pre>{JSON.stringify(health.embedding, null, 2)}</pre>
-      </div>
-      <div className="health-card">
-        <h3>Phase 4-7 Subsystems</h3>
-        <pre>{JSON.stringify(health.phase4to7, null, 2)}</pre>
-      </div>
+      {sections.map(sec => (
+        <Card key={sec.key} className="health-card">
+          <div className="health-card-header">
+            <sec.Icon size={18} className="health-card-icon" />
+            <h3>{sec.title}</h3>
+            {sec.data && <StatusDot status={getStatus(sec.data)} />}
+          </div>
+          <div className="health-card-body">
+            {sec.data ? (
+              <HealthDataGrid data={sec.data} />
+            ) : (
+              <p className="health-no-data">Not reporting</p>
+            )}
+          </div>
+        </Card>
+      ))}
     </div>
   );
 }
 
+function HealthDataGrid({ data }) {
+  if (typeof data !== 'object' || data === null) {
+    return <span className="health-value-inline">{String(data)}</span>;
+  }
+  return (
+    <div className="health-data-grid">
+      {Object.entries(data).map(([key, val]) => (
+        <div key={key} className="health-data-row">
+          <span className="health-data-key">{key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}</span>
+          <span className="health-data-val">
+            {typeof val === 'object' ? (
+              <Badge intent="default">{JSON.stringify(val)}</Badge>
+            ) : typeof val === 'boolean' ? (
+              val ? <CheckCircle2 size={14} className="health-ok" /> : <XCircle size={14} className="health-fail" />
+            ) : (
+              <strong>{String(val)}</strong>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatusDot({ status }) {
+  const colors = { ok: 'var(--status-done)', warn: '#f39c12', error: 'var(--danger)' };
+  return (
+    <span className="health-status-dot" style={{ background: colors[status] || colors.ok }} title={status} />
+  );
+}
+
+function getStatus(data) {
+  if (!data) return 'error';
+  const str = JSON.stringify(data).toLowerCase();
+  if (str.includes('error') || str.includes('false')) return 'warn';
+  return 'ok';
+}
+
+/* ── Graph Tab ── */
 function GraphTab({ graph }) {
-  if (!graph) return <div>No graph data</div>;
+  if (!graph) return <EmptyState icon={GitBranch} title="No graph data" description="The temporal state graph is empty." />;
   return (
     <div className="graph-view">
-      <div className="graph-stats">
-        <div className="stat-box"><strong>{graph.nodes?.length || 0}</strong> Nodes</div>
-        <div className="stat-box"><strong>{graph.edges?.length || 0}</strong> Edges</div>
+      <div className="graph-stats-row">
+        <MetricCard title="Nodes" value={graph.nodes?.length || 0} icon={GitBranch} />
+        <MetricCard title="Edges" value={graph.edges?.length || 0} icon={Activity} />
       </div>
       <div className="graph-nodes-list">
-        {graph.nodes?.slice(0, 10).map(n => (
-          <div key={n.id} className="graph-node">
-            <span className={`node-state state-${n.state.toLowerCase()}`}>{n.state}</span>
-            <span className="node-label">{n.label}</span>
-          </div>
+        {graph.nodes?.slice(0, 15).map(n => (
+          <Card key={n.id} className="graph-node-card">
+            <Badge intent={n.state === 'DONE' ? 'positive' : n.state === 'OPEN' ? 'accent' : 'warning'}>
+              {n.state}
+            </Badge>
+            <span className="graph-node-label">{n.label}</span>
+          </Card>
         ))}
-        {graph.nodes?.length > 10 && <div className="more-nodes">...and {graph.nodes.length - 10} more</div>}
+        {graph.nodes?.length > 15 && (
+          <div className="graph-more">
+            <Badge intent="default">+{graph.nodes.length - 15} more nodes</Badge>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+/* ── Traces Tab ── */
 function TracesTab({ traces }) {
-  if (!traces?.length) return <div className="empty-state">No traces found.</div>;
+  if (!traces?.length) return <EmptyState icon={Activity} title="No traces found" description="System activity traces will appear here." />;
   return (
     <div className="traces-list">
       {traces.map(t => (
-        <div key={t.id} className="trace-card">
+        <Card key={t.id} className="trace-card">
           <div className="trace-header">
-            <span className="trace-type">{t.action_type || 'system'}</span>
-            <span className="trace-time">{new Date(t.created_at).toLocaleString()}</span>
+            <Badge intent="accent">{t.action_type || 'system'}</Badge>
+            <span className="trace-time">
+              <Clock size={12} />
+              {new Date(t.created_at).toLocaleString()}
+            </span>
           </div>
           <pre className="trace-body">{JSON.stringify(t.diff || t.metadata || {}, null, 2)}</pre>
-        </div>
+        </Card>
       ))}
     </div>
   );
 }
 
+/* ── Anomalies Tab ── */
 function AnomaliesTab({ anomalies }) {
-  if (!anomalies?.length) return <div className="empty-state">No anomalies detected. All clear! 🚀</div>;
+  if (!anomalies?.length) {
+    return (
+      <EmptyState
+        icon={CheckCircle2}
+        title="All clear!"
+        description="No anomalies detected. The engine fleet is operating normally."
+      />
+    );
+  }
   return (
     <div className="anomalies-list">
       {anomalies.map(a => (
-        <div key={a.id} className="anomaly-card">
+        <Card key={a.id} className="anomaly-card">
           <div className="anomaly-header">
+            <AlertTriangle size={16} className="anomaly-icon" />
             <strong>{a.type}</strong>
-            <span>{new Date(a.detected_at).toLocaleString()}</span>
+            <span className="anomaly-time">{new Date(a.detected_at).toLocaleString()}</span>
           </div>
-          <p>{a.description}</p>
-        </div>
+          <p className="anomaly-desc">{a.description}</p>
+        </Card>
       ))}
     </div>
   );
 }
 
+/* ── Connectors Tab ── */
 function ConnectorsTab({ connectors, onAdd }) {
+  const PLATFORMS = [
+    { id: 'google_calendar', label: 'Google Calendar', Icon: Clock },
+    { id: 'gmail', label: 'Gmail', Icon: Wifi },
+    { id: 'notion', label: 'Notion', Icon: Database },
+  ];
+
   return (
     <div className="connectors-view">
-      <div className="add-connector">
+      <Card className="connector-add-card">
         <h3>Add Data Source</h3>
-        <div className="connector-buttons">
-          <button className="btn btn-secondary" onClick={() => onAdd('google_calendar')}>Google Calendar</button>
-          <button className="btn btn-secondary" onClick={() => onAdd('gmail')}>Gmail</button>
-          <button className="btn btn-secondary" onClick={() => onAdd('notion')}>Notion</button>
+        <div className="connector-add-grid">
+          {PLATFORMS.map(p => (
+            <ActionBtn
+              key={p.id}
+              variant="secondary"
+              icon={p.Icon}
+              onClick={() => onAdd(p.id)}
+            >
+              {p.label}
+            </ActionBtn>
+          ))}
         </div>
-      </div>
-      
-      <h3>Active Connectors</h3>
+      </Card>
+
+      <h3 className="connector-section-title">Active Connectors</h3>
       {connectors?.length === 0 ? (
-        <p className="empty-state">No connectors configured.</p>
+        <EmptyState icon={Plug} title="No connectors configured" description="Add a data source above to start syncing." />
       ) : (
-        <div className="connectors-list">
+        <div className="connectors-grid">
           {connectors.map(c => (
-            <div key={c.id} className="connector-card">
+            <Card key={c.id} className="connector-card">
               <div className="connector-header">
                 <strong>{c.platform}</strong>
-                <span className={`status-badge status-${c.status}`}>{c.status}</span>
+                <Badge intent={c.status === 'active' ? 'positive' : c.status === 'error' ? 'negative' : 'warning'}>
+                  {c.status}
+                </Badge>
               </div>
               <div className="connector-meta">
+                <Clock size={12} />
                 Added: {new Date(c.created_at).toLocaleDateString()}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

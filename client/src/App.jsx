@@ -11,6 +11,7 @@ import useAuthStore from './stores/authStore';
 import { useTheme } from './hooks/useTheme';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
+import { PageLoader as UiPageLoader } from './components/ui/UiKit';
 
 // ── Lazy-loaded screens (code splitting) ──────────────────────
 const AuthScreen = lazy(() => import('./screens/AuthScreen'));
@@ -25,13 +26,7 @@ const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
 const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen'));
 
 function PageLoader() {
-  return (
-    <div className="page-loader" role="status" aria-label="Loading page">
-      <div className="skeleton" style={{ height: 28, width: 160, marginBottom: 16 }} />
-      <div className="skeleton" style={{ height: 48, width: '60%', marginBottom: 32 }} />
-      <div className="skeleton" style={{ height: 200, borderRadius: 16 }} />
-    </div>
-  );
+  return <UiPageLoader text="Loading..." />;
 }
 
 export default function App() {

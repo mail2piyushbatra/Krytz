@@ -1,6 +1,8 @@
-/** ✦ FLOWRA — Timeline Screen (Phase 3: inline edit) */
+/** ✦ FLOWRA — Timeline Screen (v3: premium visual feed) */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { entries } from '../services/api';
+import { Card, ActionBtn, PageLoader, EmptyState, Badge } from '../components/ui/UiKit';
+import { Calendar, Search, X, Pencil, Trash2, MessageSquare, CheckCircle2, AlertTriangle, Clock, FileText } from 'lucide-react';
 import './TimelineScreen.css';
 
 export default function TimelineScreen() {
@@ -106,11 +108,14 @@ export default function TimelineScreen() {
 
   return (
     <div className="page-container animate-fadeIn" id="timeline-screen">
-      <div className="timeline-header">
-        <h1 className="page-title">Timeline</h1>
+      <header className="timeline-header">
+        <div>
+          <p className="eyebrow">Memory Feed</p>
+          <h1 className="page-title">Timeline</h1>
+        </div>
         <div className="timeline-controls">
-          <div className="timeline-search-box">
-            <span className="tl-search-icon">🔍</span>
+          <div className="tl-search-box">
+            <Search size={16} className="tl-search-icon" />
             <input
               className="tl-search-input"
               type="text"
@@ -120,48 +125,48 @@ export default function TimelineScreen() {
               id="timeline-search"
             />
             {search && (
-              <button className="tl-search-clear" onClick={() => setSearch('')}>✕</button>
+              <button className="tl-search-clear" onClick={() => setSearch('')}>
+                <X size={14} />
+              </button>
             )}
           </div>
-          <input
-            className="tl-date-picker"
-            type="date"
-            value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
-            title="Jump to date"
-            id="timeline-date-picker"
-          />
+          <div className="tl-date-wrap">
+            <Calendar size={16} className="tl-date-icon" />
+            <input
+              className="tl-date-picker"
+              type="date"
+              value={dateFilter}
+              onChange={e => setDateFilter(e.target.value)}
+              title="Jump to date"
+              id="timeline-date-picker"
+            />
+          </div>
           {dateFilter && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setDateFilter('')}
-              title="Clear date filter"
-            >
-              ✕
-            </button>
+            <ActionBtn variant="ghost" className="btn-sm" onClick={() => setDateFilter('')}>
+              <X size={14} /> Clear
+            </ActionBtn>
           )}
         </div>
-      </div>
+      </header>
 
       {flash && (
-        <div className={`capture-flash animate-slideDown ${flash.startsWith('Error') ? 'flash-error' : 'flash-success'}`}>
+        <div className={`tl-flash animate-slideDown ${flash.startsWith('Error') ? 'tl-flash-error' : 'tl-flash-success'}`}>
           {flash}
         </div>
       )}
 
       {loading ? (
-        <div className="timeline-loading">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton" style={{ height: '80px', marginBottom: '12px' }} />
-          ))}
-        </div>
+        <PageLoader text="Loading your memory feed..." />
       ) : Object.keys(grouped).length > 0 ? (
         <>
-          <div className="timeline-groups">
+          <div className="timeline-feed">
             {Object.entries(grouped).map(([date, items]) => (
-              <div key={date} className="timeline-group animate-slideUp">
-                <div className="timeline-date">{date}</div>
-                <div className="timeline-day-entries">
+              <div key={date} className="tl-day-group">
+                <div className="tl-day-label">
+                  <span className="tl-day-dot" />
+                  <span>{date}</span>
+                </div>
+                <div className="tl-day-entries">
                   {items.map((entry, i) => (
                     <TLEntry key={entry.id || i} entry={entry} onDelete={handleDelete} onUpdate={handleUpdate} />
                   ))}
@@ -177,20 +182,18 @@ export default function TimelineScreen() {
           )}
         </>
       ) : (
-        <div className="empty-state">
-          <div className="empty-icon">{search ? '🔍' : '📅'}</div>
-          <div className="empty-title">{search ? 'No matching entries' : 'No entries yet'}</div>
-          <div className="empty-desc">
-            {search
-              ? 'Try a different search term.'
-              : 'Capture items in the Command Center to see your timeline here.'}
-          </div>
-          {(search || dateFilter) && (
-            <button className="btn btn-secondary" onClick={() => { setSearch(''); setDateFilter(''); }}>
+        <EmptyState
+          icon={search ? Search : Calendar}
+          title={search ? 'No matching entries' : 'No entries yet'}
+          description={search
+            ? 'Try a different search term.'
+            : 'Capture items in the Command Center to see your timeline here.'}
+          action={(search || dateFilter) ? (
+            <ActionBtn variant="secondary" onClick={() => { setSearch(''); setDateFilter(''); }}>
               Clear Filters
-            </button>
-          )}
-        </div>
+            </ActionBtn>
+          ) : null}
+        />
       )}
     </div>
   );
@@ -229,51 +232,56 @@ function TLEntry({ entry, onDelete, onUpdate }) {
   }
 
   return (
-    <div
-      className={`tl-entry card ${deleting ? 'entry-deleting' : ''}`}
+    <Card
+      className={`tl-entry ${deleting ? 'tl-entry-deleting' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="tl-entry-header">
-        <span className="tl-time">{time}</span>
-        <div className="tl-entry-actions">
-          <span className="tl-source badge badge-tag">{entry.source || 'manual'}</span>
-          <button
-            className={`btn btn-ghost btn-sm tl-edit ${hovered ? 'visible' : ''}`}
-            onClick={startEdit}
-            title="Edit"
-          >
-            ✏️
-          </button>
-          <button
-            className={`btn btn-ghost btn-sm tl-delete ${hovered ? 'visible' : ''}`}
-            onClick={handleDel}
-            title="Delete"
-          >
-            🗑️
-          </button>
-        </div>
+      {/* Timeline connector dot */}
+      <div className="tl-entry-connector">
+        <div className="tl-entry-dot" />
+        <div className="tl-entry-line" />
       </div>
-      {editing ? (
-        <div className="entry-edit-box">
-          <textarea
-            ref={editRef}
-            className="entry-edit-input"
-            value={editText}
-            onChange={e => setEditText(e.target.value)}
-            onKeyDown={handleEditKey}
-            rows={3}
-          />
-          <div className="entry-edit-actions">
-            <button className="btn btn-sm btn-ghost" onClick={cancelEdit}>Cancel</button>
-            <button className="btn btn-sm btn-primary" onClick={saveEdit}>Save</button>
+
+      <div className="tl-entry-body">
+        <div className="tl-entry-header">
+          <div className="tl-entry-meta">
+            <Clock size={12} />
+            <span className="tl-time">{time}</span>
+            <Badge intent="default">{entry.source || 'manual'}</Badge>
+          </div>
+          <div className={`tl-entry-actions ${hovered ? 'tl-actions-visible' : ''}`}>
+            <button className="tl-action-btn" onClick={startEdit} title="Edit">
+              <Pencil size={14} />
+            </button>
+            <button className="tl-action-btn tl-action-delete" onClick={handleDel} title="Delete">
+              <Trash2 size={14} />
+            </button>
           </div>
         </div>
-      ) : (
-        <p className="tl-text" onDoubleClick={startEdit} title="Double-click to edit">{rawText}</p>
-      )}
-      {renderBadges(entry)}
-    </div>
+
+        {editing ? (
+          <div className="tl-edit-box">
+            <textarea
+              ref={editRef}
+              className="tl-edit-input"
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              onKeyDown={handleEditKey}
+              rows={3}
+            />
+            <div className="tl-edit-actions">
+              <ActionBtn variant="ghost" className="btn-sm" onClick={cancelEdit}>Cancel</ActionBtn>
+              <ActionBtn variant="primary" className="btn-sm" onClick={saveEdit}>Save</ActionBtn>
+            </div>
+          </div>
+        ) : (
+          <p className="tl-text" onDoubleClick={startEdit} title="Double-click to edit">{rawText}</p>
+        )}
+
+        {renderBadges(entry)}
+      </div>
+    </Card>
   );
 }
 
@@ -281,16 +289,17 @@ function renderBadges(entry) {
   const ex = entry.extractedState || entry.extracted_state;
   if (!ex) return null;
   const badges = [];
-  (ex.actionItems || ex.action_items || []).forEach(a => badges.push({ t: 'action', text: typeof a === 'string' ? a : a.text || 'item' }));
-  (ex.blockers || []).forEach(b => badges.push({ t: 'blocker', text: typeof b === 'string' ? b : b.text || 'blocker' }));
-  (ex.completions || []).forEach(c => badges.push({ t: 'done', text: typeof c === 'string' ? c : c.text || 'done' }));
-  (ex.deadlines || []).forEach(d => badges.push({ t: 'deadline', text: typeof d === 'string' ? d : d.text || 'deadline' }));
+  (ex.actionItems || ex.action_items || []).forEach(a => badges.push({ t: 'action', text: typeof a === 'string' ? a : a.text || 'item', icon: CheckCircle2 }));
+  (ex.blockers || []).forEach(b => badges.push({ t: 'blocker', text: typeof b === 'string' ? b : b.text || 'blocker', icon: AlertTriangle }));
+  (ex.completions || []).forEach(c => badges.push({ t: 'done', text: typeof c === 'string' ? c : c.text || 'done', icon: CheckCircle2 }));
+  (ex.deadlines || []).forEach(d => badges.push({ t: 'deadline', text: typeof d === 'string' ? d : d.text || 'deadline', icon: Clock }));
   if (!badges.length) return null;
   return (
-    <div className="entry-badges" style={{ marginTop: '8px' }}>
+    <div className="tl-extraction-badges">
       {badges.slice(0, 5).map((b, i) => (
-        <span key={i} className={`badge badge-${b.t}`} style={{ animationDelay: `${i * 50}ms` }}>
-          {b.text.slice(0, 35)}
+        <span key={i} className={`tl-extract-badge tl-extract-${b.t}`} style={{ animationDelay: `${i * 60}ms` }}>
+          <b.icon size={12} />
+          {b.text.slice(0, 40)}
         </span>
       ))}
     </div>

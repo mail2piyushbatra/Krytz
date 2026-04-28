@@ -1,31 +1,35 @@
-/** ✦ FLOWRA — Onboarding Screen */
+/** ✦ FLOWRA — Onboarding Screen (v3: premium animated experience) */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
 import { profile } from '../services/api';
+import { ActionBtn } from '../components/ui/UiKit';
+import { Brain, Zap, Search, ArrowRight, Sparkles } from 'lucide-react';
 import './OnboardingScreen.css';
 
 const slides = [
   {
     title: "Your mind, unloaded.",
     text: "Don't categorize. Just dump your thoughts, tasks, and ideas into the capture field. Our engine extracts the actionable bits automatically.",
-    icon: "🧠"
+    Icon: Brain,
+    accent: 'var(--accent-primary)',
   },
   {
     title: "Always know what's next.",
-    text: "Flowra calculates priority using deadlines, staleness, and blockages to build your Today view. No more manual sorting.",
-    icon: "⚡"
+    text: "Flowra calculates priority using deadlines, staleness, and blockages to build your operating state. No more manual sorting.",
+    Icon: Zap,
+    accent: '#6c5ce7',
   },
   {
     title: "Total Recall.",
     text: "Ask questions like 'What did I decide about the Q3 budget?' and get instant answers sourced from your past entries.",
-    icon: "🔍"
+    Icon: Search,
+    accent: '#00b894',
   }
 ];
 
 export default function OnboardingScreen() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [completing, setCompleting] = useState(false);
   const navigate = useNavigate();
   const { init } = useAuthStore();
 
@@ -33,38 +37,62 @@ export default function OnboardingScreen() {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(s => s + 1);
     } else {
-      setCompleting(true);
-      try {
-        await profile.update({ onboarded: true });
-        await init(); // Refresh user state from server
-        navigate('/', { replace: true });
-      } catch (err) {
-        console.error(err);
-        setCompleting(false);
-      }
+      await profile.update({ onboarded: true });
+      await init();
+      navigate('/', { replace: true });
     }
   };
 
+  const slide = slides[currentSlide];
+  const SlideIcon = slide.Icon;
+
   return (
     <div className="onboard-bg">
-      <div className="onboard-card glass animate-scaleIn">
-        <div className="onboard-icon">{slides[currentSlide].icon}</div>
-        <h1 className="onboard-title">{slides[currentSlide].title}</h1>
-        <p className="onboard-text">{slides[currentSlide].text}</p>
+      {/* Animated background orbs */}
+      <div className="onboard-orb onboard-orb-1" />
+      <div className="onboard-orb onboard-orb-2" />
+      <div className="onboard-orb onboard-orb-3" />
+
+      <div className="onboard-card glass animate-scaleIn" key={currentSlide}>
+        <div className="onboard-sparkle">
+          <Sparkles size={14} />
+        </div>
+
+        <div className="onboard-icon-ring" style={{ '--slide-accent': slide.accent }}>
+          <SlideIcon size={36} className="onboard-icon" />
+        </div>
+
+        <h1 className="onboard-title">{slide.title}</h1>
+        <p className="onboard-text">{slide.text}</p>
         
+        {/* Progress dots */}
         <div className="onboard-dots">
           {slides.map((_, i) => (
-            <div key={i} className={`onboard-dot ${i === currentSlide ? 'active' : ''}`} />
+            <button
+              key={i}
+              className={`onboard-dot ${i === currentSlide ? 'active' : ''} ${i < currentSlide ? 'completed' : ''}`}
+              onClick={() => setCurrentSlide(i)}
+            />
           ))}
         </div>
 
-        <button 
-          className="btn btn-primary btn-lg onboard-btn" 
+        <ActionBtn 
+          variant="primary"
+          className="onboard-btn"
           onClick={handleNext}
-          disabled={completing}
+          icon={currentSlide === slides.length - 1 ? Sparkles : ArrowRight}
         >
-          {completing ? <span className="spinner" /> : currentSlide === slides.length - 1 ? "Enter Flowra" : "Next"}
-        </button>
+          {currentSlide === slides.length - 1 ? "Enter Flowra" : "Next"}
+        </ActionBtn>
+
+        {currentSlide > 0 && (
+          <button 
+            className="onboard-back" 
+            onClick={() => setCurrentSlide(s => s - 1)}
+          >
+            Back
+          </button>
+        )}
       </div>
     </div>
   );

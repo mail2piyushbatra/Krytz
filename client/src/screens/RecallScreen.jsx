@@ -1,9 +1,11 @@
-/** ✦ FLOWRA — Recall Screen
+/** ✦ FLOWRA — Recall Screen (v3: spotlight interface)
  *  Mode A: AI Recall (natural language Q&A via /recall)
  *  Mode B: Semantic Search (vector similarity via /items/search)
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { recall as recallApi, items, entries } from '../services/api';
+import { Card, ActionBtn, EmptyState, Badge } from '../components/ui/UiKit';
+import { Search, Sparkles, Clock, ArrowRight, X, Target, MessageSquare, Loader2 } from 'lucide-react';
 import './RecallScreen.css';
 
 export default function RecallScreen() {
@@ -13,10 +15,15 @@ export default function RecallScreen() {
   const [semanticResults, setSemantic] = useState([]);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState(null);
+  const inputRef = useRef(null);
   const [history, setHistory]       = useState(() => {
     try { return JSON.parse(localStorage.getItem('flowra_recall_history') || '[]'); }
     catch { return []; }
   });
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [mode]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -70,125 +77,144 @@ export default function RecallScreen() {
     localStorage.setItem('flowra_recall_history', JSON.stringify(updated));
   }
 
+  function clearHistory() {
+    setHistory([]);
+    localStorage.removeItem('flowra_recall_history');
+  }
+
   const placeholders = {
-    recall: 'What did I do last week?',
+    recall: 'Ask: "What did I do last week?"',
     semantic: 'Find items similar to "deploy the API"',
   };
 
+  const showIdleState = !loading && !answer && !error && semanticResults.length === 0;
+
   return (
     <div className="page-container animate-fadeIn" id="recall-screen">
-      <h1 className="page-title">Recall</h1>
+      <header className="recall-header">
+        <p className="eyebrow">Intelligence</p>
+        <h1 className="page-title">Recall</h1>
+      </header>
 
-      {/* Mode tabs */}
-      <div className="recall-mode-tabs">
+      {/* Mode toggle */}
+      <div className="recall-mode-toggle">
         <button
-          className={`recall-mode-tab ${mode === 'recall' ? 'active' : ''}`}
+          className={`recall-mode-btn ${mode === 'recall' ? 'active' : ''}`}
           onClick={() => { setMode('recall'); setAnswer(null); setSemantic([]); setError(null); }}
           id="recall-tab-ai"
         >
-          ✦ AI Recall
+          <Sparkles size={16} />
+          AI Recall
         </button>
         <button
-          className={`recall-mode-tab ${mode === 'semantic' ? 'active' : ''}`}
+          className={`recall-mode-btn ${mode === 'semantic' ? 'active' : ''}`}
           onClick={() => { setMode('semantic'); setAnswer(null); setSemantic([]); setError(null); }}
           id="recall-tab-semantic"
         >
-          ◎ Semantic Search
+          <Target size={16} />
+          Semantic Search
         </button>
       </div>
 
-      {/* Search form */}
-      <form className="recall-search" onSubmit={handleSubmit}>
-        <div className="recall-input-wrapper">
-          <span className="recall-search-icon">{mode === 'semantic' ? '◎' : '🔍'}</span>
+      {/* Spotlight search bar */}
+      <form className="recall-spotlight" onSubmit={handleSubmit}>
+        <div className="recall-spotlight-inner">
+          {loading ? (
+            <Loader2 size={20} className="recall-search-spinner ui-spinner-anim" />
+          ) : (
+            <Search size={20} className="recall-search-icon" />
+          )}
           <input
-            className="recall-input"
+            ref={inputRef}
+            className="recall-spotlight-input"
             type="text"
             placeholder={placeholders[mode]}
             value={query}
             onChange={e => setQuery(e.target.value)}
             id="recall-input"
           />
+          {query && (
+            <button type="button" className="recall-clear-btn" onClick={() => setQuery('')}>
+              <X size={16} />
+            </button>
+          )}
+          <ActionBtn
+            type="submit"
+            disabled={!query.trim() || loading}
+            className="recall-submit-btn"
+            id="recall-submit"
+          >
+            {mode === 'semantic' ? 'Search' : 'Ask'}
+            <ArrowRight size={16} />
+          </ActionBtn>
         </div>
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={!query.trim() || loading}
-          id="recall-submit"
-        >
-          {loading ? 'Searching...' : mode === 'semantic' ? 'Search' : 'Ask'}
-        </button>
       </form>
-
-      {/* Loading */}
-      {loading && (
-        <div className="recall-loading animate-fadeIn">
-          <div className="recall-dots">
-            <span /><span /><span />
-          </div>
-          <p>{mode === 'semantic' ? 'Finding similar items...' : 'Searching your entries...'}</p>
-        </div>
-      )}
 
       {/* Error */}
       {error && (
-        <div className="recall-error animate-slideUp">
+        <Card className="recall-error animate-slideUp">
           <p>⚠️ {error}</p>
-        </div>
+        </Card>
       )}
 
       {/* Semantic results */}
       {semanticResults.length > 0 && !loading && (
-        <div className="recall-semantic-results animate-slideUp">
-          <div className="section-title" style={{ marginBottom: 'var(--space-3)' }}>
-            {semanticResults.length} similar items found
+        <section className="recall-results animate-slideUp">
+          <div className="recall-results-header">
+            <h3>{semanticResults.length} similar items found</h3>
           </div>
-          {semanticResults.map((item, i) => (
-            <div key={item.id || i} className="recall-semantic-item card">
-              <div className="recall-semantic-score">
-                {item.similarity != null
-                  ? `${Math.round(item.similarity * 100)}% match`
-                  : `#${i + 1}`}
-              </div>
-              <div className="recall-semantic-text">
-                {item.canonical_text || item.text || item.rawText}
-              </div>
-              {item.category && (
-                <span className="badge badge-tag">{item.category}</span>
-              )}
-              {item.state && item.state !== 'OPEN' && (
-                <span className={`badge badge-${item.state === 'DONE' ? 'done' : 'blocker'}`}>
-                  {item.state}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+          <div className="recall-results-list">
+            {semanticResults.map((item, i) => (
+              <Card key={item.id || i} className="recall-result-card">
+                <div className="recall-result-score">
+                  {item.similarity != null ? (
+                    <span className="recall-score-ring" style={{ '--score-pct': `${item.similarity * 100}%` }}>
+                      {Math.round(item.similarity * 100)}%
+                    </span>
+                  ) : (
+                    <span className="recall-score-rank">#{i + 1}</span>
+                  )}
+                </div>
+                <div className="recall-result-body">
+                  <p className="recall-result-text">{item.canonical_text || item.text || item.rawText}</p>
+                  <div className="recall-result-meta">
+                    {item.category && <Badge intent="default">{item.category}</Badge>}
+                    {item.state && item.state !== 'OPEN' && (
+                      <Badge intent={item.state === 'DONE' ? 'positive' : 'warning'}>{item.state}</Badge>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* AI Answer */}
       {answer && !loading && (
-        <div className="recall-answer card animate-slideUp">
+        <Card className="recall-answer animate-slideUp">
           <div className="recall-answer-header">
-            <span className="recall-ai-badge">✦ AI</span>
+            <div className="recall-ai-badge">
+              <Sparkles size={14} />
+              AI
+            </div>
             {answer.fallback && (
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>
-                (full-text fallback)
-              </span>
+              <Badge intent="warning">fallback mode</Badge>
             )}
           </div>
           <div className="recall-answer-body">
             {answer.answer || answer.response || answer.summary ? (
               <TypewriterText text={answer.answer || answer.response || answer.summary} />
             ) : (
-              <p className="text-secondary">
-                {JSON.stringify(answer, null, 2)}
-              </p>
+              <pre className="recall-raw-json">{JSON.stringify(answer, null, 2)}</pre>
             )}
           </div>
           {answer.sources?.length > 0 && (
             <details className="recall-sources">
-              <summary>📋 Related entries ({answer.sources.length})</summary>
+              <summary>
+                <MessageSquare size={14} />
+                Related entries ({answer.sources.length})
+              </summary>
               <div className="recall-sources-list">
                 {answer.sources.map((src, i) => (
                   <div key={i} className="recall-source-item">
@@ -201,41 +227,40 @@ export default function RecallScreen() {
               </div>
             </details>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Recent queries */}
-      {history.length > 0 && !loading && !answer && semanticResults.length === 0 && (
-        <div className="recall-history animate-slideUp">
-          <div className="section-title">Recent Queries</div>
+      {showIdleState && history.length > 0 && (
+        <section className="recall-history animate-slideUp">
+          <div className="recall-history-header">
+            <h3>Recent Queries</h3>
+            <button className="recall-clear-history" onClick={clearHistory}>Clear</button>
+          </div>
           <div className="recall-history-list">
             {history.map((q, i) => (
               <button
                 key={i}
-                className="recall-history-item"
+                className="recall-history-chip"
                 onClick={() => setQuery(q)}
               >
-                <span className="recall-history-icon">💬</span>
+                <Clock size={14} />
                 <span>{q}</span>
               </button>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Empty state */}
-      {!loading && !answer && !error && semanticResults.length === 0 && history.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">{mode === 'semantic' ? '◎' : '🔍'}</div>
-          <div className="empty-title">
-            {mode === 'semantic' ? 'Find items by meaning' : 'Ask anything about your entries'}
-          </div>
-          <div className="empty-desc">
-            {mode === 'semantic'
-              ? 'Type any phrase — semantic search finds items with similar meaning, not just exact words.'
-              : 'Try: "What meetings did I have this week?" or "Am I still blocked on anything?"'}
-          </div>
-        </div>
+      {showIdleState && history.length === 0 && (
+        <EmptyState
+          icon={mode === 'semantic' ? Target : Search}
+          title={mode === 'semantic' ? 'Find items by meaning' : 'Ask anything about your entries'}
+          description={mode === 'semantic'
+            ? 'Type any phrase — semantic search finds items with similar meaning, not just exact words.'
+            : 'Try: "What meetings did I have this week?" or "Am I still blocked on anything?"'}
+        />
       )}
     </div>
   );

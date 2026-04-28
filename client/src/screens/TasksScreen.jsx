@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { items as itemsApi } from '../services/api';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { items as itemsApi, entries } from '../services/api';
 import { Card, ActionBtn, PageLoader, EmptyState, Badge } from '../components/ui/UiKit';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Plus, Send } from 'lucide-react';
 import './TasksScreen.css';
 
 export default function TasksScreen() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('OPEN'); // OPEN or DONE
+  const [newTaskText, setNewTaskText] = useState('');
+  const [adding, setAdding] = useState(false);
+  const inputRef = useRef(null);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -33,7 +36,6 @@ export default function TasksScreen() {
     
     try {
       if (isDone) {
-        // We'd typically have an un-done endpoint, assuming update is available
         await itemsApi.update(task.id, { state: 'OPEN' });
       } else {
         await itemsApi.markDone(task.id);
@@ -44,7 +46,37 @@ export default function TasksScreen() {
     }
   };
 
+  const handleAddTask = async (e) => {
+    if (e) e.preventDefault();
+    const text = newTaskText.trim();
+    if (!text) return;
+    
+    setAdding(true);
+    try {
+      // Use the entries.todo shortcut — creates a direct action item without LLM
+      await entries.todo(text);
+      setNewTaskText('');
+      // Reload to pick up the new item
+      await loadTasks();
+      // Switch to Open view to see it
+      setFilter('OPEN');
+      inputRef.current?.focus();
+    } catch (err) {
+      console.error('Failed to add task:', err);
+    }
+    setAdding(false);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddTask();
+    }
+  };
+
   const filteredTasks = tasks.filter(t => filter === 'OPEN' ? t.state !== 'DONE' && t.state !== 'DROPPED' : t.state === 'DONE');
+  const openCount = tasks.filter(t => t.state !== 'DONE' && t.state !== 'DROPPED').length;
+  const doneCount = tasks.filter(t => t.state === 'DONE').length;
 
   if (loading && tasks.length === 0) {
     return <PageLoader text="Loading your tasks..." />;
@@ -63,22 +95,51 @@ export default function TasksScreen() {
             variant={filter === 'OPEN' ? 'primary' : 'ghost'} 
             onClick={() => setFilter('OPEN')}
           >
-            Open ({tasks.filter(t => t.state !== 'DONE').length})
+            Open ({openCount})
           </ActionBtn>
           <ActionBtn 
             variant={filter === 'DONE' ? 'primary' : 'ghost'} 
             onClick={() => setFilter('DONE')}
           >
-            Completed
+            Done ({doneCount})
           </ActionBtn>
         </div>
       </header>
+
+      {/* Inline task creation */}
+      <form className="task-add-form" onSubmit={handleAddTask}>
+        <div className="task-add-inner">
+          <Plus size={18} className="task-add-icon" />
+          <input
+            ref={inputRef}
+            className="task-add-input"
+            type="text"
+            placeholder="Add a task... (press Enter)"
+            value={newTaskText}
+            onChange={e => setNewTaskText(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+            disabled={adding}
+            id="task-add-input"
+          />
+          {newTaskText.trim() && (
+            <ActionBtn
+              type="submit"
+              variant="primary"
+              className="btn-sm task-add-btn"
+              disabled={adding}
+              icon={Send}
+            >
+              Add
+            </ActionBtn>
+          )}
+        </div>
+      </form>
 
       <div className="tasks-list stagger">
         {filteredTasks.length === 0 ? (
           <EmptyState 
             title={filter === 'OPEN' ? 'No open tasks' : 'No completed tasks yet'} 
-            description={filter === 'OPEN' ? 'You are all caught up! Go to the Command Center to capture new items.' : 'Check off some tasks to see them here.'}
+            description={filter === 'OPEN' ? 'Type above to add your first task, or capture items in the Command Center.' : 'Check off some tasks to see them here.'}
           />
         ) : (
           filteredTasks.map(task => {
@@ -94,12 +155,13 @@ export default function TasksScreen() {
                 </button>
                 
                 <div className="task-content">
-                  <p className="task-text">{task.text}</p>
+                  <p className="task-text">{task.canonical_text || task.text}</p>
                   <div className="task-meta">
                     {task.category && <Badge intent="default">{task.category}</Badge>}
                     {task.blocker && <Badge intent="warning">Blocked</Badge>}
                     {task.deadline && (
-                      <Badge intent={isOverdue ? 'negative' : 'accent'} icon={Clock}>
+                      <Badge intent={isOverdue ? 'negative' : 'accent'}>
+                        <Clock size={12} style={{ marginRight: 4 }} />
                         {new Date(task.deadline).toLocaleDateString()}
                       </Badge>
                     )}

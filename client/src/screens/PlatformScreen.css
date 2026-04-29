@@ -4,20 +4,26 @@
 }
 
 .platform-hero {
-  margin-bottom: var(--space-8);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  align-items: end;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .platform-hero h1 {
   max-width: 980px;
-  margin: var(--space-2) 0 var(--space-5);
-  font-size: clamp(2.5rem, 7vw, 5.5rem);
-  line-height: 0.92;
+  margin: var(--space-2) 0 var(--space-2);
+  font-size: clamp(2.15rem, 4vw, 3.75rem);
+  line-height: 0.98;
 }
 
 .platform-hero p {
   max-width: 760px;
   color: var(--text-secondary);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
 }
 
 .platform-grid,
@@ -55,6 +61,11 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dashboard-grid--matrix {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
 .audit-list {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -76,6 +87,17 @@
 
 .platform-operating-map .platform-section-head p {
   max-width: 640px;
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.role-dashboard-matrix .platform-section-head {
+  align-items: end;
+}
+
+.role-dashboard-matrix .platform-section-head p {
+  max-width: 720px;
   margin-top: var(--space-2);
   color: var(--text-secondary);
   font-size: var(--text-sm);
@@ -143,7 +165,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .role-switch a {
@@ -199,6 +221,11 @@
 }
 
 .role-route-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 370px;
+  overflow: hidden;
   color: inherit;
   text-decoration: none;
   transition: transform var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
@@ -208,6 +235,100 @@
   color: inherit;
   border-color: rgba(116, 185, 255, 0.45);
   transform: translateY(-2px);
+}
+
+.role-route-card--founder { border-color: rgba(255, 198, 109, 0.26); }
+.role-route-card--operator { border-color: rgba(75, 155, 107, 0.26); }
+.role-route-card--devops { border-color: rgba(91, 141, 239, 0.26); }
+.role-route-card--coder { border-color: rgba(132, 94, 247, 0.22); }
+.role-route-card--support { border-color: rgba(212, 155, 75, 0.26); }
+
+.role-route-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.role-route-topline > strong {
+  color: var(--text-primary);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 0.9;
+}
+
+.role-route-mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.role-route-mini-kpis div {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.role-route-mini-kpis span,
+.role-route-bars span {
+  display: block;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.role-route-mini-kpis strong {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--text-primary);
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+
+.role-route-bars {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.role-route-bars div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 44px;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.role-route-bars i {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: rgba(27, 42, 74, 0.08);
+}
+
+.role-route-bars b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--status-info), rgba(116, 185, 255, 0.35));
+}
+
+.role-route-bars strong {
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
+.role-route-card small {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.45;
 }
 
 .platform-card h3 {
@@ -235,58 +356,40 @@
 }
 
 .role-kpi-board {
-  margin-top: var(--space-6);
-  padding: var(--space-5);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
   border: 1px solid rgba(116, 185, 255, 0.18);
-  border-radius: 34px;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(116, 185, 255, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(75, 155, 107, 0.12), transparent 24%),
-    rgba(255, 255, 255, 0.045);
-  box-shadow: 0 24px 64px rgba(10, 18, 32, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: var(--shadow-sm);
 }
 
 .role-kpi-board--founder {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(255, 198, 109, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(116, 185, 255, 0.12), transparent 24%),
-    rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 198, 109, 0.32);
 }
 
 .role-kpi-board--operator {
-  background:
-    radial-gradient(circle at 10% 10%, rgba(75, 155, 107, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(116, 185, 255, 0.12), transparent 24%),
-    rgba(255, 255, 255, 0.045);
+  border-color: rgba(75, 155, 107, 0.32);
 }
 
 .role-kpi-board--devops {
-  background:
-    radial-gradient(circle at 10% 10%, rgba(91, 141, 239, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(212, 155, 75, 0.12), transparent 24%),
-    rgba(255, 255, 255, 0.045);
+  border-color: rgba(91, 141, 239, 0.32);
 }
 
 .role-kpi-board--coder {
-  background:
-    radial-gradient(circle at 10% 10%, rgba(132, 94, 247, 0.16), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(75, 155, 107, 0.10), transparent 24%),
-    rgba(255, 255, 255, 0.045);
+  border-color: rgba(132, 94, 247, 0.28);
 }
 
 .role-kpi-board--support {
-  background:
-    radial-gradient(circle at 10% 10%, rgba(212, 155, 75, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(201, 68, 68, 0.10), transparent 24%),
-    rgba(255, 255, 255, 0.045);
+  border-color: rgba(212, 155, 75, 0.32);
 }
 
 .role-kpi-topline {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .role-kpi-topline span,
@@ -302,38 +405,38 @@
 .role-kpi-topline h2 {
   max-width: 780px;
   margin: var(--space-2) 0;
-  font-size: clamp(2rem, 5vw, 4rem);
-  line-height: 0.96;
+  font-size: clamp(1.75rem, 3vw, 2.6rem);
+  line-height: 1;
 }
 
 .role-kpi-topline p {
   max-width: 760px;
   color: var(--text-secondary);
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
 }
 
 .role-kpi-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) minmax(320px, 0.9fr);
-  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) 190px minmax(280px, 0.85fr);
+  gap: var(--space-3);
 }
 
-.role-kpi-gauge,
+.role-kpi-gauge-container,
 .role-kpi-card,
 .role-kpi-chart {
   border: 1px solid var(--border-subtle);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.62);
+  border-radius: 12px;
+  background: var(--bg-primary);
   box-shadow: var(--shadow-sm);
 }
 
-.role-kpi-gauge {
+.role-kpi-gauge-container {
   display: grid;
   place-items: center;
   align-content: center;
   gap: var(--space-4);
-  min-height: 300px;
-  padding: var(--space-5);
+  min-height: 260px;
+  padding: var(--space-4);
   text-align: center;
 }
 
@@ -381,22 +484,22 @@
 }
 
 .role-kpi-card {
-  min-height: 142px;
+  min-height: 126px;
   padding: var(--space-4);
 }
 
 .role-kpi-card strong {
   display: block;
-  margin: var(--space-3) 0 var(--space-2);
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  line-height: 0.9;
+  margin: var(--space-2) 0;
+  font-size: clamp(2rem, 3vw, 2.85rem);
+  line-height: 0.95;
 }
 
 .role-kpi-chart {
   display: flex;
   flex-direction: column;
-  min-height: 300px;
-  padding: var(--space-5);
+  min-height: 260px;
+  padding: var(--space-4);
 }
 
 .role-kpi-chart-head {
@@ -529,7 +632,7 @@
 .workflow-lane {
   display: flex;
   flex-direction: column;
-  min-height: 520px;
+  min-height: 390px;
 }
 
 .workflow-lane-head {
@@ -703,8 +806,7 @@
   .gap-list,
   .login-table,
   .dashboard-grid,
-  .role-kpi-layout,
-  .role-kpi-card-grid,
+  .dashboard-grid--matrix,
   .audit-list,
   .readiness-grid,
   .action-result,
@@ -715,7 +817,16 @@
     grid-template-columns: 1fr;
   }
 
+  .platform-hero {
+    grid-template-columns: 1fr;
+  }
+
   .platform-operating-map .platform-section-head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .role-dashboard-matrix .platform-section-head {
     align-items: start;
     flex-direction: column;
   }
@@ -724,8 +835,17 @@
     flex-direction: column;
   }
 
-  .role-kpi-gauge {
-    min-height: auto;
+  .role-kpi-layout {
+    grid-template-columns: minmax(0, 1fr) 180px;
+  }
+
+  .role-kpi-chart {
+    grid-column: 1 / -1;
+    min-height: 220px;
+  }
+
+  .role-kpi-gauge-container {
+    min-height: 220px;
   }
 
   .role-kpi-bars button {
@@ -734,6 +854,23 @@
 
   .workflow-command {
     align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .role-route-mini-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .role-kpi-layout,
+  .role-kpi-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .role-kpi-chart {
+    grid-column: auto;
   }
 }
 

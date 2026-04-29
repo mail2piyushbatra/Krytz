@@ -7,7 +7,7 @@
  * 4. Settings added to main nav
  */
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
 import NotificationPanel from './NotificationPanel';
 import './Sidebar.css';
@@ -110,23 +110,42 @@ function IconExpand() {
 }
 
 const navItems = [
-  { path: '/', icon: IconCommand, label: 'Command', mobileIcon: '⊞' },
-  { path: '/strategy', icon: IconStrategy, label: 'Strategy', mobileIcon: '⊡' },
-  { path: '/tasks', icon: IconTasks, label: 'Tasks', mobileIcon: '☑' },
-  { path: '/timeline', icon: IconTimeline, label: 'Timeline', mobileIcon: '⊙' },
-  { path: '/search', icon: IconSearch, label: 'Search', mobileIcon: '⊘' },
+  { path: '/', icon: IconCommand, label: 'Command', mobileIcon: '⊞', userOnly: true },
+  { path: '/strategy', icon: IconStrategy, label: 'Strategy', mobileIcon: '⊡', userOnly: true },
+  { path: '/tasks', icon: IconTasks, label: 'Tasks', mobileIcon: '☑', userOnly: true },
+  { path: '/timeline', icon: IconTimeline, label: 'Timeline', mobileIcon: '⊙', userOnly: true },
+  { path: '/search', icon: IconSearch, label: 'Search', mobileIcon: '⊘', userOnly: true },
   { path: '/platform', icon: IconPlatform, label: 'Platform', mobileIcon: '⊟', platformOnly: true },
   { path: '/inspector', icon: IconInspector, label: 'Inspector', mobileIcon: '⌕', platformOnly: true },
   { path: '/settings', icon: IconSettings, label: 'Settings', mobileIcon: '⊛' },
 ];
 
 const PLATFORM_ROLES = ['founder', 'operator', 'devops', 'coder', 'support'];
+const PLATFORM_LANDING_BY_ROLE = {
+  founder: '/platform/founder',
+  operator: '/platform/operator',
+  devops: '/platform/devops',
+  coder: '/platform/coder',
+  support: '/platform/support',
+};
 
 export default function Sidebar() {
   const { user } = useAuthStore();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(true); // start collapsed (icon-only)
-  const hasPlatformAccess = PLATFORM_ROLES.includes(user?.platformRole || user?.role);
-  const visibleNavItems = navItems.filter(item => !item.platformOnly || hasPlatformAccess);
+  const platformRole = user?.platformRole || user?.role;
+  const platformLanding = PLATFORM_LANDING_BY_ROLE[platformRole] || '/platform/hub';
+  const hasPlatformAccess = PLATFORM_ROLES.includes(platformRole);
+  const visibleNavItems = navItems.filter(item => {
+    if (item.platformOnly && !hasPlatformAccess) return false;
+    if (item.userOnly && hasPlatformAccess) return false;
+    return true;
+  }).map(item => {
+    if (item.platformOnly && item.path === '/platform') {
+      return { ...item, path: platformLanding, activeMatch: '/platform' };
+    }
+    return item;
+  });
 
   return (
     <>
@@ -144,7 +163,7 @@ export default function Sidebar() {
                 key={item.path}
                 to={item.path}
                 end={item.path === '/'}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                className={({ isActive }) => `nav-item ${isActive || (item.activeMatch && location.pathname.startsWith(item.activeMatch)) ? 'active' : ''}`}
                 title={collapsed ? item.label : undefined}
               >
                 <span className="nav-icon"><Icon /></span>
@@ -177,7 +196,7 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               end={item.path === '/'}
-              className={({ isActive }) => `mobile-tab ${isActive ? 'active' : ''}`}
+              className={({ isActive }) => `mobile-tab ${isActive || (item.activeMatch && location.pathname.startsWith(item.activeMatch)) ? 'active' : ''}`}
             >
               <span className="tab-icon"><Icon /></span>
               <span className="tab-label">{item.label}</span>

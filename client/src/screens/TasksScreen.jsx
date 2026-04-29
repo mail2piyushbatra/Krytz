@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { items as itemsApi, entries } from '../services/api';
 import { Card, ActionBtn, PageLoader, EmptyState, Badge } from '../components/ui/UiKit';
-import { CheckCircle2, Circle, Clock, Plus, Send } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Circle, Clock, ListChecks, Plus, Send, TrendingUp } from 'lucide-react';
 import './TasksScreen.css';
 
 export default function TasksScreen() {
@@ -77,6 +77,16 @@ export default function TasksScreen() {
   const filteredTasks = tasks.filter(t => filter === 'OPEN' ? t.state !== 'DONE' && t.state !== 'DROPPED' : t.state === 'DONE');
   const openCount = tasks.filter(t => t.state !== 'DONE' && t.state !== 'DROPPED').length;
   const doneCount = tasks.filter(t => t.state === 'DONE').length;
+  const blockerCount = tasks.filter(t => t.blocker && t.state !== 'DONE' && t.state !== 'DROPPED').length;
+  const overdueCount = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.state !== 'DONE' && t.state !== 'DROPPED').length;
+  const dueSoonCount = tasks.filter(t => {
+    if (!t.deadline || t.state === 'DONE' || t.state === 'DROPPED') return false;
+    const due = new Date(t.deadline).getTime();
+    const now = Date.now();
+    return due >= now && due <= now + 3 * 24 * 60 * 60 * 1000;
+  }).length;
+  const completionRate = Math.round((doneCount / Math.max(openCount + doneCount, 1)) * 100);
+  const categoryCounts = buildTaskCategoryCounts(tasks);
 
   if (loading && tasks.length === 0) {
     return <PageLoader text="Loading your tasks..." />;
@@ -105,6 +115,34 @@ export default function TasksScreen() {
           </ActionBtn>
         </div>
       </header>
+
+      <section className="tasks-kpi-grid" aria-label="Task KPIs">
+        <TaskKpiCard icon={ListChecks} label="Open" value={openCount} detail="active queue" />
+        <TaskKpiCard icon={AlertTriangle} label="Blocked" value={blockerCount} detail="needs movement" tone="warning" />
+        <TaskKpiCard icon={Clock} label="Due soon" value={dueSoonCount} detail={`${overdueCount} overdue`} tone={overdueCount > 0 ? 'danger' : 'neutral'} />
+        <TaskKpiCard icon={TrendingUp} label="Completion" value={`${completionRate}%`} detail={`${doneCount} done`} tone="positive" />
+      </section>
+
+      {categoryCounts.length > 0 && (
+        <section className="tasks-dashboard-panel">
+          <div className="tasks-panel-head">
+            <span>Workload lanes</span>
+            <strong>{categoryCounts.length} categories</strong>
+          </div>
+          <div className="tasks-lane-grid">
+            {categoryCounts.slice(0, 6).map(category => (
+              <article className="tasks-lane-card" key={category.name}>
+                <span>{category.name}</span>
+                <strong>{category.open}</strong>
+                <div className="tasks-lane-meter">
+                  <i style={{ width: `${category.percent}%` }} />
+                </div>
+                <small>{category.done} done / {category.blocked} blocked</small>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Inline task creation */}
       <form className="task-add-form" onSubmit={handleAddTask}>
@@ -174,4 +212,31 @@ export default function TasksScreen() {
       </div>
     </div>
   );
+}
+
+function TaskKpiCard({ icon: Icon, label, value, detail, tone = 'neutral' }) {
+  return (
+    <article className={`tasks-kpi-card tasks-kpi-card--${tone}`}>
+      <div className="tasks-kpi-icon"><Icon size={18} /></div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  );
+}
+
+function buildTaskCategoryCounts(tasks) {
+  const rows = new Map();
+  for (const task of tasks) {
+    const name = task.category || 'uncategorized';
+    const existing = rows.get(name) || { name, open: 0, done: 0, blocked: 0 };
+    if (task.state === 'DONE') existing.done += 1;
+    else if (task.state !== 'DROPPED') existing.open += 1;
+    if (task.blocker && task.state !== 'DONE' && task.state !== 'DROPPED') existing.blocked += 1;
+    rows.set(name, existing);
+  }
+  const max = Math.max(...Array.from(rows.values()).map(row => row.open), 1);
+  return Array.from(rows.values())
+    .map(row => ({ ...row, percent: Math.max(6, Math.round((row.open / max) * 100)) }))
+    .sort((a, b) => b.open - a.open || b.blocked - a.blocked);
 }

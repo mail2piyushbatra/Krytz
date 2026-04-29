@@ -1,21 +1,14 @@
-import React, { lazy, Suspense } from 'react';
-import { Card } from './UiKit';
-
-// Lazy-load the recharts library and our chart implementations
-const RechartsCharts = lazy(() => import('./Charts.impl'));
+import React from 'react';
+import { TrajectoryChart as TrajectoryChartImpl, RadarHealthChart as RadarHealthChartImpl } from './Charts.impl';
 
 export function TrajectoryChart(props) {
   return (
-    <Suspense fallback={<Card className="ui-chart-skeleton" style={{ height: props.height || 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>Loading chart...</Card>}>
-      <RechartsCharts.TrajectoryChart {...props} />
-    </Suspense>
+    <TrajectoryChartImpl {...props} />
   );
 }
 
 export function RadarHealthChart(props) {
   return (
-    <Suspense fallback={<Card className="ui-chart-skeleton" style={{ height: props.height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>Loading chart...</Card>}>
-      <RechartsCharts.RadarHealthChart {...props} />
-    </Suspense>
+    <RadarHealthChartImpl {...props} />
   );
 }

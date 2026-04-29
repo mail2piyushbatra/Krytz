@@ -1,0 +1,409 @@
+[2m2:58:18 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mReferenceError: categories is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx:526:17)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27)
+
+The above error occurred in the <SettingsScreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m2:58:18 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: ReferenceError: categories is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx:526:17)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27) 
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx:77:39)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx:51:34)
+[2m3:00:02 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mError: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `TrajectoryChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+
+The above error occurred in the <Offscreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:00:02 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `TrajectoryChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37) 
+    at Suspense (<anonymous>)
+    at TrajectoryChart (http://localhost:5175/src/components/ui/Charts.jsx:13:19)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at section (<anonymous>)
+    at PersonalOperatingDashboard (http://localhost:5175/src/screens/CommandCenterScreen.jsx:1527:39)
+    at div (<anonymous>)
+    at CommandCenterScreen (http://localhost:5175/src/screens/CommandCenterScreen.jsx:20:28)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx:51:34)
+[2m3:02:42 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mReferenceError: catLoading is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:587:19)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27)
+
+The above error occurred in the <SettingsScreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:02:42 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: ReferenceError: catLoading is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:587:19)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27) 
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:77:39)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455029606:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455029606:51:34)
+[2m3:02:44 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mError: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `RadarHealthChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+
+The above error occurred in the <Offscreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:02:44 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `RadarHealthChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37) 
+    at Suspense (<anonymous>)
+    at RadarHealthChart (http://localhost:5175/src/components/ui/Charts.jsx:42:19)
+    at div (<anonymous>)
+    at Card (http://localhost:5175/src/components/ui/UiKit.jsx:89:24)
+    at div (<anonymous>)
+    at StrategyScreen (http://localhost:5175/src/screens/StrategyScreen.jsx:24:32)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455029606:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455029606:51:34)
+[2m3:02:47 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mError: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `TrajectoryChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+
+The above error occurred in the <Offscreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:02:47 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `TrajectoryChart`.
+    at createFiberFromTypeAndProps (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2816:21)
+    at createFiberFromElement (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:2827:11)
+    at reconcileChildFibersImpl (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3812:373)
+    at http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:3868:28
+    at reconcileChildren (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5385:46)
+    at updateOffscreenComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5457:4)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6213:21)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:123)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37) 
+    at Suspense (<anonymous>)
+    at TrajectoryChart (http://localhost:5175/src/components/ui/Charts.jsx:13:19)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at div (<anonymous>)
+    at section (<anonymous>)
+    at PersonalOperatingDashboard (http://localhost:5175/src/screens/CommandCenterScreen.jsx:1527:39)
+    at div (<anonymous>)
+    at CommandCenterScreen (http://localhost:5175/src/screens/CommandCenterScreen.jsx:20:28)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455029606:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455029606:51:34)
+[2m3:02:51 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mReferenceError: catLoading is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:587:19)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27)
+
+The above error occurred in the <SettingsScreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:02:51 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: ReferenceError: catLoading is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:587:19)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27) 
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455029606:77:39)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455029606:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455029606:51:34)
+[2m3:04:35 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mReferenceError: newRule is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:978:15)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27)
+
+The above error occurred in the <SettingsScreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:04:35 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: ReferenceError: newRule is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:978:15)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27) 
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:77:39)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455217129:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455217129:51:34)
+[2m3:04:37 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:04:37 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:04:40 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:04:40 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:04:44 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22mReferenceError: newRule is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:978:15)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27)
+
+The above error occurred in the <SettingsScreen> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+
+[2m3:04:44 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [2m[console.error] [22m[ErrorBoundary] Caught: ReferenceError: newRule is not defined
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:978:15)
+    at Object.react_stack_bottom_frame (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:12867:12)
+    at renderWithHooks (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:4212:19)
+    at updateFunctionComponent (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:5568:16)
+    at beginWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:6119:628)
+    at runWithFiberInDEV (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:850:66)
+    at performUnitOfWork (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8428:92)
+    at workLoopSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8324:37)
+    at renderRootSync (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:8308:6)
+    at performWorkOnRoot (http://localhost:5175/node_modules/.vite/deps/react-dom_client.js?v=090e3e91:7993:27) 
+    at SettingsScreen (http://localhost:5175/src/screens/SettingsScreen.jsx?t=1777455217047:77:39)
+    at RenderedRoute (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4011:26)
+    at Routes (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4642:19)
+    at div (<anonymous>)
+    at Suspense (<anonymous>)
+    at main (<anonymous>)
+    at MainContent (http://localhost:5175/src/App.jsx?t=1777455217129:143:19)
+    at ErrorBoundary (http://localhost:5175/src/components/ErrorBoundary.jsx:11:3)
+    at div (<anonymous>)
+    at ToastProvider (http://localhost:5175/src/components/Toast.jsx:19:33)
+    at Router (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:4594:29)
+    at BrowserRouter (http://localhost:5175/node_modules/.vite/deps/react-router-dom.js?v=090e3e91:7019:26)
+    at App (http://localhost:5175/src/App.jsx?t=1777455217129:51:34)
+[2m3:09:40 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:09:40 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:09:44 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:09:44 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:10:47 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:10:47 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:10:50 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:10:50 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:12:56 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+[2m3:12:56 PM[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22mThe width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.

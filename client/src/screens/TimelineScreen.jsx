@@ -96,6 +96,10 @@ export default function TimelineScreen() {
 
   // Entries are filtered server-side now
   const filtered = allEntries;
+  const totalEntries = filtered.length;
+  const actionCount = filtered.filter(entry => (entry.extractedItems || entry.extracted_items || []).length > 0).length;
+  const blockerCount = filtered.filter(entry => hasExtraction(entry, 'blocker')).length;
+  const sourceCount = new Set(filtered.map(entry => entry.source || 'manual')).size;
 
   // Group by date
   const grouped = {};
@@ -149,6 +153,13 @@ export default function TimelineScreen() {
         </div>
       </header>
 
+      <section className="timeline-kpi-grid" aria-label="Timeline dashboard">
+        <TimelineKpiCard label="Entries" value={totalEntries} detail={search || dateFilter ? 'matching current filters' : 'loaded in feed'} icon={FileText} />
+        <TimelineKpiCard label="Actions" value={actionCount} detail="entries with extracted items" icon={CheckCircle2} tone="positive" />
+        <TimelineKpiCard label="Blockers" value={blockerCount} detail="needs attention" icon={AlertTriangle} tone={blockerCount > 0 ? 'warning' : 'neutral'} />
+        <TimelineKpiCard label="Sources" value={sourceCount} detail="capture channels" icon={MessageSquare} />
+      </section>
+
       {flash && (
         <div className={`tl-flash animate-slideDown ${flash.startsWith('Error') ? 'tl-flash-error' : 'tl-flash-success'}`}>
           {flash}
@@ -197,6 +208,25 @@ export default function TimelineScreen() {
       )}
     </div>
   );
+}
+
+function TimelineKpiCard({ label, value, detail, icon: Icon, tone = 'neutral' }) {
+  return (
+    <article className={`timeline-kpi-card timeline-kpi-card--${tone}`}>
+      <div className="timeline-kpi-icon"><Icon size={18} /></div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  );
+}
+
+function hasExtraction(entry, type) {
+  const extracted = [
+    ...(entry.extractedItems || entry.extracted_items || []),
+    ...(entry.items || []),
+  ];
+  return extracted.some(item => (item.type || item.state || item.kind || '').toLowerCase().includes(type));
 }
 
 function TLEntry({ entry, onDelete, onUpdate }) {

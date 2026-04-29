@@ -3,9 +3,9 @@
  * Closes architecture gaps:
  * - #3  Error boundaries (wraps all routes)
  * - #9  Page transitions (CSS animation on route change)
- * - #10 Code splitting (React.lazy for all screens)
+ * - #10 Stable route rendering (screens imported eagerly)
  */
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import useAuthStore from './stores/authStore';
 import { useTheme } from './hooks/useTheme';
@@ -14,18 +14,29 @@ import Sidebar from './components/Sidebar';
 import { ToastProvider } from './components/Toast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { PageLoader as UiPageLoader } from './components/ui/UiKit';
+import AuthScreen from './screens/AuthScreen';
+import CommandCenterScreen from './screens/CommandCenterScreen';
+import StrategyScreen from './screens/StrategyScreen';
+import TimelineScreen from './screens/TimelineScreen';
+import TasksScreen from './screens/TasksScreen';
+import RecallScreen from './screens/RecallScreen';
+import PlatformScreen from './screens/PlatformScreen';
+import InspectorScreen from './screens/InspectorScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 
 // ── Lazy-loaded screens (code splitting) ──────────────────────
-const AuthScreen = lazy(() => import('./screens/AuthScreen'));
-const CommandCenterScreen = lazy(() => import('./screens/CommandCenterScreen'));
-const StrategyScreen = lazy(() => import('./screens/StrategyScreen'));
-const TimelineScreen = lazy(() => import('./screens/TimelineScreen'));
-const TasksScreen = lazy(() => import('./screens/TasksScreen'));
-const RecallScreen = lazy(() => import('./screens/RecallScreen'));
-const PlatformScreen = lazy(() => import('./screens/PlatformScreen'));
-const InspectorScreen = lazy(() => import('./screens/InspectorScreen'));
-const SettingsScreen = lazy(() => import('./screens/SettingsScreen'));
-const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen'));
+const PLATFORM_LANDING_BY_ROLE = {
+  founder: '/platform/founder',
+  operator: '/platform/operator',
+  devops: '/platform/devops',
+  coder: '/platform/coder',
+  support: '/platform/support',
+};
+
+function getPlatformLanding(user) {
+  return PLATFORM_LANDING_BY_ROLE[user?.platformRole || user?.role] || '/platform/hub';
+}
 
 function PageLoader() {
   return <UiPageLoader text="Loading..." />;
@@ -84,13 +95,21 @@ function MainContent() {
   const { user } = useAuthStore();
   const isPlatformRoute = location.pathname === '/platform' || location.pathname.startsWith('/platform/');
   const isPlatformUtilityRoute = location.pathname === '/settings';
-  const hasPlatformRole = Boolean(user?.platformRole);
+  const hasPlatformRole = Boolean(PLATFORM_LANDING_BY_ROLE[user?.platformRole || user?.role]);
+  const isLegacyUserRoute = ['/', '/strategy', '/timeline', '/tasks', '/search', '/recall'].includes(location.pathname);
+  const platformLanding = getPlatformLanding(user);
 
   if (user && !user.onboarded && !hasPlatformRole && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
   if (user && !user.onboarded && hasPlatformRole && !isPlatformRoute && !isPlatformUtilityRoute && location.pathname !== '/onboarding') {
-    return <Navigate to="/platform" replace />;
+    return <Navigate to={platformLanding} replace />;
+  }
+  if (user && hasPlatformRole && isLegacyUserRoute) {
+    return <Navigate to={platformLanding} replace />;
+  }
+  if (user && hasPlatformRole && location.pathname === '/platform') {
+    return <Navigate to={platformLanding} replace />;
   }
 
   return (

@@ -88,6 +88,9 @@ export default function RecallScreen() {
   };
 
   const showIdleState = !loading && !answer && !error && semanticResults.length === 0;
+  const sourceCount = answer?.sources?.length || 0;
+  const resultCount = semanticResults.length || sourceCount;
+  const answerState = loading ? 'running' : error ? 'blocked' : answer ? 'answered' : semanticResults.length ? 'matched' : 'ready';
 
   return (
     <div className="page-container animate-fadeIn" id="recall-screen">
@@ -95,6 +98,13 @@ export default function RecallScreen() {
         <p className="eyebrow">Intelligence</p>
         <h1 className="page-title">Recall</h1>
       </header>
+
+      <section className="recall-kpi-grid" aria-label="Recall dashboard">
+        <RecallKpiCard label="Mode" value={mode === 'recall' ? 'AI' : 'Search'} detail={mode === 'recall' ? 'natural language recall' : 'semantic item matching'} />
+        <RecallKpiCard label="State" value={answerState} detail={loading ? 'query in progress' : 'ready for next question'} tone={error ? 'danger' : answer || semanticResults.length ? 'positive' : 'neutral'} />
+        <RecallKpiCard label="Results" value={resultCount} detail={mode === 'semantic' ? 'similar items' : 'source entries'} />
+        <RecallKpiCard label="History" value={history.length} detail="recent queries saved locally" />
+      </section>
 
       {/* Mode toggle */}
       <div className="recall-mode-toggle">
@@ -263,6 +273,16 @@ export default function RecallScreen() {
         />
       )}
     </div>
+  );
+}
+
+function RecallKpiCard({ label, value, detail, tone = 'neutral' }) {
+  return (
+    <article className={`recall-kpi-card recall-kpi-card--${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
   );
 }
 

@@ -28,11 +28,11 @@ export function EmptyState({ icon: Icon = Inbox, title, description, action }) {
   );
 }
 
-export function Card({ children, className, ...props }) {
+export function Card({ children, className, as: Tag = 'div', ...props }) {
   return (
-    <div className={clsx('ui-card', className)} {...props}>
+    <Tag className={clsx('ui-card', className)} {...props}>
       {children}
-    </div>
+    </Tag>
   );
 }
 

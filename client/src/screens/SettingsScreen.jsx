@@ -51,6 +51,15 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [exportingCSV, setExportingCSV] = useState(false);
   const [tier, setTier] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [editingCat, setEditingCat] = useState(null);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatColor, setNewCatColor] = useState(COLOR_PALETTE[0]);
+  const [catLoading, setCatLoading] = useState(false);
+  const [rulesList, setRulesList] = useState([]);
+  const [rulesLoading, setRulesLoading] = useState(false);
+  const [newRule, setNewRule] = useState('');
+  const [addingRule, setAddingRule] = useState(false);
   const toast = useToast();
 
   // Load categories
@@ -201,14 +210,27 @@ export default function SettingsScreen() {
     } catch (err) { toast.error(err.message); }
   }
 
+  const enabledRules = rulesList.filter(rule => rule.enabled).length;
+  const planName = tier?.tier || tier?.name || 'free';
+  const captureUsage = tier?.captures_today !== undefined
+    ? `${tier.captures_today}/${tier.max_daily_captures || 'unlimited'}`
+    : 'open';
+
   return (
     <div className="page-container animate-fadeIn" id="settings-screen">
       <h1 className="page-title">Settings</h1>
 
+      <section className="settings-kpi-grid" aria-label="Settings dashboard">
+        <SettingsKpiCard label="Plan" value={planName} detail={`captures ${captureUsage}`} />
+        <SettingsKpiCard label="Categories" value={categories.length} detail="active routing lanes" />
+        <SettingsKpiCard label="Rules" value={rulesList.length} detail={`${enabledRules} enabled`} />
+        <SettingsKpiCard label="Theme" value={theme} detail={`${timezone} timezone`} />
+      </section>
+
       {/* Profile */}
       <section className="settings-section">
         <div className="section-title">Profile</div>
-        <form className="settings-card card" onSubmit={handleSave}>
+        <Card as="form" onSubmit={handleSave}>
           <div className="settings-field">
             <label className="settings-label">Name</label>
             <input
@@ -515,6 +537,16 @@ export default function SettingsScreen() {
 }
 
 // ─── Category Row ──────────────────────────────────────────────────────────────
+
+function SettingsKpiCard({ label, value, detail }) {
+  return (
+    <article className="settings-kpi-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{detail}</small>
+    </article>
+  );
+}
 
 function CategoryRow({ cat, editing, onEdit, onUpdate, onDelete }) {
   const [editName, setEditName] = useState(cat.name);

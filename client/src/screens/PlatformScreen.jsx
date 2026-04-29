@@ -160,29 +160,29 @@ export default function PlatformScreen() {
           <h2>Access denied</h2>
           <p>Your {userRole} role cannot open the {roleMeta[blockedRole].label} dashboard.</p>
           <p className="platform-gate-hint">Use an allowed dashboard or ask a founder to update your platform role.</p>
-          <Link to="/platform" className="btn btn-primary">Back to Platform</Link>
+          <Link to="/platform/hub" className="btn btn-primary">Back to Platform Hub</Link>
         </div>
       </div>
     );
   }
 
   const overview = state.overview;
+  const heroEyebrow = activeRole ? `${roleMeta[activeRole].label} role dashboard` : 'Platform operating hub';
 
   return (
     <div className="platform-screen page-container">
       <header className="platform-hero">
-        <p className="eyebrow">Platform control plane</p>
+        <p className="eyebrow">{heroEyebrow}</p>
         {activeRole ? (
           <>
             <h1>{roleMeta[activeRole].title}</h1>
-            <p>{roleMeta[activeRole].promise}</p>
+            <p>{roleMeta[activeRole].promise} Live queues, workspace signals, and executable role actions are loaded into this view.</p>
           </>
         ) : (
           <>
-            <h1>The app needs operators, builders, and data visibility too.</h1>
+            <h1>Platform operating hub</h1>
             <p>
-              This console is the first non-user surface: access model, role dashboards,
-              services, storage, audit, and governance gaps.
+              Role dashboards, service ownership, storage, audit, and governance surfaces for the platform team.
             </p>
           </>
         )}
@@ -356,6 +356,8 @@ async function runPlatformAction(action, role, accounts = [], workspace = {}) {
 function PlatformHub({ overview, allowedRoles }) {
   return (
     <>
+      <RoleDashboardMatrix overview={overview} allowedRoles={allowedRoles} />
+
       <PlatformOperatingMap overview={overview} allowedRoles={allowedRoles} />
 
       <section className="platform-section">
@@ -376,22 +378,28 @@ function PlatformHub({ overview, allowedRoles }) {
         </div>
       </section>
 
-      <section className="platform-section">
-        <div className="platform-section-head">
-          <h2>Dashboard routes</h2>
-          <span>accessible work surfaces</span>
-        </div>
-        <div className="dashboard-grid">
-          {Object.keys(roleMeta)
-            .filter(key => allowedRoles.includes(key))
-            .map(key => (
-              <RoleRouteCard key={key} role={key} />
-            ))}
-        </div>
-      </section>
-
       <SharedPlatformSections overview={overview} />
     </>
+  );
+}
+
+function RoleDashboardMatrix({ overview, allowedRoles }) {
+  const roles = Object.keys(roleMeta).filter(key => allowedRoles.includes(key));
+  return (
+    <section className="platform-section role-dashboard-matrix">
+      <div className="platform-section-head">
+        <div>
+          <h2>Role KPI dashboards</h2>
+          <p>Each platform user lands on a dedicated dashboard with role-specific cards, gauges, and drill-down bars.</p>
+        </div>
+        <span>{roles.length} dashboards</span>
+      </div>
+      <div className="dashboard-grid dashboard-grid--matrix">
+        {roles.map(key => (
+          <RoleRouteCard key={key} role={key} overview={overview} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -472,7 +480,7 @@ function PlatformOperatingMap({ overview, allowedRoles }) {
 function RoleSwitch({ activeRole, allowedRoles }) {
   return (
     <nav className="role-switch" aria-label="Platform role dashboards">
-      <Link className={!activeRole ? 'active' : ''} to="/platform">Hub</Link>
+      <Link className={!activeRole ? 'active' : ''} to="/platform/hub">Hub</Link>
       {Object.entries(roleMeta)
         .filter(([key]) => allowedRoles.includes(key))
         .map(([key, meta]) => (
@@ -484,13 +492,40 @@ function RoleSwitch({ activeRole, allowedRoles }) {
   );
 }
 
-function RoleRouteCard({ role }) {
+function RoleRouteCard({ role, overview }) {
   const meta = roleMeta[role];
+  const model = overview ? buildRoleKpiModel(role, overview, null, null) : null;
+  const leadCard = model?.cards?.[0];
   return (
-    <Link className="platform-card role-route-card" to={`/platform/${role}`}>
-      <span>{role}</span>
+    <Link className={`platform-card role-route-card role-route-card--${role}`} to={`/platform/${role}`}>
+      <div className="role-route-topline">
+        <span>{role}</span>
+        <strong>{model?.gauge?.value ?? 'open'}</strong>
+      </div>
       <h3>{meta.title}</h3>
-      <p>{meta.promise}</p>
+      <p>{model?.title || meta.promise}</p>
+      {model && (
+        <>
+          <div className="role-route-mini-kpis">
+            {model.cards.slice(0, 4).map(card => (
+              <div key={card.label}>
+                <span>{card.label}</span>
+                <strong>{card.value}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="role-route-bars">
+            {model.chart.rows.slice(0, 3).map(row => (
+              <div key={row.label}>
+                <span>{row.label}</span>
+                <i><b style={{ width: `${row.percent}%` }} /></i>
+                <strong>{row.value}</strong>
+              </div>
+            ))}
+          </div>
+          <small>{leadCard?.note || model.subtitle}</small>
+        </>
+      )}
       <code>open /platform/{role}</code>
     </Link>
   );
@@ -548,17 +583,6 @@ function RoleKpiDashboard({ role, overview, rolePayload, workspace, onRunAction,
       </div>
 
       <div className="role-kpi-layout">
-        <article className="role-kpi-gauge-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <ProgressRing 
-            percentage={model.gauge.percent} 
-            size={160} 
-            strokeWidth={14}
-            label={model.gauge.value}
-            sublabel={model.gauge.label}
-            color="var(--accent-primary)"
-          />
-        </article>
-
         <div className="role-kpi-card-grid">
           {model.cards.map(card => (
             <article className="role-kpi-card" key={card.label}>
@@ -568,6 +592,17 @@ function RoleKpiDashboard({ role, overview, rolePayload, workspace, onRunAction,
             </article>
           ))}
         </div>
+
+        <article className="role-kpi-gauge-container">
+          <ProgressRing 
+            percentage={model.gauge.percent} 
+            size={142} 
+            strokeWidth={12}
+            label={model.gauge.value}
+            sublabel={model.gauge.label}
+            color="var(--accent-primary)"
+          />
+        </article>
 
         <article className="role-kpi-chart">
           <div className="role-kpi-chart-head">

@@ -340,6 +340,7 @@ export default function CommandCenterScreen() {
               </span>
             )}
             {focus.score !== null && focus.score !== undefined && <span className="badge badge-tag">score {focus.score}</span>}
+          </div>
           <div className="cc-focus-actions">
             <button className="btn btn-primary btn-sm" onClick={() => handleMarkDone(focus)}>✅ Done</button>
             <button className="btn btn-secondary btn-sm" onClick={() => handleToggleBlocker(focus)}>🚫 Blocked</button>

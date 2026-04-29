@@ -22,6 +22,13 @@ async function register({ email, password, name }) {
   );
 
   await bootstrapFirstPlatformFounder(rows[0].id);
+
+  // Seed default categories so auto-categorization works from the first task
+  try {
+    const { seedDefaults } = require('../categories/category.service');
+    await seedDefaults(rows[0].id);
+  } catch (err) { /* non-blocking — categories can be created later */ }
+
   const user = await toApiUser(rows[0]);
   const tokens = await generateTokens(user);
   return { user, ...tokens };

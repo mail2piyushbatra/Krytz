@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import useAuthStore from '../stores/authStore';
 import { auth } from '../services/api';
+import { ActionBtn } from '../components/ui/UiKit';
 import './AuthScreen.css';
 
 export default function AuthScreen() {
@@ -126,23 +127,16 @@ export default function AuthScreen() {
           />
         )}
 
-        <button
-          className="btn btn-primary btn-lg auth-submit"
+        <ActionBtn
+          className="btn-lg auth-submit"
           type="submit"
-          disabled={loading}
+          isLoading={loading}
         >
-          {loading ? (
-            <span className="auth-spinner" />
-          ) : (
-            <>
-              {mode === 'login' && 'Sign In'}
-              {mode === 'register' && 'Create Account'}
-              {mode === 'forgot' && 'Send Reset Link'}
-              {mode === 'reset' && 'Update Password'}
-              {' →'}
-            </>
-          )}
-        </button>
+          {mode === 'login' && 'Sign In'}
+          {mode === 'register' && 'Create Account'}
+          {mode === 'forgot' && 'Send Reset Link'}
+          {mode === 'reset' && 'Update Password'}
+        </ActionBtn>
 
         {(mode === 'login' || mode === 'register') && (
           <>

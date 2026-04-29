@@ -7,6 +7,8 @@ import { useState, useEffect, useRef } from 'react';
 import useAuthStore from '../stores/authStore';
 import { API_BASE, profile, billing, categories as catApi, dataExport, rules as rulesApi } from '../services/api';
 import { useTheme } from '../hooks/useTheme';
+import { Card, ActionBtn, Badge } from '../components/ui/UiKit';
+import { useToast } from '../components/Toast';
 import './SettingsScreen.css';
 
 // ── Common timezones grouped by region ────────────────────────
@@ -49,25 +51,7 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [exportingCSV, setExportingCSV] = useState(false);
   const [tier, setTier] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  // Rules state
-  const [rulesList, setRulesList] = useState([]);
-  const [rulesLoading, setRulesLoading] = useState(false);
-  const [newRule, setNewRule] = useState('');
-  const [addingRule, setAddingRule] = useState(false);
-
-  // Category management
-  const [categories, setCategories] = useState([]);
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatColor, setNewCatColor] = useState(COLOR_PALETTE[0]);
-  const [editingCat, setEditingCat] = useState(null);
-  const [catLoading, setCatLoading] = useState(false);
-
-  function showToast(msg, type = 'success') {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 2600);
-  }
+  const toast = useToast();
 
   // Load categories
   useEffect(() => {
@@ -95,8 +79,8 @@ export default function SettingsScreen() {
       await rulesApi.create({ nl: newRule.trim() });
       setNewRule('');
       await loadRules();
-      showToast('Rule created');
-    } catch (err) { showToast(err.message || 'Rule creation failed', 'error'); }
+      toast.success('Rule created');
+    } catch (err) { toast.error(err.message || 'Rule creation failed'); }
     setAddingRule(false);
   }
 
@@ -104,7 +88,7 @@ export default function SettingsScreen() {
     try {
       await rulesApi.update(id, { enabled: !enabled });
       setRulesList(prev => prev.map(r => r.id === id ? { ...r, enabled: !enabled } : r));
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) { toast.error(err.message); }
   }
 
   async function handleDeleteRule(id, name) {
@@ -112,8 +96,8 @@ export default function SettingsScreen() {
     try {
       await rulesApi.delete(id);
       setRulesList(prev => prev.filter(r => r.id !== id));
-      showToast('Rule deleted');
-    } catch (err) { showToast(err.message, 'error'); }
+      toast.success('Rule deleted');
+    } catch (err) { toast.error(err.message); }
   }
 
   async function handleSave(e) {
@@ -124,9 +108,9 @@ export default function SettingsScreen() {
       // Refresh the in-memory user so sidebar/avatar updates instantly
       updateUser(data?.user || { name: name.trim(), timezone });
       setSaved(true);
-      showToast('Profile saved');
+      toast.success('Profile saved');
       setTimeout(() => setSaved(false), 2000);
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) { toast.error(err.message); }
     setSaving(false);
   }
 
@@ -138,8 +122,8 @@ export default function SettingsScreen() {
       await profile.changePassword(currentPassword, newPassword);
       setCurrentPassword('');
       setNewPassword('');
-      showToast('Password updated');
-    } catch (err) { showToast(err.message, 'error'); }
+      toast.success('Password updated');
+    } catch (err) { toast.error(err.message); }
     setChangingPwd(false);
   }
 
@@ -147,9 +131,9 @@ export default function SettingsScreen() {
     setExporting(true);
     try {
       await dataExport.download();
-      showToast('JSON export downloaded');
+      toast.success('JSON export downloaded');
     } catch (err) {
-      showToast('Export failed: ' + err.message, 'error');
+      toast.error('Export failed: ' + err.message);
     }
     setExporting(false);
   }
@@ -158,9 +142,9 @@ export default function SettingsScreen() {
     setExportingCSV(true);
     try {
       const result = await dataExport.downloadCSV();
-      showToast(`CSV downloaded (${result.count} items)`);
+      toast.success(`CSV downloaded (${result.count} items)`);
     } catch (err) {
-      showToast('CSV export failed: ' + err.message, 'error');
+      toast.error('CSV export failed: ' + err.message);
     }
     setExportingCSV(false);
   }
@@ -177,8 +161,8 @@ export default function SettingsScreen() {
         },
       });
       if (res.ok) { logout(); }
-      else { showToast('Failed to delete account', 'error'); }
-    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      else { toast.error('Failed to delete account'); }
+    } catch (err) { toast.error('Error: ' + err.message); }
   }
 
   // ── Category CRUD ─────────────────────────────────────────────
@@ -192,8 +176,8 @@ export default function SettingsScreen() {
       setNewCatName('');
       const res = await catApi.list();
       setCategories((res?.categories || []).filter(c => c.id));
-      showToast(`Category "${newCatName.trim()}" created`);
-    } catch (err) { showToast(err.message, 'error'); }
+      toast.success(`Category "${newCatName.trim()}" created`);
+    } catch (err) { toast.error(err.message); }
     setCatLoading(false);
   }
 
@@ -203,8 +187,8 @@ export default function SettingsScreen() {
       const res = await catApi.list();
       setCategories((res?.categories || []).filter(c => c.id));
       setEditingCat(null);
-      showToast('Category updated');
-    } catch (err) { showToast(err.message, 'error'); }
+      toast.success('Category updated');
+    } catch (err) { toast.error(err.message); }
   }
 
   async function handleDeleteCategory(id, name) {
@@ -213,8 +197,8 @@ export default function SettingsScreen() {
       await catApi.remove(id);
       const res = await catApi.list();
       setCategories((res?.categories || []).filter(c => c.id));
-      showToast(`Category "${name}" deleted`);
-    } catch (err) { showToast(err.message, 'error'); }
+      toast.success(`Category "${name}" deleted`);
+    } catch (err) { toast.error(err.message); }
   }
 
   return (
@@ -263,13 +247,13 @@ export default function SettingsScreen() {
             </span>
           </div>
           <div className="settings-actions">
-            <button className="btn btn-primary" type="submit" disabled={saving} id="settings-save">
-              {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Changes'}
-            </button>
+            <ActionBtn variant="primary" type="submit" isLoading={saving} isSuccess={saved} id="settings-save">
+              Save Changes
+            </ActionBtn>
           </div>
-        </form>
+        </Card>
 
-        <form className="settings-card card" style={{ marginTop: 'var(--space-4)' }} onSubmit={handleChangePassword}>
+        <Card as="form" style={{ marginTop: 'var(--space-4)' }} onSubmit={handleChangePassword}>
           <div className="section-title" style={{ fontSize: '1rem', marginTop: 0 }}>Change Password</div>
           <div className="settings-field">
             <label className="settings-label">Current Password</label>
@@ -295,17 +279,17 @@ export default function SettingsScreen() {
             />
           </div>
           <div className="settings-actions">
-            <button className="btn btn-secondary" type="submit" disabled={changingPwd || !currentPassword || newPassword.length < 8}>
-              {changingPwd ? 'Updating...' : 'Update Password'}
-            </button>
+            <ActionBtn variant="secondary" type="submit" isLoading={changingPwd} disabled={!currentPassword || newPassword.length < 8}>
+              Update Password
+            </ActionBtn>
           </div>
-        </form>
+        </Card>
       </section>
 
       {/* Category Management */}
       <section className="settings-section">
         <div className="section-title">Categories</div>
-        <div className="settings-card card">
+        <Card>
           <div className="cat-list">
             {categories.map(cat => (
               <CategoryRow
@@ -340,19 +324,19 @@ export default function SettingsScreen() {
                 onChange={e => setNewCatName(e.target.value)}
                 placeholder="New category name..."
               />
-              <button className="btn btn-primary" type="submit" disabled={catLoading || !newCatName.trim()}>
-                + Add
-              </button>
+              <ActionBtn variant="primary" type="submit" isLoading={catLoading} disabled={!newCatName.trim()}>
+                Add
+              </ActionBtn>
             </div>
           </form>
-        </div>
+        </Card>
       </section>
 
       {/* Billing tier */}
       {tier && (
         <section className="settings-section">
           <div className="section-title">Plan</div>
-          <div className="settings-card card">
+          <Card>
             <div className="settings-info-row">
               <span className="settings-info-label">Current Plan</span>
               <span className="badge badge-tag" style={{ textTransform: 'uppercase' }}>{tier.tier || tier.name || 'free'}</span>
@@ -363,14 +347,14 @@ export default function SettingsScreen() {
                 <span className="settings-info-value">{tier.captures_today} / {tier.max_daily_captures || '∞'}</span>
               </div>
             )}
-          </div>
+          </Card>
         </section>
       )}
 
       {/* Appearance */}
       <section className="settings-section">
         <div className="section-title">Appearance</div>
-        <div className="settings-card card">
+        <Card>
           <div className="settings-field">
             <label className="settings-label">Theme</label>
             <div className="theme-options">
@@ -392,13 +376,13 @@ export default function SettingsScreen() {
               </button>
             </div>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* Data */}
       <section className="settings-section">
         <div className="section-title">Data</div>
-        <div className="settings-card card">
+        <Card>
           <div className="settings-data-row">
             <div>
               <div className="settings-data-label">Export All Data</div>
@@ -413,17 +397,17 @@ export default function SettingsScreen() {
               <div className="settings-data-label">Export Items as CSV</div>
               <div className="settings-data-desc">Spreadsheet-compatible export of all items</div>
             </div>
-            <button className="btn btn-secondary" onClick={handleExportCSV} disabled={exportingCSV} id="settings-export-csv">
-              {exportingCSV ? <span className="spinner" /> : '📊 CSV'}
-            </button>
+            <ActionBtn variant="secondary" onClick={handleExportCSV} isLoading={exportingCSV} id="settings-export-csv">
+              Export CSV
+            </ActionBtn>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* Rules */}
       <section className="settings-section">
         <div className="section-title">Automation Rules</div>
-        <div className="settings-card card">
+        <Card>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
             Describe a rule in plain English — e.g. "If an item is older than 7 days and open, mark it as stalled."
           </p>
@@ -478,17 +462,17 @@ export default function SettingsScreen() {
               style={{ flex: 1 }}
               id="new-rule-input"
             />
-            <button className="btn btn-primary btn-sm" type="submit" disabled={addingRule || !newRule.trim()}>
-              {addingRule ? <span className="spinner" /> : 'Add Rule'}
-            </button>
+            <ActionBtn variant="primary" className="btn-sm" type="submit" isLoading={addingRule} disabled={!newRule.trim()}>
+              Add Rule
+            </ActionBtn>
           </form>
-        </div>
+        </Card>
       </section>
 
       {/* Account Info */}
       <section className="settings-section">
         <div className="section-title">Account</div>
-        <div className="settings-card card">
+        <Card>
           <div className="settings-info-row">
             <span className="settings-info-label">User ID</span>
             <span className="settings-info-value">{user?.id?.slice(0, 16)}...</span>
@@ -499,13 +483,13 @@ export default function SettingsScreen() {
               {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
             </span>
           </div>
-        </div>
+        </Card>
       </section>
 
       {/* Danger Zone */}
       <section className="settings-section">
         <div className="section-title">Danger Zone</div>
-        <div className="settings-card card settings-danger">
+        <Card className="settings-danger">
           <div className="settings-data-row">
             <div>
               <div className="settings-data-label">Sign Out</div>
@@ -524,15 +508,8 @@ export default function SettingsScreen() {
               Delete Account
             </button>
           </div>
-        </div>
+        </Card>
       </section>
-
-      {/* ── Toast ────────────────────────────────── */}
-      {toast && (
-        <div className="toast-container">
-          <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
-        </div>
-      )}
     </div>
   );
 }

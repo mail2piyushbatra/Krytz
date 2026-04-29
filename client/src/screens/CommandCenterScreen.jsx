@@ -58,6 +58,13 @@ export default function CommandCenterScreen() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Listen for global ⌘K shortcut
+  useEffect(() => {
+    function handleOpenCapture() { setCaptureOpen(true); }
+    window.addEventListener('flowra:open-capture', handleOpenCapture);
+    return () => window.removeEventListener('flowra:open-capture', handleOpenCapture);
+  }, []);
+
   // ── Keyboard shortcuts ────────────────────────────────────
   useEffect(() => {
     function onKey(e) {

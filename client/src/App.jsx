@@ -11,6 +11,7 @@ import useAuthStore from './stores/authStore';
 import { useTheme } from './hooks/useTheme';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
+import { ToastProvider } from './components/Toast';
 import { PageLoader as UiPageLoader } from './components/ui/UiKit';
 
 // ── Lazy-loaded screens (code splitting) ──────────────────────
@@ -35,6 +36,18 @@ export default function App() {
 
   useEffect(() => { init(); }, []);
 
+  // ── Global Cmd+K / Ctrl+K shortcut ──────────────
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('flowra:open-capture'));
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   if (loading) return <SplashScreen />;
 
   if (!user) {
@@ -49,12 +62,14 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="layout" role="application" aria-label="Flowra application">
-        <Sidebar />
-        <ErrorBoundary>
-          <MainContent />
-        </ErrorBoundary>
-      </div>
+      <ToastProvider>
+        <div className="layout" role="application" aria-label="Flowra application">
+          <Sidebar />
+          <ErrorBoundary>
+            <MainContent />
+          </ErrorBoundary>
+        </div>
+      </ToastProvider>
     </BrowserRouter>
   );
 }

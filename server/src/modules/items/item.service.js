@@ -187,41 +187,110 @@ async function getItem(userId, itemId) {
 
 // â”€â”€â”€ Create item directly â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+// ─── Auto-categorization ────────────────────────────────────────────────────────
+// Matches item text against user's existing categories using keyword similarity.
+
+const CATEGORY_KEYWORDS = {
+  work:       ['meeting', 'email', 'call', 'project', 'deadline', 'presentation', 'client', 'report', 'task', 'review', 'team', 'office', 'manager', 'colleague', 'slack', 'standup', 'sprint', 'deploy', 'code', 'server', 'api', 'feature', 'design', 'ux', 'ui', 'launch', 'release', 'roadmap', 'bug', 'fix', 'test', 'hire', 'interview', 'pr'],
+  infra:      ['server', 'deploy', 'ci', 'cd', 'docker', 'aws', 'cloud', 'devops', 'database', 'db', 'api', 'ssl', 'dns', 'kubernetes', 'pipeline', 'monitoring', 'backup', 'hosting', 'nginx', 'redis', 'postgres'],
+  product:    ['feature', 'design', 'ux', 'ui', 'user', 'feedback', 'launch', 'release', 'roadmap', 'spec', 'prototype', 'wireframe', 'figma', 'landing', 'onboarding', 'conversion', 'analytics', 'dashboard', 'app', 'mobile', 'web'],
+  hiring:     ['hire', 'hiring', 'interview', 'candidate', 'recruit', 'resume', 'offer', 'onboard', 'team', 'role', 'job', 'position', 'applicant', 'linkedin'],
+  operations: ['process', 'ops', 'workflow', 'vendor', 'compliance', 'legal', 'finance', 'budget', 'invoice', 'contract', 'accounting', 'payroll', 'insurance', 'tax', 'audit', 'report'],
+  personal:   ['gym', 'doctor', 'dentist', 'grocery', 'cook', 'clean', 'laundry', 'walk', 'run', 'exercise', 'meditate', 'read', 'book', 'family', 'friend', 'birthday', 'gift', 'vacation', 'travel', 'appointment', 'haircut', 'pharmacy', 'bills', 'rent', 'car', 'pet'],
+  health:     ['gym', 'workout', 'exercise', 'doctor', 'appointment', 'medication', 'sleep', 'diet', 'run', 'yoga', 'meditation', 'therapy', 'dentist', 'checkup'],
+  errands:    ['grocery', 'pharmacy', 'post', 'mail', 'package', 'pickup', 'drop', 'bank', 'store', 'shop', 'buy', 'return', 'exchange', 'repair', 'fix', 'clean', 'laundry', 'dry clean', 'car wash', 'oil change', 'renew', 'pay', 'bill'],
+  finance:    ['budget', 'invoice', 'payment', 'tax', 'bank', 'investment', 'savings', 'expense', 'salary', 'bills', 'rent', 'mortgage'],
+  learning:   ['study', 'course', 'learn', 'read', 'book', 'tutorial', 'practice', 'exam', 'class', 'lecture', 'certificate', 'skill'],
+};
+
+const URGENCY_KEYWORDS = ['urgent', 'asap', 'immediately', 'critical', 'important', 'deadline', 'overdue', 'today', 'now', 'emergency', 'priority'];
+
+async function autoCategorize(userId, text) {
+  const lower = text.toLowerCase();
+  const words = lower.split(/\s+/);
+
+  // Get user's actual categories
+  const { rows: userCats } = await db.query(
+    `SELECT name FROM categories WHERE user_id = $1`, [userId]
+  );
+  const userCatNames = userCats.map(c => c.name.toLowerCase());
+
+  let bestCat = 'uncategorized';
+  let bestScore = 0;
+
+  for (const catName of userCatNames) {
+    let score = 0;
+    const keywords = CATEGORY_KEYWORDS[catName] || [];
+    for (const kw of keywords) {
+      if (lower.includes(kw)) score += 2;
+    }
+    if (lower.includes(catName)) score += 5;
+    for (const word of words) {
+      if (catName.includes(word) && word.length > 3) score += 1;
+    }
+    if (score > bestScore) { bestScore = score; bestCat = catName; }
+  }
+
+  return bestScore >= 2 ? bestCat : 'uncategorized';
+}
+
+function computeInitialPriority(text, deadline, blocker) {
+  let priority = 0.5;
+  const lower = text.toLowerCase();
+  for (const kw of URGENCY_KEYWORDS) {
+    if (lower.includes(kw)) { priority = Math.min(1.0, priority + 0.15); break; }
+  }
+  if (deadline) {
+    const hoursUntil = (new Date(deadline) - Date.now()) / (1000 * 60 * 60);
+    if (hoursUntil < 0) priority = Math.min(1.0, priority + 0.3);
+    else if (hoursUntil < 24) priority = Math.min(1.0, priority + 0.25);
+    else if (hoursUntil < 168) priority = Math.min(1.0, priority + 0.1);
+  }
+  if (blocker) priority = Math.min(1.0, priority + 0.2);
+  return Math.round(priority * 100) / 100;
+}
+
 async function createItem(userId, { text, category, deadline, blocker, priority }) {
+  // Auto-categorize if no category provided
+  let resolvedCategory = category;
+  if (!category || category === 'uncategorized') {
+    resolvedCategory = await autoCategorize(userId, text);
+  }
+
+  // Auto-compute priority if not explicitly set
+  const resolvedPriority = priority || computeInitialPriority(text, deadline, blocker);
+
   const { rows } = await db.query(
     `INSERT INTO items (user_id, canonical_text, category, deadline, blocker, priority, state, confidence, mention_count)
      VALUES ($1, $2, $3, $4, $5, $6, 'OPEN', 0.8, 1)
      RETURNING *`,
-    [userId, text, category || 'uncategorized', deadline || null, blocker || false, priority || 0.5]
+    [userId, text, resolvedCategory, deadline || null, blocker || false, resolvedPriority]
   );
 
   const item = toApiItem(rows[0]);
 
-  // Record creation event
   await db.query(
     `INSERT INTO item_events (item_id, from_state, to_state, confidence, reason)
-     VALUES ($1, NULL, 'OPEN', 0.8, 'Direct creation')`,
-    [item.id]
+     VALUES ($1, NULL, 'OPEN', 0.8, $2)`,
+    [item.id, resolvedCategory !== 'uncategorized' ? `Auto-categorized as "${resolvedCategory}"` : 'Direct creation']
   );
 
-  logger.info('Item created directly', { userId, itemId: item.id, category: item.category });
+  logger.info('Item created', { userId, itemId: item.id, category: resolvedCategory, priority: resolvedPriority, autocat: !category });
 
-  // Generate embedding asynchronously (non-blocking)
   generateEmbedding(item.id, text).catch(err =>
     logger.warn('Embedding generation failed', { itemId: item.id, error: err.message })
   );
 
-  // Also ingest into TSG for in-memory tracking
   try {
     const { engines } = require('../../engines');
     if (engines.state && engines.state._tsg) {
-      const TSGNode = require('../../engines/graph/temporal.state.graph.js').TSGNode;
       // TSG will pick it up on next hydration; the DB is the source of truth
     }
   } catch (_) { /* TSG not critical for direct create */ }
 
   return item;
 }
+
 
 // â”€â”€â”€ Embedding generation (fire-and-forget) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 

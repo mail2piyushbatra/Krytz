@@ -177,11 +177,11 @@ async function deleteCategory(userId, categoryId) {
 // â”€â”€â”€ Seed default categories for new users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_CATEGORIES = [
-  { name: 'infra',      color: '#4B7BD4', sortOrder: 1 },
-  { name: 'product',    color: '#C8A45A', sortOrder: 2 },
-  { name: 'hiring',     color: '#9B6BD4', sortOrder: 3 },
-  { name: 'operations', color: '#4B9B6B', sortOrder: 4 },
-  { name: 'personal',   color: '#D49B4B', sortOrder: 5 },
+  { name: 'work',      color: '#4B7BD4', sortOrder: 1 },
+  { name: 'personal',  color: '#D49B4B', sortOrder: 2 },
+  { name: 'health',    color: '#4B9B6B', sortOrder: 3 },
+  { name: 'errands',   color: '#9B6BD4', sortOrder: 4 },
+  { name: 'learning',  color: '#C8A45A', sortOrder: 5 },
 ];
 
 async function seedDefaults(userId) {

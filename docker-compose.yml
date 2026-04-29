@@ -1,52 +1,52 @@
-# Flowra — Local Development Stack
+# Krytz â€” Local Development Stack
 # Run: docker-compose up -d
 # API will be at: http://localhost:8301
 
 services:
-  # ─── PostgreSQL ──────────────────────────────────────────
+  # â”€â”€â”€ PostgreSQL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: flowra2-db
+    container_name: Krytz2-db
     environment:
-      POSTGRES_USER: flowra
-      POSTGRES_PASSWORD: flowra_dev_password
-      POSTGRES_DB: flowra
+      POSTGRES_USER: Krytz
+      POSTGRES_PASSWORD: Krytz_dev_password
+      POSTGRES_DB: Krytz
     ports:
       - "5544:5432"
     volumes:
-      - flowra2_pgdata:/var/lib/postgresql/data
+      - Krytz2_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U flowra"]
+      test: ["CMD-SHELL", "pg_isready -U Krytz"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  # ─── Redis ───────────────────────────────────────────────
+  # â”€â”€â”€ Redis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   redis:
     image: redis:7-alpine
-    container_name: flowra2-redis
+    container_name: Krytz2-redis
     ports:
       - "6381:6379"
     volumes:
-      - flowra2_redis:/data
+      - Krytz2_redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
 
-  # ─── MinIO (S3-compatible file storage) ──────────────────
+  # â”€â”€â”€ MinIO (S3-compatible file storage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   minio:
     image: minio/minio:latest
-    container_name: flowra2-storage
+    container_name: Krytz2-storage
     environment:
-      MINIO_ROOT_USER: flowra_access_key
-      MINIO_ROOT_PASSWORD: flowra_secret_key
+      MINIO_ROOT_USER: Krytz_access_key
+      MINIO_ROOT_PASSWORD: Krytz_secret_key
     ports:
       - "9100:9000"    # API
       - "9191:9001"    # Console
     volumes:
-      - flowra2_minio:/data
+      - Krytz2_minio:/data
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -54,27 +54,27 @@ services:
       timeout: 3s
       retries: 5
 
-  # ─── Create default bucket on startup ────────────────────
+  # â”€â”€â”€ Create default bucket on startup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   minio-init:
     image: minio/mc:latest
-    container_name: flowra2-storage-init
+    container_name: Krytz2-storage-init
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-        mc alias set flowra http://minio:9000 flowra_access_key flowra_secret_key;
-        mc mb flowra/flowra-files --ignore-existing;
-        mc anonymous set download flowra/flowra-files;
-        echo 'Bucket flowra-files created.';
+        mc alias set Krytz http://minio:9000 Krytz_access_key Krytz_secret_key;
+        mc mb Krytz/Krytz-files --ignore-existing;
+        mc anonymous set download Krytz/Krytz-files;
+        echo 'Bucket Krytz-files created.';
       "
 
-  # ─── Flowra API ──────────────────────────────────────────
+  # â”€â”€â”€ Krytz API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   api:
     build:
       context: .
       target: development
-    container_name: flowra2-api
+    container_name: Krytz2-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,7 +85,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 8000
-      DATABASE_URL: postgresql://flowra:flowra_dev_password@postgres:5432/flowra?schema=public
+      DATABASE_URL: postgresql://Krytz:Krytz_dev_password@postgres:5432/Krytz?schema=public
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev-jwt-secret-not-for-production
       JWT_REFRESH_SECRET: dev-refresh-secret-not-for-production
@@ -93,9 +93,9 @@ services:
       JWT_REFRESH_EXPIRES_IN: 30d
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-api-key}
       S3_ENDPOINT: http://minio:9000
-      S3_ACCESS_KEY: flowra_access_key
-      S3_SECRET_KEY: flowra_secret_key
-      S3_BUCKET: flowra-files
+      S3_ACCESS_KEY: Krytz_access_key
+      S3_SECRET_KEY: Krytz_secret_key
+      S3_BUCKET: Krytz-files
       S3_REGION: us-east-1
       LOG_LEVEL: debug
     ports:
@@ -109,12 +109,12 @@ services:
       timeout: 3s
       retries: 5
 
-  # ─── Flowra Extraction Worker ────────────────────────────
+  # â”€â”€â”€ Krytz Extraction Worker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   worker:
     build:
       context: .
       target: development
-    container_name: flowra2-worker
+    container_name: Krytz2-worker
     depends_on:
       postgres:
         condition: service_healthy
@@ -122,7 +122,7 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://flowra:flowra_dev_password@postgres:5432/flowra?schema=public
+      DATABASE_URL: postgresql://Krytz:Krytz_dev_password@postgres:5432/Krytz?schema=public
       REDIS_URL: redis://redis:6379
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-api-key}
       LOG_LEVEL: debug
@@ -132,6 +132,6 @@ services:
       - ./shared:/app/shared
 
 volumes:
-  flowra2_pgdata:
-  flowra2_redis:
-  flowra2_minio:
+  Krytz2_pgdata:
+  Krytz2_redis:
+  Krytz2_minio:

@@ -1,8 +1,8 @@
-/** ✦ FLOWRA — Command Center
+/** âœ¦ Krytz â€” Command Center
  *
  * The executive operations surface. Items grouped by category,
  * dynamic priority sorting, capture with type buttons, completion ledger,
- * and intelligence signals — all in one view.
+ * and intelligence signals â€” all in one view.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -12,7 +12,7 @@ import { Card, MetricCard, ProgressRing, ActionBtn, PageLoader, EmptyState } fro
 import { TrajectoryChart } from '../components/ui/Charts';
 import './CommandCenterScreen.css';
 
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function CommandCenterScreen() {
   const [items, setItems] = useState([]);
@@ -59,14 +59,14 @@ export default function CommandCenterScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Listen for global ⌘K shortcut
+  // Listen for global âŒ˜K shortcut
   useEffect(() => {
     function handleOpenCapture() { setCaptureOpen(true); }
-    window.addEventListener('flowra:open-capture', handleOpenCapture);
-    return () => window.removeEventListener('flowra:open-capture', handleOpenCapture);
+    window.addEventListener('Krytz:open-capture', handleOpenCapture);
+    return () => window.removeEventListener('Krytz:open-capture', handleOpenCapture);
   }, []);
 
-  // ── Keyboard shortcuts ────────────────────────────────────
+  // â”€â”€ Keyboard shortcuts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setCaptureOpen(true); }
@@ -85,7 +85,7 @@ export default function CommandCenterScreen() {
   async function handleMarkDone(item) {
     try {
       await itemsApi.markDone(item.id);
-      showToast(`✅ "${item.text}" completed`);
+      showToast(`âœ… "${item.text}" completed`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
   }
@@ -93,7 +93,7 @@ export default function CommandCenterScreen() {
   async function handleToggleBlocker(item) {
     try {
       await itemsApi.toggleBlocker(item.id, !item.blocker);
-      showToast(item.blocker ? `Blocker cleared` : `⚠ Marked as blocker`);
+      showToast(item.blocker ? `Blocker cleared` : `âš  Marked as blocker`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
   }
@@ -109,7 +109,7 @@ export default function CommandCenterScreen() {
   async function handleSnooze(item, mins = 180) {
     try {
       await actions.submit(item.id, 'snooze', mins);
-      showToast(`⏸ Snoozed for ${mins >= 60 ? `${mins/60}h` : `${mins}m`}`);
+      showToast(`â¸ Snoozed for ${mins >= 60 ? `${mins/60}h` : `${mins}m`}`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
   }
@@ -118,11 +118,11 @@ export default function CommandCenterScreen() {
     try {
       showToast('Exporting your ledger...');
       await dataExport.download();
-      showToast('✅ Export downloaded');
+      showToast('âœ… Export downloaded');
     } catch (err) { showToast(err.message, 'error'); }
   }
 
-  // ── Batch actions ──────────────────────────────────────────
+  // â”€â”€ Batch actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function toggleSelect(id) {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -135,7 +135,7 @@ export default function CommandCenterScreen() {
     for (const id of selectedIds) {
       try { await itemsApi.markDone(id); } catch {}
     }
-    showToast(`✅ ${selectedIds.size} items done`);
+    showToast(`âœ… ${selectedIds.size} items done`);
     setSelectedIds(new Set()); setBatchMode(false); load();
   }
 
@@ -147,7 +147,7 @@ export default function CommandCenterScreen() {
     setSelectedIds(new Set()); setBatchMode(false); load();
   }
 
-  // ── Drag & Drop ────────────────────────────────────────────
+  // â”€â”€ Drag & Drop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function handleDragStart(e, id) {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', id);
@@ -188,7 +188,7 @@ export default function CommandCenterScreen() {
     setDraggedId(null);
   }
 
-  // ── Partition items ──────────────────────────────────────
+  // â”€â”€ Partition items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const blockerItems = items.filter(i => i.blocker && i.state !== 'DONE');
   const activeItems = items.filter(i => !i.blocker && i.state !== 'DONE');
@@ -205,7 +205,7 @@ export default function CommandCenterScreen() {
   const categoryDashboard = buildCategoryDashboard(overview?.categories || [], categories, items);
   const completionTrend = buildCompletionTrend(completions?.items || []);
 
-  // ── Group by category for "all" view ─────────────────────
+  // â”€â”€ Group by category for "all" view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const groupedByCategory = {};
   if (!activeCategory) {
@@ -218,7 +218,7 @@ export default function CommandCenterScreen() {
 
   return (
     <div className="command-center page-container">
-      {/* ── Header ───────────────────────────────────────── */}
+      {/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <header className="cc-header">
         <div>
           <p className="eyebrow">Command Center</p>
@@ -228,10 +228,10 @@ export default function CommandCenterScreen() {
         </div>
         <div className="cc-header-actions">
           <button className={`btn btn-ghost btn-sm ${batchMode ? 'btn-active' : ''}`} onClick={() => { setBatchMode(v => !v); setSelectedIds(new Set()); }} title="Select multiple">
-            ☐ Select
+            â˜ Select
           </button>
           <button className="btn btn-secondary" onClick={handleExport} title="Download full ledger JSON">
-            ↓ Export
+            â†“ Export
           </button>
           <button className="btn btn-primary btn-lg" onClick={() => setCaptureOpen(true)} title="Cmd+K">
             + Add
@@ -239,19 +239,19 @@ export default function CommandCenterScreen() {
         </div>
       </header>
 
-      {/* ── Batch Action Bar ─────────────────────────────── */}
+      {/* â”€â”€ Batch Action Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {batchMode && selectedIds.size > 0 && (
         <div className="cc-batch-bar animate-slideUp">
           <span>{selectedIds.size} selected</span>
-          <button className="btn btn-sm btn-primary" onClick={batchMarkDone}>✓ Done</button>
-          <button className="btn btn-sm btn-ghost" onClick={batchDrop}>× Drop</button>
+          <button className="btn btn-sm btn-primary" onClick={batchMarkDone}>âœ“ Done</button>
+          <button className="btn btn-sm btn-ghost" onClick={batchDrop}>Ã— Drop</button>
           <button className="btn btn-sm btn-ghost" onClick={() => { setSelectedIds(new Set()); }}>Clear</button>
         </div>
       )}
 
       {error && <div className="command-error">{error}</div>}
 
-      {/* ── Summary Metrics ──────────────────────────────── */}
+      {/* â”€â”€ Summary Metrics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <section className="cc-metrics stagger">
         <div className="metric-card" onClick={() => { setActiveCategory(null); }}>
           <span className="metric-value"><AnimatedCounter value={totalOpen} /></span>
@@ -271,7 +271,7 @@ export default function CommandCenterScreen() {
         </div>
       </section>
 
-      {/* ── Category Tabs ────────────────────────────────── */}
+      {/* â”€â”€ Category Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <PersonalOperatingDashboard
         totalOpen={totalOpen}
         totalBlocked={totalBlocked}
@@ -325,7 +325,7 @@ export default function CommandCenterScreen() {
         ))}
       </nav>
 
-      {/* ── Focus Card (from plan engine) ────────────────── */}
+      {/* â”€â”€ Focus Card (from plan engine) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {focus && (
         <section className="cc-focus animate-slideUp">
           <div className="cc-focus-kicker">
@@ -342,21 +342,21 @@ export default function CommandCenterScreen() {
             {focus.score !== null && focus.score !== undefined && <span className="badge badge-tag">priority {focus.score}</span>}
           </div>
           <div className="cc-focus-actions">
-            <button className="btn btn-primary btn-sm" onClick={() => handleMarkDone(focus)}>✅ Done</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => handleToggleBlocker(focus)}>🚫 Blocked</button>
+            <button className="btn btn-primary btn-sm" onClick={() => handleMarkDone(focus)}>âœ… Done</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => handleToggleBlocker(focus)}>ðŸš« Blocked</button>
           </div>
         </section>
       )}
 
-      {/* ── Loading State ────────────────────────────────── */}
+      {/* â”€â”€ Loading State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {loading && (
         <PageLoader text="Loading your dashboard..." />
       )}
 
-      {/* ── Blockers Banner ──────────────────────────────── */}
+      {/* â”€â”€ Blockers Banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {!loading && blockerItems.length > 0 && (
         <section className="cc-section">
-          <div className="section-title">🔒 Stuck ({blockerItems.length})</div>
+          <div className="section-title">ðŸ”’ Stuck ({blockerItems.length})</div>
           <div className="cc-item-list stagger">
             {blockerItems.map(item => (
               <ItemRow
@@ -382,7 +382,7 @@ export default function CommandCenterScreen() {
         </section>
       )}
 
-      {/* ── Items (grouped by category or flat) ──────────── */}
+      {/* â”€â”€ Items (grouped by category or flat) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {!loading && (
         activeCategory ? (
           <section className="cc-section">
@@ -415,25 +415,25 @@ export default function CommandCenterScreen() {
           ) : !loading && items.length === 0 && (
             <EmptyState 
               title="Your command center is empty" 
-              description="Add what's on your mind — meetings, to-dos, blockers, decisions. Flowra will organize everything and keep you on track."
+              description="Add what's on your mind â€” meetings, to-dos, blockers, decisions. Krytz will organize everything and keep you on track."
               action={<ActionBtn onClick={() => setCaptureOpen(true)}>Add your first thought</ActionBtn>}
             />
           )
         )
       )}
 
-      {/* ── Completed This Week ──────────────────────────── */}
+      {/* â”€â”€ Completed This Week â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {showCompleted && completions && completions.items?.length > 0 && (
         <section className="cc-section cc-completed animate-slideUp">
-          <div className="section-title">✅ Completed this week ({completions.totalCompleted})</div>
+          <div className="section-title">âœ… Completed this week ({completions.totalCompleted})</div>
           <div className="cc-item-list">
             {completions.items.slice(0, 10).map(item => (
               <div key={item.id} className="cc-done-item">
-                <span className="cc-done-check">✓</span>
+                <span className="cc-done-check">âœ“</span>
                 <div>
                   <p>{item.text}</p>
                   <span className="cc-done-meta">
-                    {item.category} · {timeAgo(item.completedAt)}
+                    {item.category} Â· {timeAgo(item.completedAt)}
                   </span>
                 </div>
               </div>
@@ -449,7 +449,7 @@ export default function CommandCenterScreen() {
         </section>
       )}
 
-      {/* ── Category Health (from analytics) ─────────────── */}
+      {/* â”€â”€ Category Health (from analytics) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {overview?.categories?.length > 0 && (
         <section className="cc-section cc-health">
           <div className="section-title">Category Health</div>
@@ -474,7 +474,7 @@ export default function CommandCenterScreen() {
         </section>
       )}
 
-      {/* ── Capture Sheet ────────────────────────────────── */}
+      {/* â”€â”€ Capture Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <CaptureSheet
         open={captureOpen}
         categories={categories}
@@ -483,7 +483,7 @@ export default function CommandCenterScreen() {
         onCaptured={() => { setCaptureOpen(false); load(); }}
       />
 
-      {/* ── Toast ────────────────────────────────────────── */}
+      {/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {toast && (
         <div className="toast-container">
           <div className={`toast toast-${toast.type}`}>{toast.msg}</div>
@@ -493,7 +493,7 @@ export default function CommandCenterScreen() {
   );
 }
 
-// ─── Item Row ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Item Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocker, categories: cats, batchMode, selected, onToggleSelect, onDragStart, onDragOver, onDrop: handleDrop, onDragEnd }) {
   const [expanded, setExpanded] = useState(false);
@@ -581,7 +581,7 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
     >
       {batchMode ? (
         <button className={`cc-item-check cc-batch-check ${selected ? 'cc-batch-checked' : ''}`} onClick={onToggleSelect}>
-          {selected ? '☑' : '☐'}
+          {selected ? 'â˜‘' : 'â˜'}
         </button>
       ) : (
         <button className="cc-item-check" onClick={() => onDone(item)} title="Mark done">
@@ -613,7 +613,7 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
           {item.confidence < 0.5 && <span className="badge badge-tag">low confidence</span>}
         </div>
 
-        {/* ── Expanded Detail ──────────────────────── */}
+        {/* â”€â”€ Expanded Detail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {expanded && (
           <div className="cc-item-detail" onClick={e => e.stopPropagation()}>
             {loadingDetail ? (
@@ -627,7 +627,7 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
                       <span className="cc-inline-edit" onClick={e => e.stopPropagation()}>
                         <input type="range" min="0" max="100" value={priorityVal} onChange={e => setPriorityVal(+e.target.value)} className="cc-priority-slider" />
                         <span>{priorityVal}%</span>
-                        <button className="cc-save-btn" onClick={handlePrioritySave}>✓</button>
+                        <button className="cc-save-btn" onClick={handlePrioritySave}>âœ“</button>
                       </span>
                     )}
                   </span>
@@ -642,12 +642,12 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
                   {editingDeadline ? (
                     <span className="cc-inline-edit" onClick={e => e.stopPropagation()}>
                       <input type="date" className="input cc-date-input" value={deadlineVal} onChange={e => setDeadlineVal(e.target.value)} />
-                      <button className="cc-save-btn" onClick={handleDeadlineSave}>✓</button>
-                      <button className="cc-save-btn" onClick={() => { setDeadlineVal(''); handleDeadlineSave(); }}>✕</button>
+                      <button className="cc-save-btn" onClick={handleDeadlineSave}>âœ“</button>
+                      <button className="cc-save-btn" onClick={() => { setDeadlineVal(''); handleDeadlineSave(); }}>âœ•</button>
                     </span>
                   ) : (
                     <span className="cc-detail-editable" onClick={() => setEditingDeadline(true)}>
-                      {item.deadline ? new Date(item.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'none — click to set'}
+                      {item.deadline ? new Date(item.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'none â€” click to set'}
                     </span>
                   )}
                 </div>
@@ -669,7 +669,7 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
                     <span className="cc-detail-events-title">Event History</span>
                     {detail.events.slice(0, 6).map((ev, i) => (
                       <div key={i} className="cc-detail-event">
-                        <span className="badge badge-tag">{ev.fromState || '—'} → {ev.toState}</span>
+                        <span className="badge badge-tag">{ev.fromState || 'â€”'} â†’ {ev.toState}</span>
                         <span className="cc-detail-event-time">{timeAgo(ev.createdAt)}</span>
                         {ev.reason && <span className="cc-detail-event-reason">{ev.reason}</span>}
                       </div>
@@ -684,7 +684,7 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
       <div className="cc-item-actions">
         <div className="cc-snooze-wrap">
           <button className="btn btn-icon btn-ghost" onClick={() => setShowSnoozeMenu(v => !v)} title="Snooze">
-            ⏸
+            â¸
           </button>
           {showSnoozeMenu && (
             <div className="cc-snooze-menu" onClick={e => e.stopPropagation()}>
@@ -696,17 +696,17 @@ function ItemRow({ item, onDone, onBlocker, onDrop, onSnooze, onUpdate, isBlocke
           )}
         </div>
         <button className="btn btn-icon btn-ghost" onClick={() => onBlocker(item)} title={item.blocker ? 'Clear blocker' : 'Mark blocker'}>
-          {item.blocker ? '✕' : '⚠'}
+          {item.blocker ? 'âœ•' : 'âš '}
         </button>
         <button className="btn btn-icon btn-ghost" onClick={() => onDrop(item)} title="Drop">
-          ×
+          Ã—
         </button>
       </div>
     </div>
   );
 }
 
-// ─── Category Health Card ─────────────────────────────────────────────────────
+// â”€â”€â”€ Category Health Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function PersonalOperatingDashboard({
   totalOpen,
@@ -1051,11 +1051,11 @@ function CaptureSheet({ open, categories: cats, defaultCategory, onClose, onCapt
   }
 
   const typeButtons = [
-    { key: 'capture', label: '🧠 Thoughts', desc: 'Smart breakdown' },
-    { key: 'todo', label: '📋 To-do', desc: 'Add a task' },
-    { key: 'done', label: '✅ Done', desc: 'Log something done' },
-    { key: 'blocked', label: '🚫 Stuck', desc: 'Mark as stuck' },
-    { key: 'note', label: '💬 Note', desc: 'Quick note' },
+    { key: 'capture', label: 'ðŸ§  Thoughts', desc: 'Smart breakdown' },
+    { key: 'todo', label: 'ðŸ“‹ To-do', desc: 'Add a task' },
+    { key: 'done', label: 'âœ… Done', desc: 'Log something done' },
+    { key: 'blocked', label: 'ðŸš« Stuck', desc: 'Mark as stuck' },
+    { key: 'note', label: 'ðŸ’¬ Note', desc: 'Quick note' },
   ];
 
   return (
@@ -1109,11 +1109,11 @@ function CaptureSheet({ open, categories: cats, defaultCategory, onClose, onCapt
                 onClick={toggleVoice}
                 title={listening ? 'Stop recording' : 'Voice capture'}
               >
-                {listening ? '⏹' : '🎤'}
+                {listening ? 'â¹' : 'ðŸŽ¤'}
               </button>
             )}
             <button type="button" className="capture-attach-btn" onClick={() => fileInputRef.current?.click()} title="Attach file" disabled={uploading}>
-              {uploading ? '⏳' : '📎'}
+              {uploading ? 'â³' : 'ðŸ“Ž'}
             </button>
             <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
           </div>
@@ -1121,15 +1121,15 @@ function CaptureSheet({ open, categories: cats, defaultCategory, onClose, onCapt
 
         {attachedFile && (
           <div className="capture-file-badge">
-            📄 {attachedFile.name}
-            <button type="button" onClick={() => setAttachedFile(null)} className="capture-file-remove">✕</button>
+            ðŸ“„ {attachedFile.name}
+            <button type="button" onClick={() => setAttachedFile(null)} className="capture-file-remove">âœ•</button>
           </div>
         )}
 
         {error && <p className="capture-error">{error}</p>}
 
         <div className="capture-actions">
-          <span className="capture-shortcut">⌘K to open</span>
+          <span className="capture-shortcut">âŒ˜K to open</span>
           <ActionBtn type="button" variant="ghost" onClick={onClose}>Cancel</ActionBtn>
           <ActionBtn 
              variant="primary" 
@@ -1144,7 +1144,7 @@ function CaptureSheet({ open, categories: cats, defaultCategory, onClose, onCapt
   );
 }
 
-// ─── Empty States ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Empty States â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EmptyCategory({ onCapture }) {
   return (
@@ -1155,7 +1155,7 @@ function EmptyCategory({ onCapture }) {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function buildCategoryDashboard(overviewCategories, allCategories, allItems) {
   const fromOverview = overviewCategories.map(cat => ({
@@ -1227,7 +1227,7 @@ function getDayGreeting() {
   const hour = new Date().getHours();
   const day = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  return `${greeting} — ${day}`;
+  return `${greeting} â€” ${day}`;
 }
 
 function getDeadlineLabel(deadline) {
@@ -1264,10 +1264,10 @@ function getPlaceholder(type) {
 
 function getSubmitLabel(type) {
   switch (type) {
-    case 'todo': return '📋 Add To-do';
-    case 'done': return '✅ Mark Done';
-    case 'blocked': return '🚫 Mark Stuck';
-    case 'note': return '💬 Save Note';
-    default: return '🧠 Add & Organize';
+    case 'todo': return 'ðŸ“‹ Add To-do';
+    case 'done': return 'âœ… Mark Done';
+    case 'blocked': return 'ðŸš« Mark Stuck';
+    case 'note': return 'ðŸ’¬ Save Note';
+    default: return 'ðŸ§  Add & Organize';
   }
 }

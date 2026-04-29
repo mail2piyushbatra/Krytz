@@ -1,4 +1,4 @@
-/* ✦ FLOWRA — Command Center CSS
+/* âœ¦ Krytz â€” Command Center CSS
    Items-first executive operations view. */
 
 .command-center {
@@ -6,7 +6,7 @@
   padding-bottom: 96px;
 }
 
-/* ── Header ──────────────────────────────────────── */
+/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-header {
   display: flex;
@@ -24,7 +24,7 @@
   line-height: 1.3;
 }
 
-/* ── Metrics Strip ───────────────────────────────── */
+/* â”€â”€ Metrics Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-metrics {
   display: grid;
@@ -423,7 +423,7 @@
   padding-top: var(--space-4);
 }
 
-/* ── Category Tabs ───────────────────────────────── */
+/* â”€â”€ Category Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-category-tabs {
   display: flex;
@@ -485,7 +485,7 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* ── Focus Card ──────────────────────────────────── */
+/* â”€â”€ Focus Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-focus {
   border: 1px solid rgba(200, 164, 90, 0.3);
@@ -520,7 +520,7 @@
   gap: var(--space-3);
 }
 
-/* ── Loading ─────────────────────────────────────── */
+/* â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-loading {
   display: grid;
@@ -528,7 +528,7 @@
   margin-bottom: var(--space-5);
 }
 
-/* ── Section ─────────────────────────────────────── */
+/* â”€â”€ Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-section {
   margin-bottom: var(--space-6);
@@ -540,7 +540,7 @@
   gap: var(--space-2);
 }
 
-/* ── Item List ───────────────────────────────────── */
+/* â”€â”€ Item List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-item-list {
   display: grid;
@@ -626,7 +626,7 @@
   gap: var(--space-1);
 }
 
-/* ── Inline Edit ─────────────────────────────────── */
+/* â”€â”€ Inline Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-item-edit-input {
   width: 100%;
@@ -646,7 +646,7 @@
   cursor: text;
 }
 
-/* ── Item Detail Expand ──────────────────────────── */
+/* â”€â”€ Item Detail Expand â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-item--expanded {
   border-color: var(--border-strong);
@@ -720,7 +720,7 @@
   font-style: italic;
 }
 
-/* ── Header Actions ──────────────────────────────── */
+/* â”€â”€ Header Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-header-actions {
   display: flex;
@@ -739,7 +739,7 @@
   opacity: 1;
 }
 
-/* ── Completed Section ───────────────────────────── */
+/* â”€â”€ Completed Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-completed {
   border: 1px solid var(--border-subtle);
@@ -793,7 +793,7 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-/* ── Category Health ─────────────────────────────── */
+/* â”€â”€ Category Health â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-health-grid {
   display: grid;
@@ -876,7 +876,7 @@
   color: var(--text-primary);
 }
 
-/* ── Empty Category ──────────────────────────────── */
+/* â”€â”€ Empty Category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .cc-empty-cat {
   display: flex;
@@ -888,7 +888,7 @@
   font-size: var(--text-sm);
 }
 
-/* ── Capture Sheet ───────────────────────────────── */
+/* â”€â”€ Capture Sheet â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .capture-backdrop {
   position: fixed;
@@ -959,7 +959,7 @@
   min-height: 140px;
 }
 
-/* ── Voice Capture ───────────────────────────────── */
+/* â”€â”€ Voice Capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 .capture-input-wrap {
   position: relative;
@@ -1024,9 +1024,9 @@
   margin-bottom: var(--space-4);
 }
 
-/* ── Responsive ──────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Tablet (≤900px) */
+/* Tablet (â‰¤900px) */
 @media (max-width: 900px) {
   .cc-metrics {
     grid-template-columns: repeat(2, 1fr);
@@ -1062,7 +1062,7 @@
   .cc-header > div { flex: 1; min-width: 0; }
 }
 
-/* Mobile (≤600px) */
+/* Mobile (â‰¤600px) */
 @media (max-width: 600px) {
   /* Tighter page padding */
   .command-center {
@@ -1130,7 +1130,7 @@
     grid-template-columns: 84px minmax(0, 1fr) 24px;
   }
 
-  /* Category tabs — horizontal scroll, bigger tap targets */
+  /* Category tabs â€” horizontal scroll, bigger tap targets */
   .cc-category-tabs {
     gap: var(--space-2);
     margin: 0 calc(-1 * var(--space-4));
@@ -1178,7 +1178,7 @@
     font-size: var(--text-sm);
   }
   .cc-item-actions {
-    opacity: 1;  /* always visible — no hover on touch */
+    opacity: 1;  /* always visible â€” no hover on touch */
     gap: var(--space-1);
   }
   .btn-icon {
@@ -1219,7 +1219,7 @@
     align-items: flex-start;
   }
 
-  /* Bottom-sheet Capture — full width, slides from bottom */
+  /* Bottom-sheet Capture â€” full width, slides from bottom */
   .capture-backdrop {
     padding: 0;
     align-items: flex-end;
@@ -1293,7 +1293,7 @@
   }
 }
 
-/* ── Snooze Menu ─────────────────────────────────── */
+/* â”€â”€ Snooze Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cc-snooze-wrap { position: relative; }
 .cc-snooze-menu {
   position: absolute; top: 100%; right: 0; z-index: 50;
@@ -1309,7 +1309,7 @@
 }
 .cc-snooze-menu button:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 
-/* ── Batch Actions ───────────────────────────────── */
+/* â”€â”€ Batch Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cc-batch-bar {
   display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-3) var(--space-4); background: var(--bg-secondary);
@@ -1322,7 +1322,7 @@
 .cc-item--selected { border-color: var(--border-focus) !important; background: rgba(100,149,237,0.04); }
 .btn-active { background: var(--bg-tertiary) !important; border-color: var(--border-strong) !important; }
 
-/* ── Inline Editors ──────────────────────────────── */
+/* â”€â”€ Inline Editors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cc-detail-editable { cursor: pointer; border-bottom: 1px dashed var(--border-subtle); }
 .cc-detail-editable:hover { border-bottom-color: var(--text-tertiary); }
 .cc-inline-edit { display: inline-flex; align-items: center; gap: var(--space-1); margin-left: var(--space-1); }
@@ -1339,7 +1339,7 @@
 }
 .cc-detail-deadline label { font-weight: 500; }
 
-/* ── File Upload in Capture ──────────────────────── */
+/* â”€â”€ File Upload in Capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .capture-toolbar { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 4px; }
 .capture-attach-btn {
   width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border-subtle);

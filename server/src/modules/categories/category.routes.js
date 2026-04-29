@@ -1,5 +1,5 @@
 /**
- * ✦ FLOWRA — Categories Routes
+ * âœ¦ Krytz â€” Categories Routes
  *
  * CRUD for user-defined category buckets.
  */
@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// GET /api/v1/categories — List all categories with item counts
+// GET /api/v1/categories â€” List all categories with item counts
 router.get('/', async (req, res, next) => {
   try {
     // Auto-seed defaults for new users
@@ -26,7 +26,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// POST /api/v1/categories — Create new category
+// POST /api/v1/categories â€” Create new category
 router.post('/', validate(createCategorySchema), async (req, res, next) => {
   try {
     const category = await categoryService.createCategory(req.user.id, req.body);
@@ -36,7 +36,7 @@ router.post('/', validate(createCategorySchema), async (req, res, next) => {
   }
 });
 
-// PATCH /api/v1/categories/:id — Update name, color, sort order
+// PATCH /api/v1/categories/:id â€” Update name, color, sort order
 router.patch('/:id', validate(updateCategorySchema), async (req, res, next) => {
   try {
     const category = await categoryService.updateCategory(req.user.id, req.params.id, req.body);
@@ -46,7 +46,7 @@ router.patch('/:id', validate(updateCategorySchema), async (req, res, next) => {
   }
 });
 
-// DELETE /api/v1/categories/:id — Delete (items → uncategorized)
+// DELETE /api/v1/categories/:id â€” Delete (items â†’ uncategorized)
 router.delete('/:id', async (req, res, next) => {
   try {
     const result = await categoryService.deleteCategory(req.user.id, req.params.id);

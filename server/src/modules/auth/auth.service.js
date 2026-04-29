@@ -153,7 +153,7 @@ async function bootstrapFirstPlatformFounder(userId) {
 
   const { rows: [org] } = await pool.query(
     `INSERT INTO organizations(name, slug)
-     VALUES('Flowra Local Ops', 'flowra-local-ops')
+     VALUES('Krytz Local Ops', 'Krytz-local-ops')
      ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
      RETURNING id`
   );

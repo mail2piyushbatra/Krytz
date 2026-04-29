@@ -1,21 +1,21 @@
-/** ✦ FLOWRA — Service Worker
+/** âœ¦ Krytz â€” Service Worker
  *
  * Strategy:
- * - App shell (HTML, CSS, JS) → Cache-first with network update
- * - API calls → Network-first with cache fallback
+ * - App shell (HTML, CSS, JS) â†’ Cache-first with network update
+ * - API calls â†’ Network-first with cache fallback
  * - Offline page for navigation requests that fail
  */
 
-const CACHE_NAME = 'flowra-v1';
-const SHELL_CACHE = 'flowra-shell-v1';
-const API_CACHE = 'flowra-api-v1';
+const CACHE_NAME = 'Krytz-v1';
+const SHELL_CACHE = 'Krytz-shell-v1';
+const API_CACHE = 'Krytz-api-v1';
 
 const SHELL_URLS = [
   '/',
   '/index.html',
 ];
 
-// ── Install ─────────────────────────────────────────────────────────
+// â”€â”€ Install â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
@@ -24,7 +24,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// ── Activate ────────────────────────────────────────────────────────
+// â”€â”€ Activate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ── Fetch ───────────────────────────────────────────────────────────
+// â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -46,13 +46,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
-  // API requests → Network-first
+  // API requests â†’ Network-first
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
 
-  // Navigation requests → App shell (SPA)
+  // Navigation requests â†’ App shell (SPA)
   if (request.mode === 'navigate') {
     event.respondWith(
       caches.match('/index.html')
@@ -62,17 +62,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets → Cache-first
+  // Static assets â†’ Cache-first
   if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff2?)$/)) {
     event.respondWith(cacheFirst(request, SHELL_CACHE));
     return;
   }
 
-  // Everything else → Network with cache fallback
+  // Everything else â†’ Network with cache fallback
   event.respondWith(networkFirst(request, CACHE_NAME));
 });
 
-// ── Strategies ──────────────────────────────────────────────────────
+// â”€â”€ Strategies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
@@ -107,7 +107,7 @@ async function networkFirst(request, cacheName) {
   }
 }
 
-// ── Background Sync (future) ────────────────────────────────────────
+// â”€â”€ Background Sync (future) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();

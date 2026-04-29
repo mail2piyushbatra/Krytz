@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — App Shell + Router (v2)
+/** âœ¦ Krytz â€” App Shell + Router (v2)
  *
  * Closes architecture gaps:
  * - #3  Error boundaries (wraps all routes)
@@ -25,7 +25,7 @@ import InspectorScreen from './screens/InspectorScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 
-// ── Lazy-loaded screens (code splitting) ──────────────────────
+// â”€â”€ Lazy-loaded screens (code splitting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PLATFORM_LANDING_BY_ROLE = {
   founder: '/platform/founder',
   operator: '/platform/operator',
@@ -48,12 +48,12 @@ export default function App() {
 
   useEffect(() => { init(); }, []);
 
-  // ── Global Cmd+K / Ctrl+K shortcut ──────────────
+  // â”€â”€ Global Cmd+K / Ctrl+K shortcut â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent('flowra:open-capture'));
+        window.dispatchEvent(new CustomEvent('Krytz:open-capture'));
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -79,7 +79,7 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <OfflineBanner />
-        <div className="layout" role="application" aria-label="Flowra application">
+        <div className="layout" role="application" aria-label="Krytz application">
           <Sidebar />
           <ErrorBoundary>
             <MainContent />
@@ -138,7 +138,7 @@ function MainContent() {
 
 function SplashScreen() {
   return (
-    <div className="splash" role="status" aria-label="Loading Flowra" style={{
+    <div className="splash" role="status" aria-label="Loading Krytz" style={{
       minHeight: '100dvh',
       display: 'flex',
       alignItems: 'center',
@@ -154,13 +154,13 @@ function SplashScreen() {
         WebkitTextFillColor: 'transparent',
         filter: 'drop-shadow(0 0 20px rgba(200, 164, 90, 0.2))',
         animation: 'pulse 2s ease-in-out infinite',
-      }}>✦</span>
+      }}>âœ¦</span>
       <span style={{
         color: 'var(--text-secondary)',
         fontSize: '0.875rem',
         letterSpacing: '3px',
         textTransform: 'uppercase',
-      }}>flowra</span>
+      }}>Krytz</span>
     </div>
   );
 }

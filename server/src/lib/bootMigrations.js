@@ -13,8 +13,8 @@ const MIGRATION_FILES = [
 ];
 
 async function runBootMigrations(db) {
-  if (process.env.FLOWRA_SKIP_BOOT_MIGRATIONS === 'true') {
-    logger.info('Boot migrations skipped by FLOWRA_SKIP_BOOT_MIGRATIONS');
+  if (process.env.Krytz_SKIP_BOOT_MIGRATIONS === 'true') {
+    logger.info('Boot migrations skipped by Krytz_SKIP_BOOT_MIGRATIONS');
     return;
   }
 

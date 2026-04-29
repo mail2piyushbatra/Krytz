@@ -1,10 +1,10 @@
-/** ✦ FLOWRA — useTheme hook
+/** âœ¦ Krytz â€” useTheme hook
  *  Persists theme preference in localStorage.
- *  Applies [data-theme] on <html> — zero component changes needed.
+ *  Applies [data-theme] on <html> â€” zero component changes needed.
  */
 import { useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'flowra_theme';
+const STORAGE_KEY = 'Krytz_theme';
 
 export function useTheme() {
   const [theme, setTheme] = useState(() => {

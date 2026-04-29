@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-document.title = 'Flowra — Your life, reconstructed.'
+document.title = 'Krytz â€” Your life, reconstructed.'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -11,12 +11,12 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// ── Service Worker Registration ─────────────────────────────────────
+// â”€â”€ Service Worker Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(reg => {
-        console.log('[Flowra] SW registered, scope:', reg.scope);
+        console.log('[Krytz] SW registered, scope:', reg.scope);
 
         // Check for updates periodically
         setInterval(() => reg.update(), 60 * 60 * 1000); // hourly
@@ -27,12 +27,12 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
           if (!newWorker) return;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content available — could show a toast here
-              console.log('[Flowra] New version available — refresh to update.');
+              // New content available â€” could show a toast here
+              console.log('[Krytz] New version available â€” refresh to update.');
             }
           });
         });
       })
-      .catch(err => console.warn('[Flowra] SW registration failed:', err));
+      .catch(err => console.warn('[Krytz] SW registration failed:', err));
   });
 }

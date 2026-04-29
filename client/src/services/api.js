@@ -1,12 +1,12 @@
-/** ✦ FLOWRA — API Client
+/** âœ¦ Krytz â€” API Client
  *  Connects to the Express backend (default: localhost:8301).
  *  Handles JWT auth, auto-refresh, and response unwrapping.
  */
 
 export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8301/api/v1';
 
-let accessToken = localStorage.getItem('flowra_token');
-let refreshToken = localStorage.getItem('flowra_refresh');
+let accessToken = localStorage.getItem('Krytz_token');
+let refreshToken = localStorage.getItem('Krytz_refresh');
 let onUnauthorized = null;
 
 export function setAuthCallback(cb) { onUnauthorized = cb; }
@@ -14,10 +14,10 @@ export function setAuthCallback(cb) { onUnauthorized = cb; }
 function setTokens(access, refresh) {
   accessToken = access;
   refreshToken = refresh;
-  if (access) localStorage.setItem('flowra_token', access);
-  else localStorage.removeItem('flowra_token');
-  if (refresh) localStorage.setItem('flowra_refresh', refresh);
-  else localStorage.removeItem('flowra_refresh');
+  if (access) localStorage.setItem('Krytz_token', access);
+  else localStorage.removeItem('Krytz_token');
+  if (refresh) localStorage.setItem('Krytz_refresh', refresh);
+  else localStorage.removeItem('Krytz_refresh');
 }
 
 export function clearTokens() { setTokens(null, null); }
@@ -76,7 +76,7 @@ class ApiError extends Error {
   }
 }
 
-// ── Auth ──────────────────────────────────────────────────
+// â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const auth = {
   async register(email, password, name) {
     const data = await request('/auth/register', {
@@ -117,40 +117,40 @@ export const auth = {
   },
 };
 
-// ── Capture / Entries ─────────────────────────────────────
+// â”€â”€ Capture / Entries â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const entries = {
   /**
-   * Free-form capture → /capture (AI pipeline, async 202).
-   * Structured types (todo/done/blocked/note) → /entries (instant handling).
+   * Free-form capture â†’ /capture (AI pipeline, async 202).
+   * Structured types (todo/done/blocked/note) â†’ /entries (instant handling).
    */
   async capture(rawInput, opts = {}) {
     const type = opts.type || 'capture';
     if (type === 'capture') {
-      // AI-pipeline path — POST /capture
+      // AI-pipeline path â€” POST /capture
       return request('/capture', {
         method: 'POST',
         body: JSON.stringify({ raw_input: rawInput, source: 'manual', ...opts }),
       });
     }
-    // Structured type — direct entry with instant state handling
+    // Structured type â€” direct entry with instant state handling
     return request('/entries', {
       method: 'POST',
       body: JSON.stringify({ rawText: rawInput, type, category: opts.category }),
     });
   },
-  /** Direct todo items — skips LLM, zero latency */
+  /** Direct todo items â€” skips LLM, zero latency */
   async todo(rawInput, category) {
     return this.capture(rawInput, { type: 'todo', category });
   },
-  /** Mark something as done — instant state update */
+  /** Mark something as done â€” instant state update */
   async done(rawInput, category) {
     return this.capture(rawInput, { type: 'done', category });
   },
-  /** Flag something as blocked — instant state update */
+  /** Flag something as blocked â€” instant state update */
   async blocked(rawInput, category) {
     return this.capture(rawInput, { type: 'blocked', category });
   },
-  /** Store a note — no extraction, pure journal */
+  /** Store a note â€” no extraction, pure journal */
   async note(rawInput, category) {
     return this.capture(rawInput, { type: 'note', category });
   },
@@ -174,7 +174,7 @@ export const entries = {
   },
 };
 
-// ── Files ─────────────────────────────────────────────────
+// â”€â”€ Files â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const files = {
   async getUploadUrl(fileName, fileType, fileSize) {
     return request('/files/upload-url', {
@@ -189,7 +189,7 @@ export const files = {
     });
   },
   async upload(file) {
-    // Full upload flow: get presigned URL → upload → confirm
+    // Full upload flow: get presigned URL â†’ upload â†’ confirm
     const { uploadUrl, fileKey } = await this.getUploadUrl(file.name, file.type, file.size);
     await fetch(uploadUrl, {
       method: 'PUT',
@@ -200,7 +200,7 @@ export const files = {
   },
 };
 
-// ── Plan / State ──────────────────────────────────────────
+// â”€â”€ Plan / State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const plan = {
   async today() { return request('/plan/today'); },
   async week()  { return request('/intelligence/plan/week'); },
@@ -223,12 +223,12 @@ export const actions = {
   },
 };
 
-// ── Stats ─────────────────────────────────────────────────
+// â”€â”€ Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const stats = {
   async get() { return request('/stats'); },
 };
 
-// ── Intelligence (advanced features) ──────────────────────
+// â”€â”€ Intelligence (advanced features) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const intelligence = {
   async contradictions()             { return request('/intelligence/contradictions'); },
   async resolveContradiction(id)     { return request(`/intelligence/contradictions/${id}/resolve`, { method: 'POST' }); },
@@ -243,7 +243,7 @@ export const intelligence = {
   async metricsCosts()               { return request('/metrics/costs'); },
 };
 
-// ── Recall ────────────────────────────────────────────────
+// â”€â”€ Recall â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const recall = {
   async query(question) {
     return request('/recall', {
@@ -253,7 +253,7 @@ export const recall = {
   },
 };
 
-// ── Rules ─────────────────────────────────────────────────
+// â”€â”€ Rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const rules = {
   async list() { return request('/rules'); },
   async create(rule) {
@@ -267,7 +267,7 @@ export const rules = {
   },
 };
 
-// ── Notifications ─────────────────────────────────────────
+// â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const notifications = {
   async list(params = {}) {
     const qs = new URLSearchParams(params).toString();
@@ -281,7 +281,7 @@ export const notifications = {
   },
 };
 
-// ── Billing ───────────────────────────────────────────────
+// â”€â”€ Billing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Lives under /intelligence/billing/tier, NOT /billing/tier
 export const billing = {
   async tier() { return request('/intelligence/billing/tier'); },
@@ -293,7 +293,7 @@ export const billing = {
   },
 };
 
-// ── Profile ───────────────────────────────────────────────
+// â”€â”€ Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const profile = {
   async update(fields) {
     // Backend route is PATCH /auth/me, not /profile
@@ -340,7 +340,7 @@ export const platform = {
   },
 };
 
-// ── Items (Todo Ledger) ───────────────────────────────────────
+// â”€â”€ Items (Todo Ledger) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const items = {
   async list(filters = {}) {
     const params = new URLSearchParams();
@@ -380,7 +380,7 @@ export const items = {
   },
 };
 
-// ── Categories ────────────────────────────────────────────────
+// â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const categories = {
   async list() { return request('/categories'); },
   async create(data) {
@@ -394,13 +394,13 @@ export const categories = {
   },
 };
 
-// ── Analytics ─────────────────────────────────────────────────
+// â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const analytics = {
   async overview() { return request('/analytics/overview'); },
   async category(name) { return request(`/analytics/category/${encodeURIComponent(name)}`); },
 };
 
-// ── Export ─────────────────────────────────────────────────────
+// â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const dataExport = {
   async download() {
     const res = await request('/export');
@@ -409,7 +409,7 @@ export const dataExport = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `flowra-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `Krytz-export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     return res;
@@ -437,14 +437,14 @@ export const dataExport = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `flowra-items-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Krytz-items-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     return { count: items.length };
   },
 };
 
-// ── Inspector (observability & engine introspection) ───────
+// â”€â”€ Inspector (observability & engine introspection) â”€â”€â”€â”€â”€â”€â”€
 export const inspector = {
   async traces(limit = 50)       { return request(`/inspector/traces?limit=${limit}`); },
   async replay(traceId)          { return request(`/inspector/replay/${traceId}`); },

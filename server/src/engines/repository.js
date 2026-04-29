@@ -1,12 +1,12 @@
 /**
- * ✦ FLOWRA REPOSITORY — v3
+ * âœ¦ Krytz REPOSITORY â€” v3
  *
  * Decouples all engines from the database driver.
- * Engines depend on this interface — NEVER on pg or SQL directly.
+ * Engines depend on this interface â€” NEVER on pg or SQL directly.
  *
  * Implementations:
- *   PgRepository       — production (PostgreSQL via pg Pool)
- *   InMemoryRepository — tests / local dev without DB
+ *   PgRepository       â€” production (PostgreSQL via pg Pool)
+ *   InMemoryRepository â€” tests / local dev without DB
  *
  * Interface methods required by engines:
  *
@@ -30,10 +30,10 @@
 
 const db = require('../lib/db');
 
-// ─── PgRepository (production) ───────────────────────────────────────────────
+// â”€â”€â”€ PgRepository (production) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class PgRepository {
 
-  // ── Entry ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async findEntry(entryId) {
     const { rows } = await db.query(
@@ -74,7 +74,7 @@ class PgRepository {
   }
 
   /**
-   * Get entries for a specific day (dayStart → dayEnd).
+   * Get entries for a specific day (dayStart â†’ dayEnd).
    * Used by StateEngine.recomputeDaily.
    */
   async getEntriesForDay(userId, dayStart, dayEnd, opts = {}) {
@@ -131,7 +131,7 @@ class PgRepository {
     return rows.map(r => this._mapEntry(r));
   }
 
-  // ── Daily state ────────────────────────────────────────────────────────────
+  // â”€â”€ Daily state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async getDailyState(userId, date) {
     const { rows } = await db.query(
@@ -166,7 +166,7 @@ class PgRepository {
     return rows.map(r => this._mapDailyState(r));
   }
 
-  // ── Entry count ───────────────────────────────────────────────────────────
+  // â”€â”€ Entry count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async countEntries(userId) {
     const { rows } = await db.query(
@@ -175,7 +175,7 @@ class PgRepository {
     return parseInt(rows[0].n);
   }
 
-  // ── Mappers ───────────────────────────────────────────────────────────────
+  // â”€â”€ Mappers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _mapEntry(row) {
     const es = row.extracted_state;
@@ -225,7 +225,7 @@ function _parseJson(val, fallback) {
   try { return JSON.parse(val); } catch { return fallback; }
 }
 
-// ─── InMemoryRepository (tests / local dev without DB) ───────────────────────
+// â”€â”€â”€ InMemoryRepository (tests / local dev without DB) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class InMemoryRepository {
   constructor() {
     this._entries         = new Map();
@@ -322,7 +322,7 @@ class InMemoryRepository {
     return [...this._entries.values()].filter(e => e.userId === userId).length;
   }
 
-  // ── Test helpers ──────────────────────────────────────────────────────────
+  // â”€â”€ Test helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _seedEntry(entry) {
     this._entries.set(entry.id, {
@@ -346,7 +346,7 @@ class InMemoryRepository {
   }
 }
 
-// Default singleton — production use
+// Default singleton â€” production use
 const defaultRepository = new PgRepository();
 
 module.exports = defaultRepository;

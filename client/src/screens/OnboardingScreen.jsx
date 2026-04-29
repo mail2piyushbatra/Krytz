@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Onboarding Screen (v3: premium animated experience) */
+/** âœ¦ Krytz â€” Onboarding Screen (v3: premium animated experience) */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
@@ -16,7 +16,7 @@ const slides = [
   },
   {
     title: "Always know what's next.",
-    text: "Flowra calculates priority using deadlines, staleness, and blockages to build your operating state. No more manual sorting.",
+    text: "Krytz calculates priority using deadlines, staleness, and blockages to build your operating state. No more manual sorting.",
     Icon: Zap,
     accent: '#6c5ce7',
   },
@@ -82,7 +82,7 @@ export default function OnboardingScreen() {
           onClick={handleNext}
           icon={currentSlide === slides.length - 1 ? Sparkles : ArrowRight}
         >
-          {currentSlide === slides.length - 1 ? "Enter Flowra" : "Next"}
+          {currentSlide === slides.length - 1 ? "Enter Krytz" : "Next"}
         </ActionBtn>
 
         {currentSlide > 0 && (

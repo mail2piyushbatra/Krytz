@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Auth Screen (Login / Register / Reset) */
+/** âœ¦ Krytz â€” Auth Screen (Login / Register / Reset) */
 import { useState, useEffect } from 'react';
 import useAuthStore from '../stores/authStore';
 import { auth } from '../services/api';
@@ -82,8 +82,8 @@ export default function AuthScreen() {
 
       <form className="auth-card glass animate-scaleIn" onSubmit={handleSubmit}>
         <div className="auth-logo">
-          <span className="auth-logo-mark">✦</span>
-          <h1 className="auth-logo-text">flowra</h1>
+          <span className="auth-logo-mark">âœ¦</span>
+          <h1 className="auth-logo-text">Krytz</h1>
         </div>
         <p className="auth-tagline">
           {mode === 'forgot' ? 'Reset your password' : mode === 'reset' ? 'Create new password' : 'Your life, reconstructed.'}
@@ -163,7 +163,7 @@ export default function AuthScreen() {
           ) : mode === 'register' ? (
             <p className="auth-switch">Already have an account? <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>Sign in</button></p>
           ) : (
-            <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>← Back to login</button>
+            <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>â† Back to login</button>
           )}
         </div>
       </form>

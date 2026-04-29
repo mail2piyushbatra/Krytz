@@ -1,7 +1,7 @@
 /**
- * ✦ BASE ENGINE — v2
+ * âœ¦ BASE ENGINE â€” v2
  *
- * Abstract base class for all Flowra engines.
+ * Abstract base class for all Krytz engines.
  *
  * Upgrades from v1:
  *   - p50/p95 latency tracking (sliding window, 1000 samples)
@@ -13,7 +13,7 @@
 
 'use strict';
 
-// ─── Percentile helper ────────────────────────────────────────────────────────
+// â”€â”€â”€ Percentile helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function percentile(arr, p) {
   if (arr.length === 0) return 0;
   const sorted = [...arr].sort((a, b) => a - b);
@@ -27,7 +27,7 @@ class BaseEngine {
     this.initialized = false;
     this.startedAt   = null;
 
-    // ── Call stats ──────────────────────────────────────────────
+    // â”€â”€ Call stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     this._stats = {
       totalCalls:   0,
       totalErrors:  0,
@@ -35,18 +35,18 @@ class BaseEngine {
       lastCallAt:   null,
     };
 
-    // ── Latency tracking (sliding window) ──────────────────────
+    // â”€â”€ Latency tracking (sliding window) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     this._latencies  = [];           // ms values, capped at 1000
     this._windowSize = 1000;
 
-    // ── Cost tracking ───────────────────────────────────────────
+    // â”€â”€ Cost tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     this._cost = {
       inputTokens:  0,
       outputTokens: 0,
       usd:          0,
     };
 
-    // ── Circuit breaker ─────────────────────────────────────────
+    // â”€â”€ Circuit breaker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     this._circuit = {
       open:         false,
       openedAt:     null,
@@ -55,11 +55,11 @@ class BaseEngine {
       minSamples:   10,          // need at least 10 calls before tripping
     };
 
-    // ── Throughput ──────────────────────────────────────────────
+    // â”€â”€ Throughput â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     this._callTimestamps = [];   // last 60s of call timestamps
   }
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Lifecycle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async initialize() {
     this.initialized = true;
@@ -72,11 +72,11 @@ class BaseEngine {
     }
   }
 
-  // ─── Observability ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Observability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
    * Call at the START of every engine operation.
-   * Returns a done() function — call it when the operation completes.
+   * Returns a done() function â€” call it when the operation completes.
    *
    * Usage:
    *   const done = this.startCall();
@@ -155,7 +155,7 @@ class BaseEngine {
     };
   }
 
-  // ─── Circuit breaker ──────────────────────────────────────────────────────
+  // â”€â”€â”€ Circuit breaker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _checkCircuitBreaker() {
     if (!this._circuit.open) return;
@@ -183,7 +183,7 @@ class BaseEngine {
     }
   }
 
-  // ─── Latency ──────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Latency â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _recordLatency(ms) {
     this._latencies.push(ms);

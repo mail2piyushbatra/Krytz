@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Auth Store (Zustand) */
+/** âœ¦ Krytz â€” Auth Store (Zustand) */
 import { create } from 'zustand';
 import { auth as authApi, setAuthCallback, getToken, clearTokens } from '../services/api';
 

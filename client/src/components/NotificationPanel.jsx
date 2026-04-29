@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Notification Panel */
+/** âœ¦ Krytz â€” Notification Panel */
 import { useState, useEffect, useRef } from 'react';
 import { notifications } from '../services/api';
 import './NotificationPanel.css';
@@ -56,17 +56,17 @@ export default function NotificationPanel() {
   }
 
   const typeIcons = {
-    reminder: '⏰',
-    insight: '💡',
-    alert: '⚠️',
-    achievement: '🏆',
-    system: '🔔',
+    reminder: 'â°',
+    insight: 'ðŸ’¡',
+    alert: 'âš ï¸',
+    achievement: 'ðŸ†',
+    system: 'ðŸ””',
   };
 
   return (
     <div className="notif-wrapper" ref={panelRef}>
       <button className="notif-bell" onClick={toggle} title="Notifications" id="notif-bell">
-        🔔
+        ðŸ””
         {unread > 0 && <span className="notif-badge-count">{unread > 9 ? '9+' : unread}</span>}
       </button>
 
@@ -90,7 +90,7 @@ export default function NotificationPanel() {
                   onClick={() => !notif.read && !notif.read_at && markRead(notif.id)}
                 >
                   <span className="notif-icon">
-                    {typeIcons[notif.type] || typeIcons[notif.notification_type] || '🔔'}
+                    {typeIcons[notif.type] || typeIcons[notif.notification_type] || 'ðŸ””'}
                   </span>
                   <div className="notif-content">
                     <p className="notif-message">{notif.message || notif.title}</p>
@@ -103,7 +103,7 @@ export default function NotificationPanel() {
               ))
             ) : (
               <div className="notif-empty">
-                <span>🔕</span>
+                <span>ðŸ”•</span>
                 <p>No notifications yet</p>
               </div>
             )}

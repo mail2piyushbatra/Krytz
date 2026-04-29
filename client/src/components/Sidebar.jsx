@@ -1,9 +1,9 @@
-/** ✦ FLOWRA — Sidebar (v2)
+/** âœ¦ Krytz â€” Sidebar (v2)
  * 
  * Closes gaps:
  * 1. Proper SVG icons instead of single letters
  * 2. Unread notification badge count (delegated to NotificationPanel which already has it)
- * 3. Sidebar collapse toggle (icon-only ↔ expanded with labels)
+ * 3. Sidebar collapse toggle (icon-only â†” expanded with labels)
  * 4. Settings added to main nav
  */
 import { useState } from 'react';
@@ -12,7 +12,7 @@ import useAuthStore from '../stores/authStore';
 import NotificationPanel from './NotificationPanel';
 import './Sidebar.css';
 
-// ── SVG Icon components (inline, zero dependencies) ─────────────
+// â”€â”€ SVG Icon components (inline, zero dependencies) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function IconCommand() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -110,14 +110,14 @@ function IconExpand() {
 }
 
 const navItems = [
-  { path: '/', icon: IconCommand, label: 'Home', mobileIcon: '⊞', userOnly: true },
-  { path: '/strategy', icon: IconStrategy, label: 'Overview', mobileIcon: '⊡', userOnly: true },
-  { path: '/tasks', icon: IconTasks, label: 'Tasks', mobileIcon: '☑', userOnly: true },
-  { path: '/timeline', icon: IconTimeline, label: 'Journal', mobileIcon: '⊙', userOnly: true },
-  { path: '/search', icon: IconSearch, label: 'Search', mobileIcon: '⊘', userOnly: true },
-  { path: '/platform', icon: IconPlatform, label: 'Console', mobileIcon: '⊟', platformOnly: true },
-  { path: '/inspector', icon: IconInspector, label: 'Admin', mobileIcon: '⌕', platformOnly: true },
-  { path: '/settings', icon: IconSettings, label: 'Settings', mobileIcon: '⊛' },
+  { path: '/', icon: IconCommand, label: 'Home', mobileIcon: 'âŠž', userOnly: true },
+  { path: '/strategy', icon: IconStrategy, label: 'Overview', mobileIcon: 'âŠ¡', userOnly: true },
+  { path: '/tasks', icon: IconTasks, label: 'Tasks', mobileIcon: 'â˜‘', userOnly: true },
+  { path: '/timeline', icon: IconTimeline, label: 'Journal', mobileIcon: 'âŠ™', userOnly: true },
+  { path: '/search', icon: IconSearch, label: 'Search', mobileIcon: 'âŠ˜', userOnly: true },
+  { path: '/platform', icon: IconPlatform, label: 'Console', mobileIcon: 'âŠŸ', platformOnly: true },
+  { path: '/inspector', icon: IconInspector, label: 'Admin', mobileIcon: 'âŒ•', platformOnly: true },
+  { path: '/settings', icon: IconSettings, label: 'Settings', mobileIcon: 'âŠ›' },
 ];
 
 const PLATFORM_ROLES = ['founder', 'operator', 'devops', 'coder', 'support'];
@@ -152,7 +152,7 @@ export default function Sidebar() {
       <aside className={`sidebar ${collapsed ? '' : 'sidebar-expanded'}`} id="sidebar-nav">
         <div className="sidebar-logo">
           <span className="logo-mark">F</span>
-          {!collapsed && <span className="logo-text">flowra</span>}
+          {!collapsed && <span className="logo-text">Krytz</span>}
         </div>
 
         <nav className="sidebar-nav">

@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Recall Screen (v3: spotlight interface)
+/** âœ¦ Krytz â€” Recall Screen (v3: spotlight interface)
  *  Mode A: AI Recall (natural language Q&A via /recall)
  *  Mode B: Semantic Search (vector similarity via /items/search)
  */
@@ -17,7 +17,7 @@ export default function RecallScreen() {
   const [error, setError]           = useState(null);
   const inputRef = useRef(null);
   const [history, setHistory]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem('flowra_recall_history') || '[]'); }
+    try { return JSON.parse(localStorage.getItem('Krytz_recall_history') || '[]'); }
     catch { return []; }
   });
 
@@ -40,7 +40,7 @@ export default function RecallScreen() {
         setSemantic(data?.results || data?.items || []);
         saveToHistory(query.trim());
       } else {
-        // AI recall — natural language Q&A
+        // AI recall â€” natural language Q&A
         try {
           const data = await recallApi.query(query.trim());
           setAnswer(data);
@@ -54,7 +54,7 @@ export default function RecallScreen() {
           );
           if (matches.length > 0) {
             setAnswer({
-              answer: `AI recall unavailable — found ${matches.length} matching entries:`,
+              answer: `AI recall unavailable â€” found ${matches.length} matching entries:`,
               sources: matches.slice(0, 5),
               fallback: true,
             });
@@ -74,12 +74,12 @@ export default function RecallScreen() {
   function saveToHistory(q) {
     const updated = [q, ...history.filter(h => h !== q)].slice(0, 10);
     setHistory(updated);
-    localStorage.setItem('flowra_recall_history', JSON.stringify(updated));
+    localStorage.setItem('Krytz_recall_history', JSON.stringify(updated));
   }
 
   function clearHistory() {
     setHistory([]);
-    localStorage.removeItem('flowra_recall_history');
+    localStorage.removeItem('Krytz_recall_history');
   }
 
   const placeholders = {
@@ -163,7 +163,7 @@ export default function RecallScreen() {
       {/* Error */}
       {error && (
         <Card className="recall-error animate-slideUp">
-          <p>⚠️ {error}</p>
+          <p>âš ï¸ {error}</p>
         </Card>
       )}
 
@@ -268,7 +268,7 @@ export default function RecallScreen() {
           icon={mode === 'semantic' ? Target : Search}
           title={mode === 'semantic' ? 'Find similar items' : 'Ask anything about your notes'}
           description={mode === 'semantic'
-            ? 'Type any phrase — semantic search finds items with similar meaning, not just exact words.'
+            ? 'Type any phrase â€” semantic search finds items with similar meaning, not just exact words.'
             : 'Try: "What meetings did I have this week?" or "Am I still blocked on anything?"'}
         />
       )}

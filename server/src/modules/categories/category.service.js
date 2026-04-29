@@ -1,5 +1,5 @@
 /**
- * ✦ FLOWRA — Categories Service
+ * âœ¦ Krytz â€” Categories Service
  *
  * User-defined static buckets (Infra, Product, Hiring, Fundraise, etc.)
  * with item counts per state. Categories give structure to the CEO's mental model.
@@ -9,7 +9,7 @@ const db = require('../../lib/db');
 const logger = require('../../lib/logger');
 const { AppError } = require('../../middleware/errorHandler');
 
-// ─── Row mapper ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Row mapper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function toApiCategory(row) {
   return {
@@ -29,7 +29,7 @@ function toApiCategory(row) {
   };
 }
 
-// ─── List categories with item counts ─────────────────────────────────────────
+// â”€â”€â”€ List categories with item counts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function listCategories(userId) {
   // Get user-defined categories with item counts
@@ -86,7 +86,7 @@ async function listCategories(userId) {
   return categories;
 }
 
-// ─── Create category ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Create category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function createCategory(userId, { name, color, sortOrder }) {
   try {
@@ -105,7 +105,7 @@ async function createCategory(userId, { name, color, sortOrder }) {
   }
 }
 
-// ─── Update category ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Update category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function updateCategory(userId, categoryId, updates) {
   const sets = [];
@@ -154,7 +154,7 @@ async function updateCategory(userId, categoryId, updates) {
   return toApiCategory(rows[0]);
 }
 
-// ─── Delete category ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Delete category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function deleteCategory(userId, categoryId) {
   const { rows } = await db.query(
@@ -174,7 +174,7 @@ async function deleteCategory(userId, categoryId) {
   return { message: `Category "${rows[0].name}" deleted. ${rowCount} items moved to uncategorized.` };
 }
 
-// ─── Seed default categories for new users ───────────────────────────────────
+// â”€â”€â”€ Seed default categories for new users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const DEFAULT_CATEGORIES = [
   { name: 'infra',      color: '#4B7BD4', sortOrder: 1 },

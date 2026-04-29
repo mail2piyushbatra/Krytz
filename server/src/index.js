@@ -17,7 +17,7 @@ const exportRoutes   = require('./modules/export/export.routes');
 const { errorHandler } = require('./middleware/errorHandler');
 const db = require('./lib/db');
 
-// ─── V3 Infrastructure ────────────────────────────────────────────
+// â”€â”€â”€ V3 Infrastructure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const { intelligenceRoutes, stripeWebhookRoute } = require('./modules/intelligence/intelligence.routes');
 const productRoutesV2 = require('./modules/product/product.routes.v2');
 const supportRoutes   = require('./modules/support/support.routes');
@@ -28,13 +28,13 @@ const { tierMiddleware } = require('./lib/tiers');
 const { startCron }     = require('./lib/cron');
 const { runBootMigrations } = require('./lib/bootMigrations');
 
-// Single shared pg Pool — all modules use lib/db.js
+// Single shared pg Pool â€” all modules use lib/db.js
 const pool = db;
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// ─── Global Middleware ────────────────────────────────────────────
+// â”€â”€â”€ Global Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const { requestId } = require('./middleware/requestId');
 app.use(requestId);
@@ -73,12 +73,12 @@ const aiLimiter = rateLimit({
   },
 });
 
-// ─── Health Check ─────────────────────────────────────────────────
+// â”€â”€â”€ Health Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'flowra-api',
+    service: 'Krytz-api',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
@@ -93,9 +93,9 @@ app.get('/health/engines', (req, res) => {
   });
 });
 
-// ─── API Routes ───────────────────────────────────────────────────
+// â”€â”€â”€ API Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Stripe webhook FIRST (needs raw body — before express.json)
+// Stripe webhook FIRST (needs raw body â€” before express.json)
 if (pool) app.use('/api/v1', stripeWebhookRoute(pool));
 
 app.use('/api/v1/auth', authRoutes);
@@ -108,7 +108,7 @@ app.use('/api/v1/state', stateRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/recall', aiLimiter, recallRoutes);
 
-// ─── V3 Routes (pool-based, tier + RLS aware) ─────────────────────
+// â”€â”€â”€ V3 Routes (pool-based, tier + RLS aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if (pool) {
   // Attach tier to req for feature-gate middleware
   app.use('/api/v1', tierMiddleware(pool));
@@ -131,7 +131,7 @@ if (pool) {
   app.use('/api/v1/inspector', inspectorRoutes(pool));
 }
 
-// ─── 404 Handler ──────────────────────────────────────────────────
+// â”€â”€â”€ 404 Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.use((req, res) => {
   res.status(404).json({
@@ -140,11 +140,11 @@ app.use((req, res) => {
   });
 });
 
-// ─── Error Handler ────────────────────────────────────────────────
+// â”€â”€â”€ Error Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 app.use(errorHandler);
 
-// ─── Start Server ─────────────────────────────────────────────────
+// â”€â”€â”€ Start Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const { initializeEngines } = require('./engines');
 
@@ -163,7 +163,7 @@ async function start() {
   logger.info('All engines initialized');
 
   server = app.listen(PORT, () => {
-    logger.info(`Flowra API running`, { port: PORT, env: process.env.NODE_ENV || 'development' });
+    logger.info(`Krytz API running`, { port: PORT, env: process.env.NODE_ENV || 'development' });
   });
 
   // Start cron scheduler (requires pg pool)
@@ -173,7 +173,7 @@ async function start() {
   }
 }
 
-// ─── Graceful Shutdown ────────────────────────────────────────────
+// â”€â”€â”€ Graceful Shutdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function shutdown(signal) {
   logger.info(`${signal} received. Shutting down gracefully...`);

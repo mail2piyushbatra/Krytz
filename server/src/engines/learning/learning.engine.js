@@ -1,7 +1,7 @@
 /**
- * ✦ LEARNING ENGINE
+ * âœ¦ LEARNING ENGINE
  *
- * Adapts Flowra to user behavior over time. Learns from outcomes to calibrate:
+ * Adapts Krytz to user behavior over time. Learns from outcomes to calibrate:
  *   1. Capacity limits (how much can this user realistically handle?)
  *   2. Priority signal weights (what signals matter most for this user?)
  *   3. Context boost effectiveness (which boosts actually improve outcomes?)
@@ -19,7 +19,7 @@
 
 const logger = require('../../lib/logger');
 
-// ─── Default user model ───────────────────────────────────────────────────────
+// â”€â”€â”€ Default user model â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DEFAULT_MODEL = {
   capacityLimits: {
     maxDailyMinutes:    360,
@@ -117,7 +117,7 @@ async function calibrate(db, userId) {
   return model;
 }
 
-// ─── Capacity Calibration ─────────────────────────────────────────────────────
+// â”€â”€â”€ Capacity Calibration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function _calibrateCapacity(db, userId) {
   // Look at actual completion patterns to estimate true daily capacity
@@ -165,7 +165,7 @@ async function _calibrateCapacity(db, userId) {
   };
 }
 
-// ─── Priority Weight Calibration ──────────────────────────────────────────────
+// â”€â”€â”€ Priority Weight Calibration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function _calibratePriorityWeights(db, userId) {
   // Compare what the user actually completed vs what was suggested
@@ -209,10 +209,10 @@ async function _calibratePriorityWeights(db, userId) {
   return weights;
 }
 
-// ─── Context Boost Calibration ────────────────────────────────────────────────
+// â”€â”€â”€ Context Boost Calibration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function _calibrateContextBoosts(db, userId) {
-  // Analyze completion times — when does the user actually complete things?
+  // Analyze completion times â€” when does the user actually complete things?
   const { rows } = await db.query(
     `SELECT EXTRACT(HOUR FROM ie.created_at) AS hour,
             count(*) AS completions
@@ -236,12 +236,12 @@ async function _calibrateContextBoosts(db, userId) {
 
   return {
     morningMomentum: morningCompletions / total > 0.4 ? 0.15 : 0.05,
-    focusModeShort:  0.10, // keep default — hard to measure without focus mode data
+    focusModeShort:  0.10, // keep default â€” hard to measure without focus mode data
     lowEnergyQuick:  0.10, // keep default
   };
 }
 
-// ─── Behavior Pattern Detection ───────────────────────────────────────────────
+// â”€â”€â”€ Behavior Pattern Detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function _detectBehaviorPatterns(db, userId) {
   const patterns = [];
@@ -284,7 +284,7 @@ async function _detectBehaviorPatterns(db, userId) {
       type:     'FOCUS_BLOCKS',
       severity: 'positive',
       count:    focusBlocks.length,
-      insight:  `You have productive focus blocks — ${focusBlocks.length} sessions with 3+ completions in an hour.`,
+      insight:  `You have productive focus blocks â€” ${focusBlocks.length} sessions with 3+ completions in an hour.`,
     });
   }
 
@@ -335,7 +335,7 @@ async function _detectBehaviorPatterns(db, userId) {
   return patterns;
 }
 
-// ─── Anomaly Threshold Calibration ────────────────────────────────────────────
+// â”€â”€â”€ Anomaly Threshold Calibration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function _calibrateAnomalyThresholds(db, userId) {
   // Use historical priority variance to calibrate spike threshold
@@ -354,7 +354,7 @@ async function _calibrateAnomalyThresholds(db, userId) {
   };
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function _avg(arr) { return arr.length ? arr.reduce((s, v) => s + (parseFloat(v) || 0), 0) / arr.length : 0; }
 

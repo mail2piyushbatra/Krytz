@@ -1,12 +1,12 @@
 /**
- * ✦ PROGRESSIVE INTELLIGENCE
- * Day 1 → simple, Day 7 → personalized, Day 30 → predictive.
+ * âœ¦ PROGRESSIVE INTELLIGENCE
+ * Day 1 â†’ simple, Day 7 â†’ personalized, Day 30 â†’ predictive.
  * Cold start bootstrap: helpful empty state for new users.
  */
 'use strict';
 
 const STAGES = {
-  simple:       { name: 'simple',       minEntries: 0,  minDays: 0,  maxNextItems: 3, showConfidence: false, useSemanticRank: false, useRules: false, planMessage: "Getting started — just capture things and we'll track them." },
+  simple:       { name: 'simple',       minEntries: 0,  minDays: 0,  maxNextItems: 3, showConfidence: false, useSemanticRank: false, useRules: false, planMessage: "Getting started â€” just capture things and we'll track them." },
   personalized: { name: 'personalized', minEntries: 10, minDays: 7,  maxNextItems: 5, showConfidence: true,  useSemanticRank: true,  useRules: true,  planMessage: null },
   predictive:   { name: 'predictive',   minEntries: 50, minDays: 30, maxNextItems: 5, showConfidence: true,  useSemanticRank: true,  useRules: true,  proactive: true, planMessage: null },
 };
@@ -22,7 +22,7 @@ async function getUserStage(db, userId) {
 }
 
 function getColdStartPlan(timezone = 'UTC') {
-  return { focus: null, next: [], blockers: [], carryovers: [], totalOpen: 0, confidence: 0, empty: true, coldStart: true, stage: 'simple', message: "Welcome to Flowra. Start by capturing anything on your mind — tasks, notes, ideas. We'll handle the rest.", suggestions: ["Try: 'Finish the project proposal by Friday'", "Try: 'Call the client about the contract'", "Try: 'Buy groceries — milk, eggs, bread'"], generatedAt: new Date().toISOString() };
+  return { focus: null, next: [], blockers: [], carryovers: [], totalOpen: 0, confidence: 0, empty: true, coldStart: true, stage: 'simple', message: "Welcome to Krytz. Start by capturing anything on your mind â€” tasks, notes, ideas. We'll handle the rest.", suggestions: ["Try: 'Finish the project proposal by Friday'", "Try: 'Call the client about the contract'", "Try: 'Buy groceries â€” milk, eggs, bread'"], generatedAt: new Date().toISOString() };
 }
 
 function applyStageToplan(plan, stage) {

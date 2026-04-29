@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Items Store (Zustand)
+/** âœ¦ Krytz â€” Items Store (Zustand)
  *
  * Centralized state for items across screens.
  * Supports optimistic updates, reducing redundant API calls.

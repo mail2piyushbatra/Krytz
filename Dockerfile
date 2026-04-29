@@ -14,7 +14,7 @@ COPY shared/ ./shared/
 COPY server/ ./server/
 
 
-# ─── Development ───────────────────────────────────────────────
+# â”€â”€â”€ Development â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM base AS development
 
 ENV NODE_ENV=development
@@ -24,7 +24,7 @@ EXPOSE 8000
 # Run migrations then start dev server
 CMD ["sh", "-c", "cd /app && npm run dev:server"]
 
-# ─── Production ────────────────────────────────────────────────
+# â”€â”€â”€ Production â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM node:20-alpine AS production
 
 WORKDIR /app
@@ -46,9 +46,9 @@ COPY server/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
 # Non-root user for security
-RUN addgroup -g 1001 -S flowra && \
-    adduser -S flowra -u 1001 -G flowra
-USER flowra
+RUN addgroup -g 1001 -S Krytz && \
+    adduser -S Krytz -u 1001 -G Krytz
+USER Krytz
 
 EXPOSE 8000
 

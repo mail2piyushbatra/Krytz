@@ -1,10 +1,10 @@
-/* ✦ FLOWRA — Design System
+/* âœ¦ Krytz â€” Design System
    Warm cream executive palette, Inter font, navy/gold accents.
    Premium operations dashboard feel. */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* ── Reset ─────────────────────────────────────────────── */
+/* â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -34,7 +34,7 @@
   --gold-muted:      rgba(200, 164, 90, 0.12);
   --gold-gradient:   linear-gradient(135deg, #C8A45A, #D4B46C);
 
-  /* Status colors — muted, sophisticated */
+  /* Status colors â€” muted, sophisticated */
   --status-action:   #D4574B;
   --status-blocker:  #D49B4B;
   --status-done:     #4B9B6B;
@@ -70,7 +70,7 @@
   --radius-xl:  24px;
   --radius-full: 9999px;
 
-  /* Shadows — warm, subtle */
+  /* Shadows â€” warm, subtle */
   --shadow-sm:   0 1px 3px rgba(27, 42, 74, 0.06);
   --shadow-md:   0 4px 12px rgba(27, 42, 74, 0.08);
   --shadow-lg:   0 8px 32px rgba(27, 42, 74, 0.10);
@@ -93,9 +93,9 @@
   color-scheme: light;
 }
 
-/* ── Dark Theme ────────────────────────────────────────────
+/* â”€â”€ Dark Theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Applied via [data-theme="dark"] on <html>.
-   All tokens override — zero component changes needed.     */
+   All tokens override â€” zero component changes needed.     */
 [data-theme="dark"] {
   --bg-primary:      #0E1117;
   --bg-secondary:    #161B27;
@@ -127,7 +127,7 @@
   color-scheme: dark;
 }
 
-/* ── Base ──────────────────────────────────────────────── */
+/* â”€â”€ Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 body {
   font-family: var(--font-family);
@@ -148,7 +148,7 @@ a:hover { color: var(--accent-hover); }
 ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.2); }
 
-/* ── Glass Card ────────────────────────────────────────── */
+/* â”€â”€ Glass Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .glass {
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
@@ -166,7 +166,7 @@ a:hover { color: var(--accent-hover); }
 }
 .card:hover { border-color: var(--border-strong); }
 
-/* ── Buttons ───────────────────────────────────────────── */
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -209,7 +209,7 @@ a:hover { color: var(--accent-hover); }
 .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
 .btn-icon { padding: var(--space-2); border-radius: var(--radius-md); min-width: 36px; min-height: 36px; }
 
-/* ── Inputs ────────────────────────────────────────────── */
+/* â”€â”€ Inputs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .input {
   width: 100%;
   padding: var(--space-3) var(--space-4);
@@ -228,7 +228,7 @@ a:hover { color: var(--accent-hover); }
 
 textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 
-/* ── Badges / Pills ────────────────────────────────────── */
+/* â”€â”€ Badges / Pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -245,7 +245,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .badge-deadline{ background: rgba(75, 123, 212, 0.10); color: var(--status-deadline); }
 .badge-tag     { background: var(--bg-tertiary); color: var(--text-secondary); }
 
-/* ── Metric Card ───────────────────────────────────────── */
+/* â”€â”€ Metric Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .metric-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
@@ -261,7 +261,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .metric-card .metric-value { font-size: var(--text-2xl); font-weight: 700; line-height: 1; }
 .metric-card .metric-label { font-size: var(--text-xs); color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* ── Layout ────────────────────────────────────────────── */
+/* â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .layout { display: flex; min-height: 100dvh; }
 .main-content {
   flex: 1;
@@ -289,7 +289,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   background: var(--border-subtle);
 }
 
-/* ── Animations ────────────────────────────────────────── */
+/* â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
@@ -321,7 +321,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .stagger > *:nth-child(5) { animation-delay: 240ms; }
 .stagger > *:nth-child(6) { animation-delay: 300ms; }
 
-/* ── Skeleton Loader ───────────────────────────────────── */
+/* â”€â”€ Skeleton Loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .skeleton {
   background: linear-gradient(90deg, var(--bg-tertiary) 0%, var(--bg-glass-strong) 50%, var(--bg-tertiary) 100%);
   background-size: 200% 100%;
@@ -329,7 +329,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   border-radius: var(--radius-sm);
 }
 
-/* ── Toast ──────────────────────────────────────────────── */
+/* â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .toast-container {
   position: fixed;
   bottom: var(--space-6);
@@ -351,7 +351,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .toast-error   { background: var(--danger); color: white; }
 .toast-info    { background: var(--accent-primary); color: white; }
 
-/* ── Empty State ───────────────────────────────────────── */
+/* â”€â”€ Empty State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -366,7 +366,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .empty-state .empty-title { font-size: var(--text-lg); color: var(--text-secondary); font-weight: 500; }
 .empty-state .empty-desc { font-size: var(--text-sm); max-width: 360px; line-height: 1.6; }
 
-/* ── Spinner ────────────────────────────────────────────── */
+/* â”€â”€ Spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes spin { to { transform: rotate(360deg); } }
 .spinner {
   display: inline-block;
@@ -378,7 +378,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   animation: spin 0.6s linear infinite;
 }
 
-/* ── Disabled states ───────────────────────────────────── */
+/* â”€â”€ Disabled states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -389,16 +389,16 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   cursor: not-allowed;
 }
 
-/* ── Page Transition ──────────────────────────────────── */
+/* â”€â”€ Page Transition â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .page-transition { animation: pageIn 200ms var(--ease-out) both; }
 
-/* ── Responsive ────────────────────────────────────────── */
+/* â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Prevent iOS input zoom (font-size must be ≥16px) */
+/* Prevent iOS input zoom (font-size must be â‰¥16px) */
 @media (max-width: 768px) {
   .input, select.input, textarea.input {
     font-size: 16px !important;
@@ -452,7 +452,7 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
   ::-webkit-scrollbar { width: 0; }
 }
 
-/* ── Error Boundary ────────────────────────────────────── */
+/* â”€â”€ Error Boundary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .error-boundary {
   display: flex;
   align-items: center;
@@ -472,14 +472,14 @@ textarea.input { resize: vertical; min-height: 60px; line-height: 1.5; }
 .error-boundary-msg { color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; }
 .error-boundary-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); }
 
-/* ── Page Loader (Suspense fallback) ───────────────────── */
+/* â”€â”€ Page Loader (Suspense fallback) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .page-loader {
   padding: var(--space-8);
   max-width: var(--max-content);
   margin: 0 auto;
 }
 
-/* ── Accessibility ─────────────────────────────────────── */
+/* â”€â”€ Accessibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn:focus-visible,
 .nav-item:focus-visible,
 .input:focus-visible,

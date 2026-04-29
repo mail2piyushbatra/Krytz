@@ -1,8 +1,8 @@
 /**
- * ✦ FLOWRA — Export Routes
+ * âœ¦ Krytz â€” Export Routes
  *
- * GET /api/v1/export — Full JSON dump of the user's ledger.
- * Satisfies audit requirement §3.2.
+ * GET /api/v1/export â€” Full JSON dump of the user's ledger.
+ * Satisfies audit requirement Â§3.2.
  */
 
 const express = require('express');
@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// GET /api/v1/export — Full ledger export
+// GET /api/v1/export â€” Full ledger export
 router.get('/', async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -52,7 +52,7 @@ router.get('/', async (req, res, next) => {
 
     const exportData = {
       exportedAt: new Date().toISOString(),
-      version: 'flowra-v3',
+      version: 'Krytz-v3',
       user: { id: userId, email: req.user.email },
       summary: {
         totalItems: items.rows.length,
@@ -70,7 +70,7 @@ router.get('/', async (req, res, next) => {
 
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Content-Disposition',
-      `attachment; filename="flowra-export-${new Date().toISOString().slice(0, 10)}.json"`
+      `attachment; filename="Krytz-export-${new Date().toISOString().slice(0, 10)}.json"`
     );
     res.json({ success: true, data: exportData });
   } catch (err) {

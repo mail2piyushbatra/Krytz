@@ -1,15 +1,15 @@
 /**
- * ✦ FLOWRA — Analytics Service
+ * âœ¦ Krytz â€” Analytics Service
  *
  * Big-picture intelligence over the items ledger.
  * Category health, blocker clusters, completion velocity,
- * focus allocation — the CEO dashboard data layer.
+ * focus allocation â€” the CEO dashboard data layer.
  */
 
 const db = require('../../lib/db');
 const logger = require('../../lib/logger');
 
-// ─── Overview: category health + cross-cutting signals ─────────────────────────
+// â”€â”€â”€ Overview: category health + cross-cutting signals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getOverview(userId) {
   // 1. Category health
@@ -67,7 +67,7 @@ async function getOverview(userId) {
     [userId]
   );
 
-  // 3. Focus allocation — proportion of active items per category
+  // 3. Focus allocation â€” proportion of active items per category
   const totalActive = categories.reduce((sum, c) => sum + c.open + c.inProgress, 0);
   const focusAllocation = {};
   for (const c of categories) {
@@ -77,7 +77,7 @@ async function getOverview(userId) {
     }
   }
 
-  // 4. Weekly velocity — items created vs completed in last 7 days
+  // 4. Weekly velocity â€” items created vs completed in last 7 days
   const velocity = await db.query(
     `SELECT
        COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS created,
@@ -90,7 +90,7 @@ async function getOverview(userId) {
   const created = velocity.rows[0].created;
   const completed = velocity.rows[0].completed;
 
-  // 5. Completion trend — compare this week vs last week
+  // 5. Completion trend â€” compare this week vs last week
   const lastWeek = await db.query(
     `SELECT COUNT(*)::int AS completed
      FROM items i
@@ -141,7 +141,7 @@ async function getOverview(userId) {
   };
 }
 
-// ─── Category-specific deep dive ──────────────────────────────────────────────
+// â”€â”€â”€ Category-specific deep dive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function getCategoryAnalytics(userId, categoryName) {
   // Items in this category

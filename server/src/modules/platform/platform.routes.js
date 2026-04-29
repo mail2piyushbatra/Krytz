@@ -142,19 +142,19 @@ function platformRoutes(pool) {
         },
         {
           name: 'PostgreSQL + pgvector',
-          runtime: 'Docker container flowra2-db',
+          runtime: 'Docker container Krytz2-db',
           localUrl: 'localhost:5544',
           responsibility: 'System of record: users, entries, items, rules, notifications, plan cache.',
         },
         {
           name: 'Redis',
-          runtime: 'Docker container flowra2-redis',
+          runtime: 'Docker container Krytz2-redis',
           localUrl: 'localhost:6381',
           responsibility: 'Cache and future queues.',
         },
         {
           name: 'MinIO / S3-compatible storage',
-          runtime: 'Docker container flowra2-storage',
+          runtime: 'Docker container Krytz2-storage',
           localUrl: 'http://localhost:9100',
           responsibility: 'Uploaded files and derived file artifacts.',
         },
@@ -162,8 +162,8 @@ function platformRoutes(pool) {
       storage: {
         database: {
           engine: 'PostgreSQL 16 + pgvector',
-          database: 'flowra',
-          host: 'flowra2-db:5432 inside Docker / localhost:5544 outside Docker',
+          database: 'Krytz',
+          host: 'Krytz2-db:5432 inside Docker / localhost:5544 outside Docker',
           tableCount: tableRows.rows.length,
           tables: tableRows.rows.map(row => row.table_name),
           selectedCounts,
@@ -174,7 +174,7 @@ function platformRoutes(pool) {
         },
         objectStorage: {
           engine: 'MinIO S3-compatible',
-          bucket: process.env.S3_BUCKET || 'flowra-files',
+          bucket: process.env.S3_BUCKET || 'Krytz-files',
           endpoint: process.env.S3_ENDPOINT || 'unknown',
           indexedFiles: Number(storageRows.rows[0]?.files || 0),
           indexedBytes: Number(storageRows.rows[0]?.bytes || 0),
@@ -182,7 +182,7 @@ function platformRoutes(pool) {
         cache: {
           engine: 'Redis',
           role: 'cache/future queue layer',
-          persistentVolume: 'flowra2_redis',
+          persistentVolume: 'Krytz2_redis',
         },
       },
       platformReadiness: [
@@ -314,8 +314,8 @@ function platformRoutes(pool) {
       checkedAt: new Date().toISOString(),
       services: [
         { name: 'api', status: 'ok', endpoint: 'http://localhost:8301/health' },
-        { name: 'postgres', status: 'ok', endpoint: 'flowra2-db:5432', latencyMs: dbLatencyMs },
-        { name: 'redis', status: 'configured', endpoint: 'flowra2-redis:6379' },
+        { name: 'postgres', status: 'ok', endpoint: 'Krytz2-db:5432', latencyMs: dbLatencyMs },
+        { name: 'redis', status: 'configured', endpoint: 'Krytz2-redis:6379' },
         { name: 'minio', status: 'configured', endpoint: process.env.S3_ENDPOINT || 'http://minio:9000' },
       ],
       counts,
@@ -393,7 +393,7 @@ function platformRoutes(pool) {
   router.post('/platform/backups/run', asyncHandler(async (req, res) => {
     await requirePlatformRole(pool, req.user.id, ['devops', 'founder']);
     const selectedCounts = await getSelectedCounts(pool);
-    const manifest = { type: 'logical-manifest', selectedCounts, volumes: ['flowra2_pgdata', 'flowra2_redis', 'flowra2_minio'], generatedAt: new Date().toISOString() };
+    const manifest = { type: 'logical-manifest', selectedCounts, volumes: ['Krytz2_pgdata', 'Krytz2_redis', 'Krytz2_minio'], generatedAt: new Date().toISOString() };
     const { rows } = await pool.query(
       `INSERT INTO platform_backup_runs(requested_by, status, manifest) VALUES($1,'completed',$2) RETURNING *`,
       [req.user.id, JSON.stringify(manifest)]
@@ -664,7 +664,7 @@ async function buildRoleOperatingModel(pool, role) {
       mission: 'Own business risk, people access, governance, and whether the product is ready to operate.',
       permissions: ['View every platform dashboard', 'Create invites', 'Grant access', 'Revoke access', 'Run backups/deploy intents', 'Read audit'],
       needs: [
-        'Activation and data inventory that proves Flowra is more than a task list.',
+        'Activation and data inventory that proves Krytz is more than a task list.',
         'Access control board showing who can enter operator/devops/coder/support surfaces.',
         'Governance queue for export/delete, audit, backup, and production readiness decisions.',
         'Action buttons that actually create access and operational records.',

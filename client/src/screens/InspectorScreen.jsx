@@ -1,4 +1,4 @@
-/** ✦ FLOWRA — Inspector Screen (v3: premium data platform UI)
+/** âœ¦ Krytz â€” Inspector Screen (v3: premium data platform UI)
  *
  * Observability, causality graph, and engine health.
  * Also manages connectors (Layer 5 gap).
@@ -150,7 +150,7 @@ export default function InspectorScreen() {
   );
 }
 
-/* ── Health Tab ── */
+/* â”€â”€ Health Tab â”€â”€ */
 function HealthTab({ health }) {
   if (!health) return <EmptyState icon={Heart} title="No health data" description="Engine fleet has not reported yet." />;
 
@@ -221,7 +221,7 @@ function getStatus(data) {
   return 'ok';
 }
 
-/* ── Graph Tab ── */
+/* â”€â”€ Graph Tab â”€â”€ */
 function GraphTab({ graph }) {
   if (!graph) return <EmptyState icon={GitBranch} title="No graph data" description="The temporal state graph is empty." />;
   return (
@@ -249,7 +249,7 @@ function GraphTab({ graph }) {
   );
 }
 
-/* ── Traces Tab ── */
+/* â”€â”€ Traces Tab â”€â”€ */
 function TracesTab({ traces }) {
   if (!traces?.length) return <EmptyState icon={Activity} title="No traces found" description="System activity traces will appear here." />;
   return (
@@ -270,7 +270,7 @@ function TracesTab({ traces }) {
   );
 }
 
-/* ── Anomalies Tab ── */
+/* â”€â”€ Anomalies Tab â”€â”€ */
 function AnomaliesTab({ anomalies }) {
   if (!anomalies?.length) {
     return (
@@ -297,7 +297,7 @@ function AnomaliesTab({ anomalies }) {
   );
 }
 
-/* ── Connectors Tab ── */
+/* â”€â”€ Connectors Tab â”€â”€ */
 function ConnectorsTab({ connectors, onAdd }) {
   const PLATFORMS = [
     { id: 'google_calendar', label: 'Google Calendar', Icon: Clock },

@@ -1,15 +1,15 @@
 /**
- * ✦ PRODUCT ROUTES — v2
+ * âœ¦ PRODUCT ROUTES â€” v2
  *
- * POST  /api/v1/capture         — ingest entry, async pipeline
- * GET   /api/v1/plan/today      — stage-aware plan (simple/personalized/predictive)
- * GET   /api/v1/explain/:itemId — why is this item in my plan?
- * POST  /api/v1/action          — done / snooze / drop  (pre-snapshot for undo)
- * POST  /api/v1/action/undo     — undo last action
- * GET   /api/v1/action/history  — last 5 reversible actions
- * POST  /api/v1/feedback        — thumbs up/down/ignore/dismiss
- * GET   /api/v1/metrics/suggestions — accept_rate, ignore_rate, snoozed, dropped
- * GET   /api/v1/metrics/costs   — today's LLM spend
+ * POST  /api/v1/capture         â€” ingest entry, async pipeline
+ * GET   /api/v1/plan/today      â€” stage-aware plan (simple/personalized/predictive)
+ * GET   /api/v1/explain/:itemId â€” why is this item in my plan?
+ * POST  /api/v1/action          â€” done / snooze / drop  (pre-snapshot for undo)
+ * POST  /api/v1/action/undo     â€” undo last action
+ * GET   /api/v1/action/history  â€” last 5 reversible actions
+ * POST  /api/v1/feedback        â€” thumbs up/down/ignore/dismiss
+ * GET   /api/v1/metrics/suggestions â€” accept_rate, ignore_rate, snoozed, dropped
+ * GET   /api/v1/metrics/costs   â€” today's LLM spend
  */
 
 'use strict';
@@ -34,7 +34,7 @@ function productRoutesV2(engines, pool) {
   // All product routes require authentication
   router.use(authenticate);
 
-  // ── POST /capture ────────────────────────────────────────────────────────────
+  // â”€â”€ POST /capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post('/capture', asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { raw_input, source = 'manual', client_ts } = req.body;
@@ -67,10 +67,10 @@ function productRoutesV2(engines, pool) {
       logger.warn('Basic item creation skipped', { entryId, error: err.message });
     });
 
-    // 202 immediately — pipeline runs async
+    // 202 immediately â€” pipeline runs async
     res.status(202).json({ ok: true, entryId, itemId, status: 'processing' });
 
-    // ── Async pipeline ────────────────────────────────────────────────────────
+    // â”€â”€ Async pipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     setImmediate(async () => {
       try {
         const { canAffordLLM, recordSpend } = require('../../lib/cost.guard');
@@ -80,7 +80,7 @@ function productRoutesV2(engines, pool) {
 
         const budget = await canAffordLLM(pool, userId, 0.002).catch(() => ({ allowed: false }));
 
-        if (engines?.cortex && process.env.FLOWRA_V3_CAPTURE_USE_LEGACY_CORTEX === 'true') {
+        if (engines?.cortex && process.env.Krytz_V3_CAPTURE_USE_LEGACY_CORTEX === 'true') {
           await engines.cortex.ingest(entryId, raw_input.trim(), { source, timestamp: ts, skipLLM: !budget.allowed }).catch(() => {});
         }
 
@@ -99,7 +99,7 @@ function productRoutesV2(engines, pool) {
     });
   }));
 
-  // ── GET /plan/today ──────────────────────────────────────────────────────────
+  // â”€â”€ GET /plan/today â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.get('/plan/today', asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const tz     = req.user.timezone || 'UTC';
@@ -118,13 +118,13 @@ function productRoutesV2(engines, pool) {
     res.json(plan);
   }));
 
-  // ── GET /explain/:itemId ─────────────────────────────────────────────────────
+  // â”€â”€ GET /explain/:itemId â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.get('/explain/:itemId', asyncHandler(async (req, res) => {
     const { explainItem } = require('../../engines/intelligence/plan.engine');
     res.json(await explainItem(pool, req.user.id, req.params.itemId));
   }));
 
-  // ── POST /action ─────────────────────────────────────────────────────────────
+  // â”€â”€ POST /action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post('/action', asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { itemId, type, snoozeMins = 180 } = req.body;
@@ -169,7 +169,7 @@ function productRoutesV2(engines, pool) {
     res.json({ ok: true, itemId, type, result });
   }));
 
-  // ── POST /action/undo ────────────────────────────────────────────────────────
+  // â”€â”€ POST /action/undo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post('/action/undo', asyncHandler(async (req, res) => {
     const { undoLastAction } = require('../../lib/undo');
     const result = await undoLastAction(pool, req.user.id);
@@ -177,14 +177,14 @@ function productRoutesV2(engines, pool) {
     res.json(result);
   }));
 
-  // ── GET /action/history ──────────────────────────────────────────────────────
+  // â”€â”€ GET /action/history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.get('/action/history', asyncHandler(async (req, res) => {
     const { getUndoHistory } = require('../../lib/undo');
     const history = await getUndoHistory(pool, req.user.id, 5);
     res.json({ history });
   }));
 
-  // ── POST /feedback ───────────────────────────────────────────────────────────
+  // â”€â”€ POST /feedback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.post('/feedback', asyncHandler(async (req, res) => {
     const userId = req.user.id;
     const { type, targetType, targetId, reason } = req.body;
@@ -209,20 +209,20 @@ function productRoutesV2(engines, pool) {
     res.json({ ok: true });
   }));
 
-  // ── GET /metrics/suggestions ─────────────────────────────────────────────────
+  // â”€â”€ GET /metrics/suggestions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.get('/metrics/suggestions', asyncHandler(async (req, res) => {
     const { getSuggestionMetrics } = require('../../engines/intelligence/progressive.intelligence');
     const days = Math.min(parseInt(req.query.days || '7'), 90);
     res.json({ windowDays: days, ...await getSuggestionMetrics(pool, req.user.id, days) });
   }));
 
-  // ── GET /metrics/costs ───────────────────────────────────────────────────────
+  // â”€â”€ GET /metrics/costs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.get('/metrics/costs', asyncHandler(async (req, res) => {
     const { getTodaySpend } = require('../../lib/cost.guard');
     res.json(await getTodaySpend(pool, req.user.id));
   }));
 
-  // ── Error handler ─────────────────────────────────────────────────────────────
+  // â”€â”€ Error handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   router.use((err, req, res, _next) => {
     const status = err.status || 500;
     logger.error('Product v2 route error', { path: req.path, error: err.message, status });

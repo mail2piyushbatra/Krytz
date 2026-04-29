@@ -1,11 +1,11 @@
 /**
- * ✦ EXTRACTION ENGINE — v2
+ * âœ¦ EXTRACTION ENGINE â€” v2
  *
  * AI-powered state extraction from normalized IR.
  *
  * Upgrades from v1:
- *   - Fixed Vision URL bug — images proxied through signed URL, never localhost
- *   - Added extraction cache (hash-based, TTL-aware) — same text never hits LLM twice
+ *   - Fixed Vision URL bug â€” images proxied through signed URL, never localhost
+ *   - Added extraction cache (hash-based, TTL-aware) â€” same text never hits LLM twice
  *   - Added local fast-path: regex pre-scan for obvious items before LLM call
  *   - Replaced console.* with structured logger
  *   - Added token estimation + cost tracking
@@ -20,11 +20,11 @@ const OpenAI     = require('openai');
 const BaseEngine = require('../base.engine');
 const logger     = require('../../lib/logger');
 
-// ─── Prompts ──────────────────────────────────────────────────────────────────
-const EXTRACTION_SYSTEM_PROMPT = `You are a state extraction engine for Flowra, a personal tracking app.
+// â”€â”€â”€ Prompts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const EXTRACTION_SYSTEM_PROMPT = `You are a state extraction engine for Krytz, a personal tracking app.
 Users capture two kinds of input:
-1. Brain dumps — longer text describing their day, blockers, progress
-2. Quick todos — short direct items like "buy milk", "call dentist", "review PR"
+1. Brain dumps â€” longer text describing their day, blockers, progress
+2. Quick todos â€” short direct items like "buy milk", "call dentist", "review PR"
 
 Given a user's text, extract structured state information.
 
@@ -47,18 +47,18 @@ Rules:
 - If nothing extractable, return empty arrays
 - Sentiment: infer from tone. Default to "neutral" if unclear`;
 
-const VISION_SYSTEM_PROMPT = `You are analyzing an image captured by a user in their personal tracking app Flowra.
+const VISION_SYSTEM_PROMPT = `You are analyzing an image captured by a user in their personal tracking app Krytz.
 Describe what you see and extract any actionable information.
 Focus on: text in the image, diagrams, whiteboard content, screenshots of tasks, etc.
 Return a plain text description that can be further processed for action items.`;
 
-// ─── Local fast-path patterns ─────────────────────────────────────────────────
+// â”€â”€â”€ Local fast-path patterns â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Catches obvious items instantly without an LLM call.
 // Results are merged with LLM output (LLM takes precedence on overlap).
 const LOCAL_PATTERNS = {
   actionItems: [
     /(?:todo|to-do|to do|need to|must|should|will)\s*:?\s*(.{5,80})/gi,
-    /(?:^|\n)\s*[-*•]\s*(?!\[x\])(.{5,80})/g,  // unchecked bullet points
+    /(?:^|\n)\s*[-*â€¢]\s*(?!\[x\])(.{5,80})/g,  // unchecked bullet points
     // Verb-leading patterns: "buy milk", "call John", "fix the bug", etc.
     /^((?:buy|call|send|fix|review|update|check|book|schedule|cancel|prepare|finish|submit|write|read|pick up|set up|follow up|reach out|clean|organize|order|pay|return|reply|respond|ship|push|deploy|test|debug|refactor|merge|create|build|design|plan|discuss|meet|email|message|text|ask|confirm|remind)\b.{3,80})$/gim,
   ],
@@ -108,7 +108,7 @@ function localExtract(text) {
     }
   }
 
-  // ── Short direct-todo detection ──────────────────────────────────────────
+  // â”€â”€ Short direct-todo detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // If the input is short, single-line, and no patterns matched yet,
   // treat the entire text as an implicit action item.
   // This handles bare captures like "buy milk", "call dentist at 3pm", "review PR #42".
@@ -137,7 +137,7 @@ function localExtract(text) {
   return state;
 }
 
-// ─── Extraction cache (hash-keyed, TTL-aware) ─────────────────────────────────
+// â”€â”€â”€ Extraction cache (hash-keyed, TTL-aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class ExtractionCache {
   constructor({ ttlMs = 24 * 60 * 60 * 1000, maxSize = 2000 } = {}) {
     this._store  = new Map();
@@ -184,12 +184,12 @@ class ExtractionCache {
   }
 }
 
-// ─── Token estimator (rough: 1 token ≈ 4 chars) ──────────────────────────────
+// â”€â”€â”€ Token estimator (rough: 1 token â‰ˆ 4 chars) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
-// ─── ExtractionEngine ─────────────────────────────────────────────────────────
+// â”€â”€â”€ ExtractionEngine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 class ExtractionEngine extends BaseEngine {
   constructor({ getSignedUrl } = {}) {
     super('extraction');
@@ -200,7 +200,7 @@ class ExtractionEngine extends BaseEngine {
     this._costs       = { inputTokens: 0, outputTokens: 0, calls: 0 };
 
     // Injected function: (fileKey) => Promise<string signedUrl>
-    // Fixes the localhost/MinIO bug — images are served via signed URL
+    // Fixes the localhost/MinIO bug â€” images are served via signed URL
     // that OpenAI can actually reach (not internal MinIO addresses).
     this._getSignedUrl = getSignedUrl || null;
   }
@@ -209,7 +209,7 @@ class ExtractionEngine extends BaseEngine {
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey || apiKey === 'sk-your-openai-api-key') {
-      logger.warn('ExtractionEngine: No valid OPENAI_API_KEY. LLM extraction disabled — local fast-path only.');
+      logger.warn('ExtractionEngine: No valid OPENAI_API_KEY. LLM extraction disabled â€” local fast-path only.');
       this.client = null;
     } else {
       this.client = new OpenAI({ apiKey });
@@ -217,7 +217,7 @@ class ExtractionEngine extends BaseEngine {
     }
 
     if (!this._getSignedUrl) {
-      logger.warn('ExtractionEngine: No getSignedUrl injected — image/Vision extraction disabled.');
+      logger.warn('ExtractionEngine: No getSignedUrl injected â€” image/Vision extraction disabled.');
     }
 
     await super.initialize();
@@ -231,7 +231,7 @@ class ExtractionEngine extends BaseEngine {
     this._getSignedUrl = fn;
   }
 
-  // ─── Main extract ──────────────────────────────────────────────────────────
+  // â”€â”€â”€ Main extract â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async extract(ir) {
     this.ensureReady();
@@ -240,7 +240,7 @@ class ExtractionEngine extends BaseEngine {
     try {
       let result;
 
-      // Fast path: explicit todo capture — skip LLM, local extraction only
+      // Fast path: explicit todo capture â€” skip LLM, local extraction only
       if (ir.metadata?.captureType === 'todo') {
         result = this._extractDirectTodo(ir.content);
         logger.info('Todo fast-path extraction', { items: result.actionItems.length });
@@ -262,7 +262,7 @@ class ExtractionEngine extends BaseEngine {
     return Promise.all(irArray.map(ir => this.extract(ir)));
   }
 
-  // ─── Text extraction ───────────────────────────────────────────────────────
+  // â”€â”€â”€ Text extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async _extractFromText(text, metadata = {}) {
     if (!text || text.trim().length < 5) return this._emptyState();
@@ -286,7 +286,7 @@ class ExtractionEngine extends BaseEngine {
     if (!this.client) {
       const fallback = this._mergeLocalWithLLM(localState, null);
       fallback.confidence = hasLocalHits ? 'local' : 'none';
-      // Cache local result too — same input never re-scanned
+      // Cache local result too â€” same input never re-scanned
       this._cache.set(sanitized, fallback);
       return fallback;
     }
@@ -329,19 +329,19 @@ class ExtractionEngine extends BaseEngine {
     return merged;
   }
 
-  // ─── Image extraction (Vision API) ────────────────────────────────────────
+  // â”€â”€â”€ Image extraction (Vision API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async _extractFromImage(ir) {
     if (!this._getSignedUrl) {
-      logger.warn('Image extraction skipped — no getSignedUrl injected');
+      logger.warn('Image extraction skipped â€” no getSignedUrl injected');
       return this._emptyState();
     }
     if (!this.client) {
-      logger.warn('Image extraction skipped — no LLM client');
+      logger.warn('Image extraction skipped â€” no LLM client');
       return this._emptyState();
     }
 
-    // Get a publicly accessible signed URL (never localhost — fixes MinIO bug)
+    // Get a publicly accessible signed URL (never localhost â€” fixes MinIO bug)
     const signedUrl = await this._getSignedUrl(ir.metadata.fileKey);
 
     logger.info('Running Vision extraction', { fileKey: ir.metadata.fileKey });
@@ -373,7 +373,7 @@ class ExtractionEngine extends BaseEngine {
     return await this._extractFromText(combinedText, ir.metadata);
   }
 
-  // ─── Merge local + LLM results ─────────────────────────────────────────────
+  // â”€â”€â”€ Merge local + LLM results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // LLM items take precedence. Local items fill in anything LLM missed.
 
   _mergeLocalWithLLM(local, llm) {
@@ -406,7 +406,7 @@ class ExtractionEngine extends BaseEngine {
     };
   }
 
-  // ─── Direct todo extraction (no LLM, zero cost) ─────────────────────────
+  // â”€â”€â”€ Direct todo extraction (no LLM, zero cost) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
    * Treats each line of input as a direct action item.
@@ -426,7 +426,7 @@ class ExtractionEngine extends BaseEngine {
       const lines = text.trim().split('\n').filter(l => l.trim().length >= 2);
       for (const line of lines) {
         const cleaned = line.trim()
-          .replace(/^[-*•]\s*/, '')       // strip bullet prefix
+          .replace(/^[-*â€¢]\s*/, '')       // strip bullet prefix
           .replace(/^\[[ x]?\]\s*/i, '') // strip checkbox prefix
           .trim();
         if (cleaned.length >= 2) {
@@ -440,7 +440,7 @@ class ExtractionEngine extends BaseEngine {
     return local;
   }
 
-  // ─── PII stripping ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ PII stripping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _stripPII(text) {
     return text
@@ -450,7 +450,7 @@ class ExtractionEngine extends BaseEngine {
       .replace(/\b\d{3}[-]?\d{2}[-]?\d{4}\b/g,                       '[SSN]');
   }
 
-  // ─── Validation ────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   _validateState(parsed) {
     return {
@@ -479,7 +479,7 @@ class ExtractionEngine extends BaseEngine {
     return { actionItems: [], blockers: [], completions: [], deadlines: [], tags: [], sentiment: 'neutral', confidence: 'none' };
   }
 
-  // ─── Observability ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Observability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   getHealth() {
     return {

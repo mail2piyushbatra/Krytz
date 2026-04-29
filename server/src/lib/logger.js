@@ -1,5 +1,5 @@
 /**
- * ✦ FLOWRA LOGGER
+ * âœ¦ Krytz LOGGER
  *
  * Structured JSON logging with levels, context, and request tracing.
  * Replaces console.log/Morgan with a proper logging system.
@@ -15,7 +15,7 @@ function formatLog(level, message, meta = {}) {
   return JSON.stringify({
     timestamp: new Date().toISOString(),
     level,
-    service: 'flowra-api',
+    service: 'Krytz-api',
     message,
     ...meta,
     ...(meta.error && {

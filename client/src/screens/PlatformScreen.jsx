@@ -6,7 +6,7 @@ import { Card, MetricCard, ProgressRing } from '../components/ui/UiKit';
 import { Database, Users, FileText, LayoutList } from 'lucide-react';
 import './PlatformScreen.css';
 
-// Role hierarchy — who can see which dashboards
+// Role hierarchy â€” who can see which dashboards
 const ROLE_ACCESS = {
   founder:  ['founder', 'operator', 'devops', 'coder', 'support'],
   operator: ['operator', 'support'],
@@ -142,11 +142,11 @@ export default function PlatformScreen() {
     return (
       <div className="platform-screen page-container">
         <div className="platform-gate">
-          <div className="platform-gate-icon">🔒</div>
+          <div className="platform-gate-icon">ðŸ”’</div>
           <h2>Platform Access Required</h2>
           <p>Your account ({user?.email || 'unknown'}) does not have platform privileges.</p>
           <p className="platform-gate-hint">Contact a founder or operator to request access.</p>
-          <Link to="/" className="btn btn-primary">← Back to Command Center</Link>
+          <Link to="/" className="btn btn-primary">â† Back to Command Center</Link>
         </div>
       </div>
     );
@@ -299,7 +299,7 @@ async function loadRoleWorkspace(role) {
 // Resolve a real account email dynamically instead of hardcoded synthetic emails
 function resolveAccountEmail(accounts, index = 0) {
   if (accounts?.length > index) return accounts[index].email;
-  return `user.${Date.now()}@flowra.local`; // fallback
+  return `user.${Date.now()}@Krytz.local`; // fallback
 }
 
 function resolveGrantTargetEmail(accounts) {
@@ -318,7 +318,7 @@ async function runPlatformAction(action, role, accounts = [], workspace = {}) {
   if (action === 'schema') return platform.schema();
   if (action === 'health') return platform.serviceHealth();
   if (action === 'role') return platform.roleDashboard(role);
-  if (action === 'invite') return platform.invite(`invite.${Date.now()}@flowra.local`, role === 'founder' ? 'operator' : role);
+  if (action === 'invite') return platform.invite(`invite.${Date.now()}@Krytz.local`, role === 'founder' ? 'operator' : role);
   if (action === 'grant') return platform.grant(resolveGrantTargetEmail(accounts), 'support');
   if (action === 'support-note') return platform.supportNote(resolveAccountEmail(accounts, 0), `Support diagnostic note from ${role} dashboard`);
   if (action === 'export-request') return platform.exportRequest(resolveAccountEmail(accounts, 0), `Export review requested from ${role} dashboard`);
@@ -371,8 +371,8 @@ function PlatformHub({ overview, allowedRoles }) {
               <span>{account.role}</span>
               <h3>{account.email}</h3>
               <p>{account.name || 'Unnamed platform account'} / {account.orgName}</p>
-              {/* Credentials hidden — no raw passwords in UI */}
-              <code className="login-credential-masked">●●●●●●●●●●</code>
+              {/* Credentials hidden â€” no raw passwords in UI */}
+              <code className="login-credential-masked">â—â—â—â—â—â—â—â—â—â—</code>
             </article>
           ))}
         </div>

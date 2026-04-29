@@ -1,38 +1,38 @@
-# ✦ FLOWRA
+# ✦ KRYTZ
 
 > A closed-loop, state-aware personal computation engine.  
 > Capture anything → See your state → Know what matters → Act.
 
 ---
 
-## What is Flowra?
+## What is Krytz?
 
-Flowra reconstructs your reality from raw captures. You dump text, voice, or files — Flowra extracts action items, blockers, completions, deadlines, and sentiment. It shows you **what's going on** without you having to organize anything.
+Krytz (formerly Flowra) reconstructs your reality from raw captures. You dump text, voice, or files — Krytz extracts action items, blockers, completions, deadlines, and sentiment. It shows you **what's going on** without you having to organize anything.
 
 **Phase 1-3:** Capture + State + Connectors (what you're doing)  
 **Phase 4-7:** Priority + Decision + Observability + Learning (what you should do)
 
-See [docs/00_unified_vision.md](./docs/00_unified_vision.md) for the full vision.
+See [WHITEPAPER.md](./WHITEPAPER.md) for the full architectural vision.
 
 ---
 
 ## Architecture
 
 ```
-Mobile App (React Native + Expo)
+PWA Client (React + Vite)
     │
     ▼
 API Monolith (Express + Node.js)
     │
-    ├── Modules (Auth, Entries, Files, State, Recall)
+    ├── Modules (Auth, Entries, Items, Files, Inspector)
     │       │
     │       ▼
     ├── Engines (Cortex → Normalization → Extraction → State)
     │       │
     │       ▼
-    ├── PostgreSQL (pg Pool — raw SQL)
-    ├── Redis (Job queue)
-    └── S3/R2 (File storage)
+    ├── PostgreSQL 16 (pgvector + pg_trgm)
+    ├── Redis (BullMQ extraction queue)
+    └── S3/MinIO (File storage)
 ```
 
 ### Engines

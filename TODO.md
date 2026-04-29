@@ -108,58 +108,46 @@
 
 ---
 
-## Phase 1B — Mobile App (React Native + Expo)
+## Phase 1B — Client App (React + Vite PWA)
 
 ### Setup
 | # | Task | Status |
 |---|---|---|
-| 2.1 | Initialize Expo project | ✅ |
-| 2.2 | React Navigation (Tab + Stack) | ✅ |
-| 2.3 | Design token system (from brand guide) | ✅ |
-| 2.4 | Zustand stores (auth, entries, state) | ✅ |
+| 2.1 | Initialize Vite project + Service Worker | ✅ |
+| 2.2 | React Router (DOM) | ✅ |
+| 2.3 | Design token system (glassmorphism) | ✅ |
+| 2.4 | Zustand stores (auth, items, entries) | ✅ |
 | 2.5 | API service layer (fetch + JWT injection) | ✅ |
-| 2.6 | SecureStore for tokens | ✅ |
+| 2.6 | LocalStorage persistence | ✅ |
 
 ### Screens
 | # | Task | Status |
 |---|---|---|
-| 2.7 | Login screen | ✅ |
-| 2.8 | Register screen | ✅ |
-| 2.9 | Auto-login flow | ✅ |
-| 2.10 | Token refresh interceptor | ✅ |
-| 2.11 | Today View — capture input | ✅ |
-| 2.12 | Today View — state panel (4 cards) | ✅ |
-| 2.13 | Today View — timeline feed | ✅ |
-| 2.14 | Entry card component | ✅ |
-| 2.15 | Badge component (status pills) | ✅ |
-| 2.16 | Pull-to-refresh | ✅ |
-| 2.17 | Entry delete (swipe) | ✅ |
-| 2.18 | Timeline View (grouped by day) | ✅ |
-| 2.19 | Infinite scroll / pagination | ✅ |
-| 2.20 | Date picker (jump to date) | ✅ |
-| 2.21 | Recall View — query input | ✅ |
-| 2.22 | Recall View — AI answer card | ✅ |
-| 2.23 | Recall View — source entries | ✅ |
-| 2.24 | Settings — profile, theme, export, delete, logout | ✅ |
+| 2.7 | Login & Register screens | ✅ |
+| 2.8 | Auto-login & Token refresh interceptor | ✅ |
+| 2.9 | Command Center — drift banner & stats | ✅ |
+| 2.10 | Tasks Screen — full item ledger | ✅ |
+| 2.11 | Timeline Screen — chronological entry feed | ✅ |
+| 2.12 | Task Detail Modal — state history & confidence | ✅ |
+| 2.13 | Capture Widget — quick action input | ✅ |
+| 2.14 | Auto-categorization engine UI feedback | ✅ |
+| 2.15 | Settings — profile, theme, logout | ✅ |
 
 ### File Capture
 | # | Task | Status |
 |---|---|---|
-| 2.25 | Image picker (camera + gallery) | ✅ |
-| 2.26 | Document picker (PDF) | ✅ |
-| 2.27 | Upload progress indicator | ✅ |
-| 2.28 | File thumbnail in entry card | ✅ |
+| 2.16 | Drag and drop file upload | ✅ |
+| 2.17 | S3 presigned URL integration | ✅ |
+| 2.18 | File metadata & thumbnail preview | ✅ |
 
-### Animations
+### Animations & Polish
 | # | Task | Status |
 |---|---|---|
-| 2.29 | Entry slide-in | ✅ |
-| 2.30 | Badge staggered fade-in | ✅ |
-| 2.31 | State counter roll animation | ✅ |
-| 2.32 | Capture expand on focus | ✅ |
-| 2.33 | Empty states + loading skeletons | ✅ |
+| 2.19 | Stale/Drift task highlighting (amber borders) | ✅ |
+| 2.20 | Priority badge color scaling | ✅ |
+| 2.21 | Modal glassmorphic slide-in | ✅ |
 
-**Phase 1B: 0/33 done (0%)**
+**Phase 1B: 21/21 done (100%)**
 
 ---
 

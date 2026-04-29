@@ -12,6 +12,7 @@ import { useTheme } from './hooks/useTheme';
 import ErrorBoundary from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar';
 import { ToastProvider } from './components/Toast';
+import { OfflineBanner } from './components/OfflineBanner';
 import { PageLoader as UiPageLoader } from './components/ui/UiKit';
 
 // ── Lazy-loaded screens (code splitting) ──────────────────────
@@ -54,7 +55,10 @@ export default function App() {
     return (
       <ErrorBoundary>
         <Suspense fallback={<SplashScreen />}>
-          <AuthScreen />
+          <ToastProvider>
+            <OfflineBanner />
+            <AuthScreen />
+          </ToastProvider>
         </Suspense>
       </ErrorBoundary>
     );
@@ -63,6 +67,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
+        <OfflineBanner />
         <div className="layout" role="application" aria-label="Flowra application">
           <Sidebar />
           <ErrorBoundary>

@@ -51,6 +51,13 @@ yarn-error.log*
 .runtime/
 logs.txt
 
+# Dev artifacts (not shipped)
+chats-source/
+drift_analysis.md
+HANDOVER.md
+STANDARDS.md
+todo.pdf
+eslint.config.js
+
 # Misc
 *.tsbuildinfo
-todo.pdf

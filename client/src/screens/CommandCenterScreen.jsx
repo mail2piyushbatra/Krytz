@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { items as itemsApi, categories as catApi, analytics as analyticsApi, entries, plan as planApi, dataExport, files, actions } from '../services/api';
 import AnimatedCounter from '../components/AnimatedCounter';
-import { Card, MetricCard, ProgressRing, TrajectoryChart, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { Card, MetricCard, ProgressRing, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { TrajectoryChart } from '../components/ui/Charts';
 import './CommandCenterScreen.css';
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────

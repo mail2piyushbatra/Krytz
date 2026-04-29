@@ -12,7 +12,8 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { analytics, items, categories as catApi, intelligence, plan, actions } from '../services/api';
-import { Card, MetricCard, Badge, ProgressRing, RadarHealthChart, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { Card, MetricCard, Badge, ProgressRing, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { RadarHealthChart } from '../components/ui/Charts';
 import { Activity, AlertTriangle, CheckCircle, Clock, Zap } from 'lucide-react';
 import './StrategyScreen.css';
 

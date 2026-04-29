@@ -234,7 +234,7 @@ export default function CommandCenterScreen() {
             ↓ Export
           </button>
           <button className="btn btn-primary btn-lg" onClick={() => setCaptureOpen(true)} title="Cmd+K">
-            + Capture
+            + Add
           </button>
         </div>
       </header>
@@ -329,7 +329,7 @@ export default function CommandCenterScreen() {
       {focus && (
         <section className="cc-focus animate-slideUp">
           <div className="cc-focus-kicker">
-            <span className="state-pill">Primary directive</span>
+            <span className="state-pill">Top priority</span>
           </div>
           <h2 className="cc-focus-text">{focus.text}</h2>
           <div className="cc-focus-meta">
@@ -339,7 +339,7 @@ export default function CommandCenterScreen() {
                 {focus.deadlineDays <= 0 ? 'overdue' : `${focus.deadlineDays}d left`}
               </span>
             )}
-            {focus.score !== null && focus.score !== undefined && <span className="badge badge-tag">score {focus.score}</span>}
+            {focus.score !== null && focus.score !== undefined && <span className="badge badge-tag">priority {focus.score}</span>}
           </div>
           <div className="cc-focus-actions">
             <button className="btn btn-primary btn-sm" onClick={() => handleMarkDone(focus)}>✅ Done</button>
@@ -350,13 +350,13 @@ export default function CommandCenterScreen() {
 
       {/* ── Loading State ────────────────────────────────── */}
       {loading && (
-        <PageLoader text="Loading your intelligence ledger..." />
+        <PageLoader text="Loading your dashboard..." />
       )}
 
       {/* ── Blockers Banner ──────────────────────────────── */}
       {!loading && blockerItems.length > 0 && (
         <section className="cc-section">
-          <div className="section-title">⚠ Blockers ({blockerItems.length})</div>
+          <div className="section-title">🔒 Stuck ({blockerItems.length})</div>
           <div className="cc-item-list stagger">
             {blockerItems.map(item => (
               <ItemRow
@@ -415,8 +415,8 @@ export default function CommandCenterScreen() {
           ) : !loading && items.length === 0 && (
             <EmptyState 
               title="Your command center is empty" 
-              description="Capture what's happening — meetings, blockers, tasks, decisions. Flowra will extract the action items and build your operating state."
-              action={<ActionBtn onClick={() => setCaptureOpen(true)}>Capture your first signal</ActionBtn>}
+              description="Add what's on your mind — meetings, to-dos, blockers, decisions. Flowra will organize everything and keep you on track."
+              action={<ActionBtn onClick={() => setCaptureOpen(true)}>Add your first thought</ActionBtn>}
             />
           )
         )
@@ -1051,17 +1051,17 @@ function CaptureSheet({ open, categories: cats, defaultCategory, onClose, onCapt
   }
 
   const typeButtons = [
-    { key: 'capture', label: '🧠 Dump', desc: 'Full AI extraction' },
-    { key: 'todo', label: '📋 Todo', desc: 'Direct action item' },
-    { key: 'done', label: '✅ Done', desc: 'Mark completed' },
-    { key: 'blocked', label: '🚫 Blocked', desc: 'Flag blocker' },
-    { key: 'note', label: '💬 Note', desc: 'Journal entry' },
+    { key: 'capture', label: '🧠 Thoughts', desc: 'Smart breakdown' },
+    { key: 'todo', label: '📋 To-do', desc: 'Add a task' },
+    { key: 'done', label: '✅ Done', desc: 'Log something done' },
+    { key: 'blocked', label: '🚫 Stuck', desc: 'Mark as stuck' },
+    { key: 'note', label: '💬 Note', desc: 'Quick note' },
   ];
 
   return (
     <div className="capture-backdrop" onMouseDown={onClose}>
       <form className="capture-sheet" onSubmit={submit} onMouseDown={e => e.stopPropagation()}>
-        <p className="eyebrow">Capture</p>
+        <p className="eyebrow">Quick add</p>
 
         {/* Type buttons */}
         <div className="capture-types">
@@ -1258,16 +1258,16 @@ function getPlaceholder(type) {
     case 'done': return 'e.g. "Deployed staging fix for auth module"';
     case 'blocked': return 'e.g. "Waiting on finance team for pricing data"';
     case 'note': return 'e.g. "Call with Rajesh went well, he wants to move forward..."';
-    default: return 'Dump what happened, what was promised, or what feels unresolved...';
+    default: return 'What\'s on your mind? Meetings, decisions, things to remember...';
   }
 }
 
 function getSubmitLabel(type) {
   switch (type) {
-    case 'todo': return '📋 Add Todo';
+    case 'todo': return '📋 Add To-do';
     case 'done': return '✅ Mark Done';
-    case 'blocked': return '🚫 Flag Blocker';
+    case 'blocked': return '🚫 Mark Stuck';
     case 'note': return '💬 Save Note';
-    default: return '🧠 Capture & Extract';
+    default: return '🧠 Add & Organize';
   }
 }

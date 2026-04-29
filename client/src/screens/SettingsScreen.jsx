@@ -408,7 +408,7 @@ export default function SettingsScreen() {
           <div className="settings-data-row">
             <div>
               <div className="settings-data-label">Export All Data</div>
-              <div className="settings-data-desc">Full dump — items, categories, entries as JSON</div>
+              <div className="settings-data-desc">Download all your data as a file</div>
             </div>
             <button className="btn btn-secondary" onClick={handleExport} disabled={exporting} id="settings-export">
               {exporting ? <span className="spinner" /> : '📥 JSON'}
@@ -417,7 +417,7 @@ export default function SettingsScreen() {
           <div className="settings-data-row">
             <div>
               <div className="settings-data-label">Export Items as CSV</div>
-              <div className="settings-data-desc">Spreadsheet-compatible export of all items</div>
+              <div className="settings-data-desc">Download your tasks as a spreadsheet</div>
             </div>
             <ActionBtn variant="secondary" onClick={handleExportCSV} isLoading={exportingCSV} id="settings-export-csv">
               Export CSV
@@ -428,7 +428,7 @@ export default function SettingsScreen() {
 
       {/* Rules */}
       <section className="settings-section">
-        <div className="section-title">Automation Rules</div>
+        <div className="section-title">Smart Rules</div>
         <Card>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
             Describe a rule in plain English — e.g. "If an item is older than 7 days and open, mark it as stalled."

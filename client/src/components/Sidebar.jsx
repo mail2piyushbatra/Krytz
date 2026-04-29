@@ -110,13 +110,13 @@ function IconExpand() {
 }
 
 const navItems = [
-  { path: '/', icon: IconCommand, label: 'Command', mobileIcon: '⊞', userOnly: true },
-  { path: '/strategy', icon: IconStrategy, label: 'Strategy', mobileIcon: '⊡', userOnly: true },
+  { path: '/', icon: IconCommand, label: 'Home', mobileIcon: '⊞', userOnly: true },
+  { path: '/strategy', icon: IconStrategy, label: 'Overview', mobileIcon: '⊡', userOnly: true },
   { path: '/tasks', icon: IconTasks, label: 'Tasks', mobileIcon: '☑', userOnly: true },
-  { path: '/timeline', icon: IconTimeline, label: 'Timeline', mobileIcon: '⊙', userOnly: true },
+  { path: '/timeline', icon: IconTimeline, label: 'Journal', mobileIcon: '⊙', userOnly: true },
   { path: '/search', icon: IconSearch, label: 'Search', mobileIcon: '⊘', userOnly: true },
-  { path: '/platform', icon: IconPlatform, label: 'Platform', mobileIcon: '⊟', platformOnly: true },
-  { path: '/inspector', icon: IconInspector, label: 'Inspector', mobileIcon: '⌕', platformOnly: true },
+  { path: '/platform', icon: IconPlatform, label: 'Console', mobileIcon: '⊟', platformOnly: true },
+  { path: '/inspector', icon: IconInspector, label: 'Admin', mobileIcon: '⌕', platformOnly: true },
   { path: '/settings', icon: IconSettings, label: 'Settings', mobileIcon: '⊛' },
 ];
 

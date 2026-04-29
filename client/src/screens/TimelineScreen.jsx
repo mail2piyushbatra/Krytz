@@ -114,7 +114,7 @@ export default function TimelineScreen() {
     <div className="page-container animate-fadeIn" id="timeline-screen">
       <header className="timeline-header">
         <div>
-          <p className="eyebrow">Memory Feed</p>
+          <p className="eyebrow">Journal</p>
           <h1 className="page-title">Timeline</h1>
         </div>
         <div className="timeline-controls">
@@ -153,7 +153,7 @@ export default function TimelineScreen() {
         </div>
       </header>
 
-      <section className="timeline-kpi-grid" aria-label="Timeline dashboard">
+      <section className="timeline-kpi-grid" aria-label="Your timeline">
         <TimelineKpiCard label="Entries" value={totalEntries} detail={search || dateFilter ? 'matching current filters' : 'loaded in feed'} icon={FileText} />
         <TimelineKpiCard label="Actions" value={actionCount} detail="entries with extracted items" icon={CheckCircle2} tone="positive" />
         <TimelineKpiCard label="Blockers" value={blockerCount} detail="needs attention" icon={AlertTriangle} tone={blockerCount > 0 ? 'warning' : 'neutral'} />
@@ -167,7 +167,7 @@ export default function TimelineScreen() {
       )}
 
       {loading ? (
-        <PageLoader text="Loading your memory feed..." />
+        <PageLoader text="Loading your journal..." />
       ) : Object.keys(grouped).length > 0 ? (
         <>
           <div className="timeline-feed">
@@ -198,7 +198,7 @@ export default function TimelineScreen() {
           title={search ? 'No matching entries' : 'No entries yet'}
           description={search
             ? 'Try a different search term.'
-            : 'Capture items in the Command Center to see your timeline here.'}
+            : 'Add your first thought to see your timeline here.'}
           action={(search || dateFilter) ? (
             <ActionBtn variant="secondary" onClick={() => { setSearch(''); setDateFilter(''); }}>
               Clear Filters

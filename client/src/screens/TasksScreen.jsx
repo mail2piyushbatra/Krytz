@@ -89,14 +89,14 @@ export default function TasksScreen() {
   const categoryCounts = buildTaskCategoryCounts(tasks);
 
   if (loading && tasks.length === 0) {
-    return <PageLoader text="Loading your tasks..." />;
+    return <PageLoader text="Getting your tasks..." />;
   }
 
   return (
     <div className="tasks-screen page-container">
       <header className="tasks-header">
         <div>
-          <p className="eyebrow">Action Items</p>
+          <p className="eyebrow">Tasks</p>
           <h1>Your active tasks</h1>
         </div>
         
@@ -116,9 +116,9 @@ export default function TasksScreen() {
         </div>
       </header>
 
-      <section className="tasks-kpi-grid" aria-label="Task KPIs">
-        <TaskKpiCard icon={ListChecks} label="Open" value={openCount} detail="active queue" />
-        <TaskKpiCard icon={AlertTriangle} label="Blocked" value={blockerCount} detail="needs movement" tone="warning" />
+      <section className="tasks-kpi-grid" aria-label="Task overview">
+        <TaskKpiCard icon={ListChecks} label="Open" value={openCount} detail="to do" />
+        <TaskKpiCard icon={AlertTriangle} label="Blocked" value={blockerCount} detail="need attention" tone="warning" />
         <TaskKpiCard icon={Clock} label="Due soon" value={dueSoonCount} detail={`${overdueCount} overdue`} tone={overdueCount > 0 ? 'danger' : 'neutral'} />
         <TaskKpiCard icon={TrendingUp} label="Completion" value={`${completionRate}%`} detail={`${doneCount} done`} tone="positive" />
       </section>
@@ -126,7 +126,7 @@ export default function TasksScreen() {
       {categoryCounts.length > 0 && (
         <section className="tasks-dashboard-panel">
           <div className="tasks-panel-head">
-            <span>Workload lanes</span>
+            <span>By category</span>
             <strong>{categoryCounts.length} categories</strong>
           </div>
           <div className="tasks-lane-grid">
@@ -177,7 +177,7 @@ export default function TasksScreen() {
         {filteredTasks.length === 0 ? (
           <EmptyState 
             title={filter === 'OPEN' ? 'No open tasks' : 'No completed tasks yet'} 
-            description={filter === 'OPEN' ? 'Type above to add your first task, or capture items in the Command Center.' : 'Check off some tasks to see them here.'}
+            description={filter === 'OPEN' ? 'Type above to add your first task, or use Quick Add from the main screen.' : 'Check off some tasks to see them here.'}
           />
         ) : (
           filteredTasks.map(task => {
@@ -187,7 +187,7 @@ export default function TasksScreen() {
                 <button 
                   className="task-check-btn" 
                   onClick={() => handleToggleTask(task)}
-                  title="Toggle status"
+                  title="Mark done / undo"
                 >
                   {task.state === 'DONE' ? <CheckCircle2 className="task-icon-done" /> : <Circle className="task-icon-open" />}
                 </button>

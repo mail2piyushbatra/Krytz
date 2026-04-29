@@ -166,14 +166,14 @@ export default function StrategyScreen() {
     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || new Date(a.createdAt) - new Date(b.createdAt))
     .slice(0, 5);
 
-  if (loading) return <PageLoader text="Computing strategy matrix..." />;
+  if (loading) return <PageLoader text="Building your overview..." />;
 
   return (
     <div className="strategy-screen page-container animate-fadeIn" id="strategy-screen">
       {toast && <div className="command-toast animate-slideUp">{toast}</div>}
 
-      <p className="strategy-eyebrow">Executive lens</p>
-      <h1 className="strategy-headline">Shape the system,<br />not just the task list.</h1>
+      <p className="strategy-eyebrow">Your big picture</p>
+      <h1 className="strategy-headline">Shape your week,<br />not just the task list.</h1>
 
       {error && <div className="command-error">{error}</div>}
 
@@ -259,7 +259,7 @@ export default function StrategyScreen() {
       {activePanel === 'capacity' && capacity && (
         <Card className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
-            <h3>Workload & Capacity</h3>
+            <h3>How busy are you?</h3>
             <Badge intent={capacity.capacity?.status === 'overloaded' ? 'negative' : 'positive'}>
               {capacity.capacity?.status || 'Unknown'}
             </Badge>
@@ -290,7 +290,7 @@ export default function StrategyScreen() {
                 <span className={`strategy-panel-stat-val ${capacity.burnout?.risk === 'high' ? 'strategy-danger-val' : ''}`}>
                   {capacity.burnout?.risk || '—'}
                 </span>
-                <span className="strategy-panel-stat-lbl">Burnout risk</span>
+                <span className="strategy-panel-stat-lbl">Workload level</span>
               </div>
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function StrategyScreen() {
       {activePanel === 'contradictions' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
-            <h3>Detected Conflicts</h3>
+            <h3>Potential Conflicts</h3>
             <span className="strategy-panel-count">{contradictions.length}</span>
           </div>
           {contradictions.length === 0 ? (
@@ -334,11 +334,11 @@ export default function StrategyScreen() {
       {activePanel === 'commitments' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
-            <h3>Open Commitments</h3>
+            <h3>Promises You've Made</h3>
             <span className="strategy-panel-count">{commitments.length}</span>
           </div>
           {commitments.length === 0 ? (
-            <p className="strategy-panel-empty">No open commitments tracked.</p>
+            <p className="strategy-panel-empty">No active commitments right now.</p>
           ) : commitments.map(c => (
             <div key={c.id} className={`strategy-commitment-card ${c.urgency === 'overdue' ? 'strategy-commitment-overdue' : ''}`}>
               <div className="strategy-commitment-body">
@@ -369,7 +369,7 @@ export default function StrategyScreen() {
       {activePanel === 'estimates' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
-            <h3>Time Estimation Accuracy</h3>
+            <h3>How accurate are your time estimates?</h3>
           </div>
           {!estimationStats || estimationStats.totalTasks === 0 ? (
             <p className="strategy-panel-empty">Not enough completed tasks with time data yet. Complete tasks and record actual times to see insights.</p>
@@ -382,15 +382,15 @@ export default function StrategyScreen() {
                 </div>
                 <div className="strategy-panel-stat">
                   <span className="strategy-panel-stat-val">{estimationStats.avgEstimateMins}m</span>
-                  <span className="strategy-panel-stat-lbl">Avg estimate</span>
+                  <span className="strategy-panel-stat-lbl">Avg. estimated</span>
                 </div>
                 <div className="strategy-panel-stat">
                   <span className="strategy-panel-stat-val">{estimationStats.avgActualMins}m</span>
-                  <span className="strategy-panel-stat-lbl">Avg actual</span>
+                  <span className="strategy-panel-stat-lbl">Avg. actual</span>
                 </div>
                 <div className="strategy-panel-stat">
                   <span className="strategy-panel-stat-val">{estimationStats.accuracyRatio}x</span>
-                  <span className="strategy-panel-stat-lbl">Accuracy ratio</span>
+                  <span className="strategy-panel-stat-lbl">Estimate accuracy</span>
                 </div>
               </div>
               <p className="strategy-panel-insight">{estimationStats.insight}</p>

@@ -95,11 +95,11 @@ export default function RecallScreen() {
   return (
     <div className="page-container animate-fadeIn" id="recall-screen">
       <header className="recall-header">
-        <p className="eyebrow">Intelligence</p>
-        <h1 className="page-title">Recall</h1>
+        <p className="eyebrow">Search & Ask</p>
+        <h1 className="page-title">Search</h1>
       </header>
 
-      <section className="recall-kpi-grid" aria-label="Recall dashboard">
+      <section className="recall-kpi-grid" aria-label="Search overview">
         <RecallKpiCard label="Mode" value={mode === 'recall' ? 'AI' : 'Search'} detail={mode === 'recall' ? 'natural language recall' : 'semantic item matching'} />
         <RecallKpiCard label="State" value={answerState} detail={loading ? 'query in progress' : 'ready for next question'} tone={error ? 'danger' : answer || semanticResults.length ? 'positive' : 'neutral'} />
         <RecallKpiCard label="Results" value={resultCount} detail={mode === 'semantic' ? 'similar items' : 'source entries'} />
@@ -114,7 +114,7 @@ export default function RecallScreen() {
           id="recall-tab-ai"
         >
           <Sparkles size={16} />
-          AI Recall
+          AI Answer
         </button>
         <button
           className={`recall-mode-btn ${mode === 'semantic' ? 'active' : ''}`}
@@ -266,7 +266,7 @@ export default function RecallScreen() {
       {showIdleState && history.length === 0 && (
         <EmptyState
           icon={mode === 'semantic' ? Target : Search}
-          title={mode === 'semantic' ? 'Find items by meaning' : 'Ask anything about your entries'}
+          title={mode === 'semantic' ? 'Find similar items' : 'Ask anything about your notes'}
           description={mode === 'semantic'
             ? 'Type any phrase — semantic search finds items with similar meaning, not just exact words.'
             : 'Try: "What meetings did I have this week?" or "Am I still blocked on anything?"'}

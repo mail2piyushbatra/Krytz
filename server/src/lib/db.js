@@ -12,7 +12,10 @@
 'use strict';
 
 const { Pool } = require('pg');
+const { AsyncLocalStorage } = require('async_hooks');
 const logger = require('./logger');
+
+const requestDbContext = new AsyncLocalStorage();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -24,6 +27,18 @@ const pool = new Pool({
 pool.on('error', (err) => {
   logger.error('Unexpected pool error', { error: err.message });
 });
+
+const baseQuery = pool.query.bind(pool);
+pool.query = (...args) => {
+  const store = requestDbContext.getStore();
+  if (store?.active && store.client) return store.client.query(...args);
+  return baseQuery(...args);
+};
+
+function runWithClient(client, fn) {
+  const store = { active: true, client };
+  return requestDbContext.run(store, () => fn(store));
+}
 
 /**
  * Verify database connectivity. Call once at startup.
@@ -47,5 +62,6 @@ async function closePool() {
 }
 
 module.exports = pool;
+module.exports.runWithClient = runWithClient;
 module.exports.verifyConnection = verifyConnection;
 module.exports.closePool = closePool;

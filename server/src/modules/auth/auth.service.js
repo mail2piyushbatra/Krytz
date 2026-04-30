@@ -1,11 +1,10 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { Pool } = require('pg');
 const { AppError } = require('../../middleware/errorHandler');
+const pool = require('../../lib/db');
 
 const SALT_ROUNDS = 12;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 async function register({ email, password, name }) {
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -27,7 +26,7 @@ async function register({ email, password, name }) {
   try {
     const { seedDefaults } = require('../categories/category.service');
     await seedDefaults(rows[0].id);
-  } catch (err) { /* non-blocking — categories can be created later */ }
+  } catch { /* non-blocking — categories can be created later */ }
 
   const user = await toApiUser(rows[0]);
   const tokens = await generateTokens(user);

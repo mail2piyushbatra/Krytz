@@ -114,26 +114,57 @@ function inspectorRoutes(pool) {
 
   // ── Connectors ──────────────────────────────────────────────────
   router.get('/connectors', asyncHandler(async (req, res) => {
+    const { connector } = require('../../engines');
+    const { redactConnectorMeta } = require('../../engines/connector/connector.http');
     const { rows } = await pool.query(
-      `SELECT * FROM connector_state WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT id, adapter_name, state, meta, created_at, updated_at
+         FROM connector_state
+        WHERE user_id = $1
+        ORDER BY created_at DESC`,
       [req.user.id]
     ).catch(() => ({ rows: [] }));
-    res.json({ connectors: rows });
+    const byAdapter = new Map(rows.map(row => [row.adapter_name, row]));
+    const connectors = connector.registry.list().map(adapter => {
+      const row = byAdapter.get(adapter.name);
+      return {
+        ...adapter,
+        id: row?.id || adapter.name,
+        adapter_name: adapter.name,
+        platform: adapter.name,
+        state: row?.state || 'disconnected',
+        status: row?.state || 'disconnected',
+        meta: redactConnectorMeta(row?.meta || {}),
+        created_at: row?.created_at || null,
+        updated_at: row?.updated_at || null,
+      };
+    });
+    res.json({ connectors });
   }));
 
   router.post('/connectors', asyncHandler(async (req, res) => {
     const { platform, config = {} } = req.body;
     if (!platform) return res.status(400).json({ error: 'platform is required' });
 
-    const { v4: uuid } = require('uuid');
-    const id = uuid();
-    await pool.query(
-      `INSERT INTO connector_state (id, user_id, platform, status, config, created_at)
-       VALUES ($1, $2, $3, 'pending', $4, now())
-       ON CONFLICT (user_id, platform) DO UPDATE SET config = $4, status = 'pending'`,
-      [id, req.user.id, platform, JSON.stringify(config)]
-    );
-    res.status(201).json({ ok: true, connectorId: id });
+    const { connector } = require('../../engines');
+    const result = await connector.registry.connect(pool, req.user.id, platform, config);
+    res.status(201).json({ ok: true, platform, result });
+  }));
+
+  router.post('/connectors/:platform/sync', asyncHandler(async (req, res) => {
+    const { connector } = require('../../engines');
+    const { filterActionable } = require('../../engines/connector/connector.framework');
+    const items = await connector.registry.sync(pool, req.user.id, req.params.platform);
+    const actionable = filterActionable(items || []);
+    const imported = req.body?.ingest === false
+      ? []
+      : await importConnectorItems(pool, req.user.id, req.params.platform, actionable);
+    res.json({ ok: true, platform: req.params.platform, items: actionable, importedCount: imported.length, imported });
+  }));
+
+  router.delete('/connectors/:platform', asyncHandler(async (req, res) => {
+    const { connector } = require('../../engines');
+    const result = await connector.registry.disconnect(pool, req.user.id, req.params.platform);
+    res.json({ ok: true, platform: req.params.platform, result });
   }));
 
   // ── Error handler ───────────────────────────────────────────────
@@ -162,6 +193,56 @@ async function requirePlatformRole(pool, userId, allowedRoles) {
     err.status = 403;
     throw err;
   }
+}
+
+async function importConnectorItems(pool, userId, platform, items) {
+  const entryService = require('../entries/entry.service');
+  const source = sourceForAdapter(platform);
+  const imported = [];
+
+  for (const item of items) {
+    const rawText = connectorItemText(item);
+    if (!rawText) continue;
+    const timestamp = connectorItemTimestamp(item);
+    const existing = await pool.query(
+      `SELECT id FROM entries
+        WHERE user_id = $1
+          AND source = $2
+          AND raw_text = $3
+          AND timestamp >= $4::timestamptz - interval '5 minutes'
+          AND timestamp <= $4::timestamptz + interval '5 minutes'
+        LIMIT 1`,
+      [userId, source, rawText, timestamp]
+    ).catch(() => ({ rows: [] }));
+    if (existing.rows.length > 0) continue;
+
+    const entry = await entryService.createEntry(userId, {
+      rawText,
+      source,
+      type: 'capture',
+      timestamp,
+    });
+    imported.push({ externalId: item.id, entryId: entry.id, source });
+  }
+
+  return imported;
+}
+
+function sourceForAdapter(platform) {
+  if (platform === 'google_calendar') return 'calendar';
+  if (platform === 'gmail') return 'gmail';
+  if (platform === 'notion') return 'notion';
+  return 'manual';
+}
+
+function connectorItemText(item) {
+  return [item.title, item.text || item.summary].filter(Boolean).join('\n\n').trim();
+}
+
+function connectorItemTimestamp(item) {
+  const value = item.metadata?.date || item.metadata?.startTime || item.metadata?.lastEditedTime || item.metadata?.updated;
+  const date = value ? new Date(value) : new Date();
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
 module.exports = inspectorRoutes;

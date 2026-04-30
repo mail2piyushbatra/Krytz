@@ -15,7 +15,8 @@
  *   - getStatus(userId)             → connected/disconnected/error
  *
  * Security:
- *   - OAuth tokens encrypted at rest
+ *   - OAuth tokens redacted from API responses
+ *   - Production deployments should encrypt connector_state.meta at rest
  *   - Scoped permissions (read-only by default)
  *   - User approval required for each data type
  *   - Rate limiting per adapter (respect API quotas)
@@ -164,7 +165,7 @@ async function saveConnectorState(db, userId, adapterName, state, meta = {}) {
      VALUES($1, $2, $3, $4, $5)
      ON CONFLICT(user_id, adapter_name) DO UPDATE SET state = $4, meta = $5, updated_at = now()`,
     [uuid(), userId, adapterName, state, JSON.stringify(meta)]
-  ).catch(() => {});
+  );
 }
 
 async function getConnectorState(db, userId, adapterName) {

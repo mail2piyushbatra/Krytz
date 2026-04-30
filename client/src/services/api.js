@@ -238,6 +238,8 @@ export const intelligence = {
   async estimateTime(itemId)         { return request(`/intelligence/items/${itemId}/estimate`); },
   async recordTime(itemId, mins)     { return request(`/intelligence/items/${itemId}/time`, { method: 'POST', body: JSON.stringify({ actualMins: mins }) }); },
   async estimationStats()            { return request('/intelligence/estimation/stats'); },
+  async taskGraph(limit = 36)         { return request(`/intelligence/task-graph?limit=${limit}`); },
+  async weeklyMemory(days = 7, limit = 18) { return request(`/intelligence/weekly-memory?days=${days}&limit=${limit}`); },
   // /metrics/* routes are on productRoutesV2, not /intelligence prefix
   async metricsSuggestions(days = 7) { return request(`/metrics/suggestions?days=${days}`); },
   async metricsCosts()               { return request('/metrics/costs'); },
@@ -422,7 +424,7 @@ export const dataExport = {
     const items = data.items || [];
     const headers = ['id', 'text', 'state', 'category', 'blocker', 'priority', 'dueDate', 'createdAt'];
     const escape = v => {
-      if (v == null) return '';
+      if (v === null || v === undefined) return '';
       const s = String(v);
       return s.includes(',') || s.includes('"') || s.includes('\n')
         ? `"${s.replace(/"/g, '""')}"` : s;
@@ -445,6 +447,15 @@ export const dataExport = {
 };
 
 // â”€â”€ Inspector (observability & engine introspection) â”€â”€â”€â”€â”€â”€â”€
+export const tools = {
+  async execute(type, payload = {}, source = 'client') {
+    return request('/tools/execute', { method: 'POST', body: JSON.stringify({ type, payload, source }) });
+  },
+  async history(limit = 50) {
+    return request(`/tools/history?limit=${limit}`);
+  },
+};
+
 export const inspector = {
   async traces(limit = 50)       { return request(`/inspector/traces?limit=${limit}`); },
   async replay(traceId)          { return request(`/inspector/replay/${traceId}`); },
@@ -456,6 +467,12 @@ export const inspector = {
   async registerConnector(platform, config = {}) {
     return request('/inspector/connectors', { method: 'POST', body: JSON.stringify({ platform, config }) });
   },
+  async syncConnector(platform, options = {}) {
+    return request(`/inspector/connectors/${platform}/sync`, { method: 'POST', body: JSON.stringify(options) });
+  },
+  async disconnectConnector(platform) {
+    return request(`/inspector/connectors/${platform}`, { method: 'DELETE' });
+  },
 };
 
-export default { auth, entries, files, plan, actions, stats, recall, rules, notifications, billing, profile, platform, items, categories, analytics, dataExport, intelligence, inspector };
+export default { auth, entries, files, plan, actions, stats, recall, rules, notifications, billing, profile, platform, items, categories, analytics, dataExport, tools, intelligence, inspector };

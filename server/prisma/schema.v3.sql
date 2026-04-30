@@ -18,7 +18,10 @@ CREATE EXTENSION IF NOT EXISTS "vector";
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS timezone       TEXT    NOT NULL DEFAULT 'UTC',
   ADD COLUMN IF NOT EXISTS daily_cost_usd REAL    NOT NULL DEFAULT 0.10,
-  ADD COLUMN IF NOT EXISTS onboarded      BOOLEAN NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS onboarded      BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS reset_token    TEXT,
+  ADD COLUMN IF NOT EXISTS reset_expires_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token) WHERE reset_token IS NOT NULL;
 
 -- 1b-2. Search Vector Indices (FTS)
 ALTER TABLE entries ADD COLUMN IF NOT EXISTS search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english', coalesce(raw_text, ''))) STORED;

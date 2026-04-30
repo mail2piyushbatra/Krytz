@@ -10,7 +10,9 @@ const testUser = {
   name: 'Auth Tester',
 };
 
-describe('Auth API Flows', () => {
+const describeLive = process.env.KRYTZ_RUN_LIVE_API_TESTS === 'true' ? describe : describe.skip;
+
+describeLive('Auth API Flows', () => {
   let token = '';
 
   afterAll(async () => {

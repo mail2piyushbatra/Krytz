@@ -23,7 +23,7 @@ const productRoutesV2 = require('./modules/product/product.routes.v2');
 const supportRoutes   = require('./modules/support/support.routes');
 const platformRoutes  = require('./modules/platform/platform.routes');
 const inspectorRoutes = require('./modules/inspector/inspector.routes');
-const { rlsMiddleware, withUserContext } = require('./middleware/rls.middleware');
+const { rlsMiddleware } = require('./middleware/rls.middleware');
 const { tierMiddleware } = require('./lib/tiers');
 const { startCron }     = require('./lib/cron');
 const { runBootMigrations } = require('./lib/bootMigrations');
@@ -97,6 +97,8 @@ app.get('/health/engines', (req, res) => {
 
 // Stripe webhook FIRST (needs raw body â€” before express.json)
 if (pool) app.use('/api/v1', stripeWebhookRoute(pool));
+
+if (pool) app.use('/api/v1', rlsMiddleware(pool));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/entries', entryRoutes);

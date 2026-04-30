@@ -22,7 +22,7 @@ export default function CaptureModal({ visible, onClose }) {
   ];
 
   const handleImagePick = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.8,
     });
@@ -33,7 +33,7 @@ export default function CaptureModal({ visible, onClose }) {
   };
 
   const handleDocPick = async () => {
-    let result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf'] });
+    const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf'] });
     if (!result.canceled) {
       const asset = result.assets[0];
       setFiles([...files, { uri: asset.uri, name: asset.name, type: asset.mimeType || 'application/pdf', size: asset.size || 1024 }]);
@@ -44,8 +44,8 @@ export default function CaptureModal({ visible, onClose }) {
     if (!text.trim() && files.length === 0) return;
     setSaving(true);
     try {
-      let uploadedKeys = [];
-      let uploadedMeta = [];
+      const uploadedKeys = [];
+      const uploadedMeta = [];
       
       for (const f of files) {
         const urlRes = await api.files.getUploadUrl(f.name, f.type, f.size);

@@ -7,6 +7,8 @@
  * POST  /api/v1/action          â€” done / snooze / drop  (pre-snapshot for undo)
  * POST  /api/v1/action/undo     â€” undo last action
  * GET   /api/v1/action/history  â€” last 5 reversible actions
+ * POST  /api/v1/tools/execute   â€” execute agentic tool commands
+ * GET   /api/v1/tools/history   â€” tool execution history
  * POST  /api/v1/feedback        â€” thumbs up/down/ignore/dismiss
  * GET   /api/v1/metrics/suggestions â€” accept_rate, ignore_rate, snoozed, dropped
  * GET   /api/v1/metrics/costs   â€” today's LLM spend
@@ -104,7 +106,7 @@ function productRoutesV2(engines, pool) {
     const userId = req.user.id;
     const tz     = req.user.timezone || 'UTC';
 
-    const { buildTodayPlan, explainItem }                               = require('../../engines/intelligence/plan.engine');
+    const { buildTodayPlan }                                            = require('../../engines/intelligence/plan.engine');
     const { getUserStage, getColdStartPlan, applyStageToplan, recordSuggestionEvent } = require('../../engines/intelligence/progressive.intelligence');
 
     const { rows: [ec] } = await pool.query(`SELECT count(*) AS n FROM entries WHERE user_id=$1`, [userId]);
@@ -182,6 +184,30 @@ function productRoutesV2(engines, pool) {
     const { getUndoHistory } = require('../../lib/undo');
     const history = await getUndoHistory(pool, req.user.id, 5);
     res.json({ history });
+  }));
+
+  router.post('/tools/execute', asyncHandler(async (req, res) => {
+    const { type, payload = {}, source = 'user' } = req.body;
+    requireFields(req.body, ['type']);
+
+    const { execution } = require('../../engines');
+    const allowedTypes = Object.values(execution.CommandType);
+    if (!allowedTypes.includes(type)) {
+      return res.status(400).json({ error: `Invalid command type: ${type}`, allowedTypes });
+    }
+
+    const result = await execution.executeCommand(pool, req.user.id, { type, payload, source });
+    res.status(result.status === execution.CommandStatus.FAILED ? 400 : 200).json({
+      ok: result.status === execution.CommandStatus.COMPLETED,
+      command: result,
+    });
+  }));
+
+  router.get('/tools/history', asyncHandler(async (req, res) => {
+    const { execution } = require('../../engines');
+    const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
+    const commands = await execution.getCommandHistory(pool, req.user.id, limit);
+    res.json({ commands });
   }));
 
   // â”€â”€ POST /feedback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

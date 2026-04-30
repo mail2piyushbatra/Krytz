@@ -23,9 +23,12 @@ CREATE TABLE IF NOT EXISTS users (
   trial_ends_at    TIMESTAMPTZ,
   onboarded        BOOLEAN NOT NULL DEFAULT false,
   settings         JSONB DEFAULT '{}',
+  reset_token      TEXT,
+  reset_expires_at TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token) WHERE reset_token IS NOT NULL;
 
 -- ─── entries ─────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS entries (

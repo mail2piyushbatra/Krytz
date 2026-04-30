@@ -10,7 +10,9 @@ const testUser = {
   name: 'Entry Tester',
 };
 
-describe('Entry API Flows', () => {
+const describeLive = process.env.KRYTZ_RUN_LIVE_API_TESTS === 'true' ? describe : describe.skip;
+
+describeLive('Entry API Flows', () => {
   let token = '';
   let entryId = '';
 

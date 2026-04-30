@@ -21,7 +21,9 @@ const testUser = {
   name: 'Test Runner',
 };
 
-describe('Items API', () => {
+const describeLive = process.env.KRYTZ_RUN_LIVE_API_TESTS === 'true' ? describe : describe.skip;
+
+describeLive('Items API', () => {
   beforeAll(async () => {
     // Register a test user
     const res = await request(BASE)
@@ -190,7 +192,7 @@ describe('Items API', () => {
   });
 });
 
-describe('Categories API', () => {
+describeLive('Categories API', () => {
   let token = '';
   let catId = '';
 

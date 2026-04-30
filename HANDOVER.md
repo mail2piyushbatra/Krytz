@@ -34,9 +34,9 @@ The system has transitioned from the "Flowra" legacy concepts to the **Krytz** a
 
 ## 3. KNOWN ISSUES / DEFERRED TO V4
 
-1. **Agentic Tool Calling:** The system tracks tasks but does not yet execute them (e.g., reaching out to external APIs to book calendar events).
-2. **React Flow TSG Visualization:** The graph nature of tasks is tracked in the DB (`item_edges`), but the visual network graph UI remains deferred.
-3. **Episodic Memory RAG:** The foundation for vector storage exists (`pgvector`), but the weekly insight generation via Retrieval-Augmented Generation is not yet wired to the client UI.
+1. **API/Docs Surface:** Missing OpenAPI/Postman documentation, deployment/debug runbooks.
+2. **Product Endpoints:** Missing a settings API (to read/update user preferences) and profile update endpoint.
+3. **Analytics API:** Missing an aggregated entry count/stats endpoint for mobile dashboards.
 
 ---
 

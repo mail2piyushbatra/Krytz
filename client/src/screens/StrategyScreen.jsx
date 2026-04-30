@@ -12,14 +12,13 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import { analytics, items, categories as catApi, intelligence, plan, actions } from '../services/api';
-import { Card, MetricCard, Badge, ProgressRing, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { Card, MetricCard, Badge, ProgressRing, ActionBtn, PageLoader } from '../components/ui/UiKit';
 import { RadarHealthChart } from '../components/ui/Charts';
-import { Activity, AlertTriangle, CheckCircle, Clock, Zap } from 'lucide-react';
+import { Activity, AlertTriangle, Brain, CheckCircle, Clock, GitBranch, Zap } from 'lucide-react';
 import './StrategyScreen.css';
 
 export default function StrategyScreen() {
   const [loading, setLoading]           = useState(true);
-  const [overview, setOverview]         = useState(null);
   const [openItems, setOpenItems]       = useState([]);
   const [completions, setCompletions]   = useState(null);
   const [prevWeekComps, setPrevWeekComps] = useState(null);
@@ -36,9 +35,11 @@ export default function StrategyScreen() {
   const [commitments, setCommitments]       = useState([]);
   const [capacity, setCapacity]             = useState(null);
   const [estimationStats, setEstimationStats] = useState(null);
+  const [taskGraph, setTaskGraph]           = useState(null);
+  const [weeklyMemory, setWeeklyMemory]     = useState(null);
 
   // Active section toggle
-  const [activePanel, setActivePanel] = useState(null); // 'contradictions' | 'commitments' | 'capacity' | 'estimates'
+  const [activePanel, setActivePanel] = useState(null); // 'contradictions' | 'commitments' | 'capacity' | 'estimates' | 'graph' | 'memory'
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -47,14 +48,12 @@ export default function StrategyScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [ov, itemsData, comps, prevComps, catsData] = await Promise.all([
-        analytics.overview().catch(() => null),
+      const [itemsData, comps, prevComps, catsData] = await Promise.all([
         items.list({ state: 'OPEN', limit: 100 }).catch(() => ({ items: [] })),
         items.completions(7).catch(() => null),
         items.completions(14).catch(() => null),
         catApi.list().catch(() => ({ categories: [] })),
       ]);
-      setOverview(ov);
       setOpenItems(itemsData?.items || []);
       setCompletions(comps);
       setPrevWeekComps(prevComps);
@@ -66,11 +65,15 @@ export default function StrategyScreen() {
         intelligence.commitments().catch(() => ({ commitments: [] })),
         plan.capacity().catch(() => null),
         intelligence.estimationStats().catch(() => null),
-      ]).then(([contra, commit, cap, est]) => {
+        intelligence.taskGraph(36).catch(() => null),
+        intelligence.weeklyMemory(7, 18).catch(() => null),
+      ]).then(([contra, commit, cap, est, graph, memory]) => {
         setContradictions(contra?.contradictions || contra || []);
         setCommitments(commit?.commitments || commit || []);
         setCapacity(cap);
         setEstimationStats(est);
+        setTaskGraph(graph);
+        setWeeklyMemory(memory);
       });
     } catch (err) {
       setError(err.message);
@@ -78,7 +81,10 @@ export default function StrategyScreen() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    const timer = setTimeout(() => { loadData(); }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function handleMarkDone(itemId) {
@@ -233,25 +239,37 @@ export default function StrategyScreen() {
           className={`strategy-intel-btn ${activePanel === 'capacity' ? 'active' : ''}`}
           onClick={() => setActivePanel(activePanel === 'capacity' ? null : 'capacity')}
         >
-          âš¡ Capacity {capacity?.capacity?.status && <span className={`strategy-intel-dot strategy-intel-${capacity.capacity.status}`} />}
+          <Zap size={14} /> Capacity {capacity?.capacity?.status && <span className={`strategy-intel-dot strategy-intel-${capacity.capacity.status}`} />}
+        </button>
+        <button
+          className={`strategy-intel-btn ${activePanel === 'graph' ? 'active' : ''}`}
+          onClick={() => setActivePanel(activePanel === 'graph' ? null : 'graph')}
+        >
+          <GitBranch size={14} /> Task Graph {taskGraph?.stats?.edgeCount > 0 && <span className="strategy-intel-count">{taskGraph.stats.edgeCount}</span>}
+        </button>
+        <button
+          className={`strategy-intel-btn ${activePanel === 'memory' ? 'active' : ''}`}
+          onClick={() => setActivePanel(activePanel === 'memory' ? null : 'memory')}
+        >
+          <Brain size={14} /> Weekly Memory {weeklyMemory?.evidence?.length > 0 && <span className="strategy-intel-count">{weeklyMemory.evidence.length}</span>}
         </button>
         <button
           className={`strategy-intel-btn ${activePanel === 'contradictions' ? 'active' : ''}`}
           onClick={() => setActivePanel(activePanel === 'contradictions' ? null : 'contradictions')}
         >
-          âš  Conflicts {contradictions.length > 0 && <span className="strategy-intel-count">{contradictions.length}</span>}
+          <AlertTriangle size={14} /> Conflicts {contradictions.length > 0 && <span className="strategy-intel-count">{contradictions.length}</span>}
         </button>
         <button
           className={`strategy-intel-btn ${activePanel === 'commitments' ? 'active' : ''}`}
           onClick={() => setActivePanel(activePanel === 'commitments' ? null : 'commitments')}
         >
-          ðŸ¤ Commitments {commitments.length > 0 && <span className="strategy-intel-count">{commitments.length}</span>}
+          <CheckCircle size={14} /> Commitments {commitments.length > 0 && <span className="strategy-intel-count">{commitments.length}</span>}
         </button>
         <button
           className={`strategy-intel-btn ${activePanel === 'estimates' ? 'active' : ''}`}
           onClick={() => setActivePanel(activePanel === 'estimates' ? null : 'estimates')}
         >
-          â± Estimates
+          <Clock size={14} /> Estimates
         </button>
       </div>
 
@@ -267,11 +285,11 @@ export default function StrategyScreen() {
           
           <div className="strategy-panel-content-flex">
             <div className="strategy-panel-ring">
-              <ProgressRing 
-                percentage={capacity.capacity?.capacityRatio != null ? Math.round(capacity.capacity.capacityRatio * 100) : 0} 
-                size={140} 
+              <ProgressRing
+                percentage={capacity.capacity?.capacityRatio !== null && capacity.capacity?.capacityRatio !== undefined ? Math.round(capacity.capacity.capacityRatio * 100) : 0}
+                size={140}
                 strokeWidth={12}
-                label={`${capacity.capacity?.capacityRatio != null ? Math.round(capacity.capacity.capacityRatio * 100) : 0}%`}
+                label={`${capacity.capacity?.capacityRatio !== null && capacity.capacity?.capacityRatio !== undefined ? Math.round(capacity.capacity.capacityRatio * 100) : 0}%`}
                 sublabel="Used"
                 color={capacity.capacity?.status === 'overloaded' ? 'var(--danger)' : 'var(--accent-primary)'}
               />
@@ -296,16 +314,24 @@ export default function StrategyScreen() {
           </div>
           
           {capacity.capacity?.insight && <p className="strategy-panel-insight">{capacity.capacity.insight}</p>}
-          {capacity.recommendation && <p className="strategy-panel-rec">ðŸ’¡ {capacity.recommendation}</p>}
+          {capacity.recommendation && <p className="strategy-panel-rec">{capacity.recommendation}</p>}
           {capacity.burnout?.signals?.length > 0 && (
             <div className="strategy-panel-signals">
-              {capacity.burnout.signals.map((s, i) => <Badge key={i} intent="warning">âš  {s}</Badge>)}
+              {capacity.burnout.signals.map((s, i) => <Badge key={i} intent="warning">{s}</Badge>)}
             </div>
           )}
         </Card>
       )}
 
       {/* â”€â”€ Contradictions Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {activePanel === 'graph' && (
+        <TaskGraphPanel graph={taskGraph} />
+      )}
+
+      {activePanel === 'memory' && (
+        <WeeklyMemoryPanel insight={weeklyMemory} />
+      )}
+
       {activePanel === 'contradictions' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
@@ -454,7 +480,7 @@ export default function StrategyScreen() {
                     <>
                       <div className="strategy-drill-row">
                         <span>Avg completion</span>
-                        <strong>{catDetail.avgCompletionDays != null ? `${catDetail.avgCompletionDays.toFixed(1)} days` : 'â€”'}</strong>
+                        <strong>{catDetail.avgCompletionDays !== null && catDetail.avgCompletionDays !== undefined ? `${catDetail.avgCompletionDays.toFixed(1)} days` : 'â€”'}</strong>
                       </div>
                       <div className="strategy-drill-row">
                         <span>Completed (30d)</span>
@@ -536,7 +562,7 @@ export default function StrategyScreen() {
           <div className="strategy-blockers">
             {blockers.slice(0, 6).map(b => (
               <div key={b.id} className="strategy-blocker-item">
-                <span className="strategy-blocker-icon">âš </span>
+                <span className="strategy-blocker-icon"><AlertTriangle size={14} /></span>
                 <div className="strategy-blocker-body">
                   <span className="strategy-blocker-text">{b.text || b.canonical_text}</span>
                   {b.category && <span className="badge badge-tag" style={{ marginLeft: 6 }}>{b.category}</span>}
@@ -551,5 +577,174 @@ export default function StrategyScreen() {
       )}
     </div>
   );
+}
+
+function TaskGraphPanel({ graph }) {
+  const nodes = (graph?.nodes || []).slice(0, 24);
+  const edges = graph?.edges || [];
+  const layout = buildGraphLayout(nodes);
+  const positions = new Map(layout.map(node => [node.id, node]));
+  const visibleEdges = edges.filter(edge => positions.has(edge.source) && positions.has(edge.target)).slice(0, 48);
+
+  return (
+    <div className="strategy-panel animate-fadeIn strategy-graph-panel">
+      <div className="strategy-panel-header">
+        <h3>Task State Graph</h3>
+        <span className="strategy-panel-count">{graph?.stats?.nodeCount || 0} items</span>
+      </div>
+
+      {!graph ? (
+        <p className="strategy-panel-empty">Task graph is not available yet.</p>
+      ) : nodes.length === 0 ? (
+        <p className="strategy-panel-empty">No active graph nodes yet. Add connected tasks to build the network.</p>
+      ) : (
+        <div className="strategy-graph-layout">
+          <div className="strategy-graph-canvas">
+            <svg className="strategy-graph-svg" viewBox="0 0 900 360" role="img" aria-label="Task dependency graph">
+              <defs>
+                <marker id="strategy-graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                </marker>
+              </defs>
+              {visibleEdges.map(edge => {
+                const source = positions.get(edge.source);
+                const target = positions.get(edge.target);
+                const midX = (source.x + target.x) / 2;
+                const midY = (source.y + target.y) / 2;
+                return (
+                  <g key={edge.id || `${edge.source}-${edge.target}`} className="strategy-graph-edge">
+                    <line x1={source.x} y1={source.y} x2={target.x} y2={target.y} markerEnd="url(#strategy-graph-arrow)" />
+                    <text x={midX} y={midY - 5}>{edge.label}</text>
+                  </g>
+                );
+              })}
+              {layout.map(node => (
+                <g
+                  key={node.id}
+                  className={`strategy-graph-node ${node.blocker ? 'strategy-graph-node--blocked' : ''}`}
+                  transform={`translate(${node.x} ${node.y})`}
+                >
+                  <circle r={node.blocker ? 18 : 16} />
+                  <text className="strategy-graph-node-label" y={34}>{truncate(node.label, 18)}</text>
+                  <title>{node.label}</title>
+                </g>
+              ))}
+            </svg>
+          </div>
+
+          <div className="strategy-graph-sidebar">
+            <div className="strategy-graph-stat-row"><span>Edges</span><strong>{graph.stats?.edgeCount || 0}</strong></div>
+            <div className="strategy-graph-stat-row"><span>Connected</span><strong>{graph.stats?.connectedNodeCount || 0}</strong></div>
+            <div className="strategy-graph-stat-row"><span>Blocked</span><strong>{graph.stats?.blockerCount || 0}</strong></div>
+            <div className="strategy-graph-stat-row"><span>Groups</span><strong>{graph.stats?.categoryCount || 0}</strong></div>
+
+            <div className="strategy-bottleneck-list">
+              <span className="strategy-mini-heading">Bottlenecks</span>
+              {(graph.bottlenecks || []).length === 0 ? (
+                <span className="strategy-muted-line">No dependency bottlenecks found.</span>
+              ) : graph.bottlenecks.map(node => (
+                <div key={node.id} className="strategy-bottleneck-item">
+                  <span>{truncate(node.label, 58)}</span>
+                  <small>{node.outgoing || 0} outgoing</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeeklyMemoryPanel({ insight }) {
+  const themes = insight?.themes || [];
+  const risks = insight?.risks || [];
+  const suggestedFocus = insight?.suggestedFocus || [];
+  const evidence = insight?.evidence || [];
+  const counts = insight?.sourceCounts || {};
+
+  return (
+    <div className="strategy-panel animate-fadeIn strategy-memory-panel">
+      <div className="strategy-panel-header">
+        <h3>Weekly Memory RAG</h3>
+        <span className="strategy-panel-count">{insight?.mode || 'pending'}</span>
+      </div>
+
+      {!insight ? (
+        <p className="strategy-panel-empty">Weekly memory insight is not available yet.</p>
+      ) : (
+        <div className="strategy-memory-grid">
+          <div className="strategy-memory-summary">
+            <span className="strategy-mini-heading">Synthesis</span>
+            <p>{insight.summary}</p>
+            <div className="strategy-memory-sources">
+              <span>Entries: {counts.entries || 0}</span>
+              <span>Episodic: {counts.episodic || 0}</span>
+              <span>Semantic: {counts.semantic || 0}</span>
+              <span>Items: {counts.activeItems || 0}</span>
+            </div>
+          </div>
+
+          <div className="strategy-memory-columns">
+            <MemoryList title="Themes" items={themes} empty="No recurring themes found." />
+            <MemoryList title="Risks" items={risks} empty="No memory-backed risks found." />
+            <MemoryList title="Suggested Focus" items={suggestedFocus} empty="No focus recommendation yet." />
+          </div>
+
+          <div className="strategy-memory-evidence">
+            <span className="strategy-mini-heading">Retrieved Evidence</span>
+            {evidence.length === 0 ? (
+              <span className="strategy-muted-line">No retrieved evidence in this window.</span>
+            ) : evidence.map(item => (
+              <div key={`${item.type}-${item.id}`} className="strategy-memory-evidence-item">
+                <div>
+                  <strong>{item.type}</strong>
+                  {item.label && <span>{item.label}</span>}
+                </div>
+                <p>{item.snippet}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MemoryList({ title, items, empty }) {
+  return (
+    <div className="strategy-memory-list">
+      <span className="strategy-mini-heading">{title}</span>
+      {items.length === 0 ? (
+        <span className="strategy-muted-line">{empty}</span>
+      ) : items.map((item, index) => (
+        <div key={`${title}-${index}`} className="strategy-memory-item">{item}</div>
+      ))}
+    </div>
+  );
+}
+
+function buildGraphLayout(nodes) {
+  const width = 900;
+  const height = 360;
+  const columns = Math.min(6, Math.max(1, Math.ceil(Math.sqrt(nodes.length * 1.6))));
+  const rows = Math.max(1, Math.ceil(nodes.length / columns));
+  const xGap = width / (columns + 1);
+  const yGap = height / (rows + 1);
+
+  return nodes.map((node, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    return {
+      ...node,
+      x: Math.round(xGap * (column + 1)),
+      y: Math.round(yGap * (row + 1)),
+    };
+  });
+}
+
+function truncate(value, max = 80) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return text.length > max ? `${text.slice(0, max - 1)}...` : text;
 }
 

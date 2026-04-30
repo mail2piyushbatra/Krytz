@@ -3,15 +3,15 @@
  * Observability, causality graph, and engine health.
  * Also manages connectors (Layer 5 gap).
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { inspector } from '../services/api';
 import useAuthStore from '../stores/authStore';
-import { Card, MetricCard, Badge, ActionBtn, PageLoader, EmptyState, ProgressRing } from '../components/ui/UiKit';
+import { Card, MetricCard, Badge, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
 import { 
   Heart, GitBranch, Activity, AlertTriangle, Plug, Lock,
   Server, Database, Cpu, Wifi, Clock, CheckCircle2, XCircle, 
-  ArrowRight, Plus, RefreshCw
+  RefreshCw
 } from 'lucide-react';
 import './InspectorScreen.css';
 
@@ -23,6 +23,18 @@ const TABS = [
   { key: 'traces', label: 'Traces', Icon: Activity },
   { key: 'anomalies', label: 'Anomalies', Icon: AlertTriangle },
   { key: 'connectors', label: 'Connectors', Icon: Plug },
+];
+
+const CONNECTOR_LABELS = {
+  google_calendar: 'Google Calendar',
+  gmail: 'Gmail',
+  notion: 'Notion',
+};
+
+const CONNECTOR_PLATFORMS = [
+  { id: 'google_calendar', label: CONNECTOR_LABELS.google_calendar, Icon: Clock },
+  { id: 'gmail', label: CONNECTOR_LABELS.gmail, Icon: Wifi },
+  { id: 'notion', label: CONNECTOR_LABELS.notion, Icon: Database },
 ];
 
 export default function InspectorScreen() {
@@ -39,15 +51,7 @@ export default function InspectorScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!hasPlatformAccess) {
-      setLoading(false);
-      return;
-    }
-    loadData();
-  }, [activeTab, hasPlatformAccess]);
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -72,15 +76,51 @@ export default function InspectorScreen() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!hasPlatformAccess) {
+        setLoading(false);
+        return;
+      }
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [hasPlatformAccess, loadData]);
 
   async function handleAddConnector(platform) {
     if (!platform || !hasPlatformAccess) return;
     try {
-      await inspector.registerConnector(platform);
-      await loadData(); // refresh
+      const config = promptConnectorConfig(platform);
+      if (!config) return;
+      await inspector.registerConnector(platform, config);
+      await loadData();
     } catch (err) {
-      alert(`Failed to add connector: ${err.message}`);
+      alert(`Failed to connect ${CONNECTOR_LABELS[platform] || platform}: ${err.message}`);
+    }
+  }
+
+  async function handleSyncConnector(platform) {
+    if (!platform || !hasPlatformAccess) return;
+    try {
+      const result = await inspector.syncConnector(platform);
+      await loadData();
+      alert(`Synced ${CONNECTOR_LABELS[platform] || platform}: ${result.importedCount || 0} items imported.`);
+    } catch (err) {
+      alert(`Failed to sync ${CONNECTOR_LABELS[platform] || platform}: ${err.message}`);
+    }
+  }
+
+  async function handleDisconnectConnector(platform) {
+    if (!platform || !hasPlatformAccess) return;
+    const label = CONNECTOR_LABELS[platform] || platform;
+    if (!window.confirm(`Disconnect ${label}?`)) return;
+    try {
+      await inspector.disconnectConnector(platform);
+      await loadData();
+    } catch (err) {
+      alert(`Failed to disconnect ${label}: ${err.message}`);
     }
   }
 
@@ -142,12 +182,29 @@ export default function InspectorScreen() {
             {activeTab === 'graph' && <GraphTab graph={data.graph} />}
             {activeTab === 'traces' && <TracesTab traces={data.traces} />}
             {activeTab === 'anomalies' && <AnomaliesTab anomalies={data.anomalies} />}
-            {activeTab === 'connectors' && <ConnectorsTab connectors={data.connectors} onAdd={handleAddConnector} />}
+            {activeTab === 'connectors' && (
+              <ConnectorsTab
+                connectors={data.connectors}
+                onAdd={handleAddConnector}
+                onSync={handleSyncConnector}
+                onDisconnect={handleDisconnectConnector}
+              />
+            )}
           </>
         )}
       </div>
     </div>
   );
+}
+
+function promptConnectorConfig(platform) {
+  const label = CONNECTOR_LABELS[platform] || platform;
+  const raw = window.prompt(`${label} access token or JSON config`);
+  if (raw === null) return null;
+  const trimmed = raw.trim();
+  if (!trimmed) throw new Error('Connector credential is required');
+  if (!trimmed.startsWith('{')) return { accessToken: trimmed };
+  return JSON.parse(trimmed);
 }
 
 /* â”€â”€ Health Tab â”€â”€ */
@@ -298,19 +355,13 @@ function AnomaliesTab({ anomalies }) {
 }
 
 /* â”€â”€ Connectors Tab â”€â”€ */
-function ConnectorsTab({ connectors, onAdd }) {
-  const PLATFORMS = [
-    { id: 'google_calendar', label: 'Google Calendar', Icon: Clock },
-    { id: 'gmail', label: 'Gmail', Icon: Wifi },
-    { id: 'notion', label: 'Notion', Icon: Database },
-  ];
-
+function ConnectorsTab({ connectors, onAdd, onSync, onDisconnect }) {
   return (
     <div className="connectors-view">
       <Card className="connector-add-card">
         <h3>Add Data Source</h3>
         <div className="connector-add-grid">
-          {PLATFORMS.map(p => (
+          {CONNECTOR_PLATFORMS.map(p => (
             <ActionBtn
               key={p.id}
               variant="secondary"
@@ -328,22 +379,56 @@ function ConnectorsTab({ connectors, onAdd }) {
         <EmptyState icon={Plug} title="No connectors configured" description="Add a data source above to start syncing." />
       ) : (
         <div className="connectors-grid">
-          {connectors.map(c => (
-            <Card key={c.id} className="connector-card">
-              <div className="connector-header">
-                <strong>{c.platform}</strong>
-                <Badge intent={c.status === 'active' ? 'positive' : c.status === 'error' ? 'negative' : 'warning'}>
-                  {c.status}
-                </Badge>
-              </div>
-              <div className="connector-meta">
-                <Clock size={12} />
-                Added: {new Date(c.created_at).toLocaleDateString()}
-              </div>
-            </Card>
-          ))}
+          {connectors.map(c => {
+            const platform = c.platform || c.adapter_name || c.name;
+            const label = c.displayName || CONNECTOR_LABELS[platform] || platform;
+            const status = c.status || c.state || 'disconnected';
+            const isConnected = status === 'connected' || status === 'syncing';
+            return (
+              <Card key={c.id || platform} className="connector-card">
+                <div className="connector-header">
+                  <strong>{label}</strong>
+                  <Badge intent={status === 'connected' ? 'positive' : status === 'error' ? 'negative' : 'warning'}>
+                    {status}
+                  </Badge>
+                </div>
+                <div className="connector-meta">
+                  <Clock size={12} />
+                  {c.created_at ? `Added: ${new Date(c.created_at).toLocaleDateString()}` : 'Not connected'}
+                </div>
+                <p className="connector-detail">{connectorMetaText(c.meta)}</p>
+                <div className="connector-actions">
+                  {isConnected ? (
+                    <>
+                      <ActionBtn variant="ghost" icon={RefreshCw} onClick={() => onSync(platform)} className="btn-sm">
+                        Sync
+                      </ActionBtn>
+                      <ActionBtn variant="ghost" icon={XCircle} onClick={() => onDisconnect(platform)} className="btn-sm">
+                        Disconnect
+                      </ActionBtn>
+                    </>
+                  ) : (
+                    <ActionBtn variant="secondary" icon={Plug} onClick={() => onAdd(platform)} className="btn-sm">
+                      Connect
+                    </ActionBtn>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
   );
+}
+
+function connectorMetaText(meta = {}) {
+  const details = [
+    meta.email,
+    meta.calendarSummary,
+    meta.workspaceName,
+    meta.lastSyncAt ? `Last sync: ${new Date(meta.lastSyncAt).toLocaleString()}` : null,
+    Number.isFinite(meta.lastSyncCount) ? `Items: ${meta.lastSyncCount}` : null,
+  ].filter(Boolean);
+  return details.join(' | ') || 'Awaiting credentials';
 }

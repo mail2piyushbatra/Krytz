@@ -1,43 +1,79 @@
 /**
- * ✦ RLS MIDDLEWARE
- * Sets app.current_user_id in Postgres per-request — activates Row Level Security.
- * No query can return data for a different user, even if there's a route bug.
- *
- * Usage in server.js:
- *   app.use('/api', authMiddleware);
- *   app.use('/api', tierMiddleware(pool));
- *   app.use('/api', rlsMiddleware(pool));
+ * RLS middleware.
+ * Sets app.current_user_id in Postgres per authenticated request.
  */
 'use strict';
 
-// ─── Express middleware ───────────────────────────────────────────────────────
+const jwt = require('jsonwebtoken');
+
 function rlsMiddleware(pool) {
   return async (req, res, next) => {
-    if (!req.user?.id) return next();
-
-    const client = await pool.connect();
-    req.dbClient = client;
-    req.db       = client;
+    let client;
+    let finalized = false;
+    let contextStore = null;
 
     try {
-      await client.query(`SET LOCAL app.current_user_id = '${req.user.id}'`);
-      next();
-    } catch (err) {
-      client.release();
-      next(err);
-    }
+      attachUserFromBearer(req);
+      if (!req.user?.id) return next();
 
-    res.on('finish', () => { try { client.release(); } catch (_) {} });
-    res.on('close',  () => { try { client.release(); } catch (_) {} });
+      client = await pool.connect();
+      req.dbClient = client;
+      req.db = client;
+
+      await client.query('BEGIN');
+      await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [req.user.id]);
+
+      const finalize = async (commit) => {
+        if (finalized) return;
+        finalized = true;
+        if (contextStore) contextStore.active = false;
+        try {
+          await client.query(commit ? 'COMMIT' : 'ROLLBACK');
+        } finally {
+          client.release();
+        }
+      };
+
+      res.once('finish', () => {
+        void finalize(res.statusCode < 400);
+      });
+      res.once('close', () => {
+        if (!res.writableEnded) void finalize(false);
+      });
+
+      if (typeof pool.runWithClient === 'function') {
+        return pool.runWithClient(client, (store) => {
+          contextStore = store;
+          next();
+        });
+      }
+
+      return next();
+    } catch (err) {
+      if (client && !finalized) {
+        finalized = true;
+        try { await client.query('ROLLBACK'); } catch {}
+        client.release();
+      }
+      return next(err);
+    }
   };
 }
 
-// ─── Background job helper ────────────────────────────────────────────────────
+function attachUserFromBearer(req) {
+  if (req.user?.id) return;
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return;
+
+  const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+  req.user = { id: decoded.sub, email: decoded.email };
+}
+
 async function withUserContext(pool, userId, fn) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`SET LOCAL app.current_user_id = '${userId}'`);
+    await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [userId]);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;
@@ -49,12 +85,11 @@ async function withUserContext(pool, userId, fn) {
   }
 }
 
-// ─── Admin context (bypasses RLS for GDPR, analytics, migrations) ─────────────
 async function withAdminContext(pool, fn) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`SET LOCAL app.current_user_id = ''`);  // no match = no RLS restriction
+    await client.query(`SELECT set_config('app.current_user_id', $1, true)`, ['']);
     const result = await fn(client);
     await client.query('COMMIT');
     return result;

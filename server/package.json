@@ -10,7 +10,8 @@
     "build": "echo 'No build step needed for JS'",
     "db:migrate": "psql $DATABASE_URL -f prisma/schema.v3.sql",
     "db:seed": "node prisma/seed.js",
-    "test": "vitest run",
+    "test": "node tests/unit/run-tests.cjs",
+    "test:live": "vitest run --pool=threads",
     "test:watch": "vitest"
   },
   "dependencies": {

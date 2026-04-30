@@ -23,6 +23,7 @@ const logger = require('./logger');
 // ─── Direct imports for modules that exist ────────────────────────────────────
 const { evaluateRulesForTSGItem } = require('../engines/automation/rule.evaluator');
 const { optimizeRule }            = require('../engines/eval/policy.optimizer');
+const { consolidateAllUsers }     = require('../engines/memory/consolidation');
 
 // ─── Job: hourly rule sweep ───────────────────────────────────────────────────
 async function jobRuleSweep(db) {
@@ -105,6 +106,15 @@ async function jobExpireSnoozes(db) {
   } catch (err) { logger.error('Expire snoozes failed', { error: err.message }); }
 }
 
+// ─── Job: nightly memory consolidation ────────────────────────────────────────
+async function jobMemoryConsolidation(db) {
+  logger.info('Memory consolidation starting');
+  try {
+    const result = await consolidateAllUsers(db);
+    logger.info('Memory consolidation complete', result);
+  } catch (err) { logger.error('Memory consolidation job failed', { error: err.message }); }
+}
+
 // ─── Job: RL policy optimizer ─────────────────────────────────────────────────
 async function jobOptimizeRules(db) {
   logger.info('Policy optimization starting');
@@ -167,15 +177,17 @@ function startCron(db) {
   if (cron) {
     cron.schedule('0 * * * *',  () => jobRuleSweep(db));
     cron.schedule('15 * * * *', () => jobExpireSnoozes(db));
+    cron.schedule('0 2 * * *',  () => jobMemoryConsolidation(db));
     cron.schedule('0 3 * * *',  () => jobOptimizeRules(db));
     cron.schedule('0 4 * * *',  () => jobTSGMaintenance(db));
     cron.schedule('0 0 * * *',  () => jobMidnightMaintenance(db));
     logger.info('Cron scheduler started (node-cron)', {
-      jobs: ['rule-sweep', 'expire-snoozes', 'optimize-rules', 'tsg-maintenance', 'midnight-maintenance'],
+      jobs: ['rule-sweep', 'expire-snoozes', 'memory-consolidation', 'optimize-rules', 'tsg-maintenance', 'midnight-maintenance'],
     });
   } else {
     setInterval(() => jobRuleSweep(db),            60 * 60 * 1000);
     setInterval(() => jobExpireSnoozes(db),         60 * 60 * 1000);
+    setInterval(() => jobMemoryConsolidation(db), 24 * 60 * 60 * 1000);
     setInterval(() => jobOptimizeRules(db),       24 * 60 * 60 * 1000);
     setInterval(() => jobTSGMaintenance(db),      24 * 60 * 60 * 1000);
     setInterval(() => jobMidnightMaintenance(db), 24 * 60 * 60 * 1000);
@@ -191,6 +203,7 @@ module.exports = {
   jobs: {
     ruleSweep:            jobRuleSweep,
     expireSnoozes:        jobExpireSnoozes,
+    memoryConsolidation:  jobMemoryConsolidation,
     optimizeRules:        jobOptimizeRules,
     tsgMaintenance:       jobTSGMaintenance,
     midnightMaintenance:  jobMidnightMaintenance,

@@ -379,6 +379,20 @@
 
 ---
 
+---
+
+## Phase 8 — API & Operations (Pending)
+
+| # | Task | Status |
+|---|---|---|
+| 11.1 | Profile & Settings API | ⬜ |
+| 11.2 | Data Export endpoint | ⬜ |
+| 11.3 | Stats endpoint | ⬜ |
+| 11.4 | OpenAPI / Postman spec | ⬜ |
+| 11.5 | Runbook & Deployment docs | ⬜ |
+
+---
+
 ## Grand Summary
 
 | Phase | Description | Total | Done | % |
@@ -392,6 +406,7 @@
 | **5** | Decision + Causality + Execution (5D Pt 2) | 17 | 17 | 100% |
 | **6** | Observability (Inspector) | 22 | 22 | 100% |
 | **7** | Intelligence + Learning + Bootstrap | 15 | 15 | 100% |
+| **8** | API & Operations | 5 | 0 | 0% |
 | **Infra** | DevOps | 10 | 10 | 100% |
 | **Test** | Testing | 10 | 10 | 100% |
-| **TOTAL** | | **212** | **212** | **100%** |
+| **TOTAL** | | **217** | **212** | **97.6%** |

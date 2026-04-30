@@ -126,6 +126,19 @@ function intelligenceRoutes(pool) {
     res.json(await computeCapacity(pool, req.user.id));
   }));
 
+  router.get('/task-graph', asyncHandler(async (req, res) => {
+    const { buildTaskGraph } = require('../../engines/intelligence/weekly.planner');
+    res.json(await buildTaskGraph(pool, req.user.id, { limit: req.query.limit }));
+  }));
+
+  router.get('/weekly-memory', asyncHandler(async (req, res) => {
+    const { buildWeeklyMemoryInsights } = require('../../engines/intelligence/weekly.planner');
+    res.json(await buildWeeklyMemoryInsights(pool, req.user.id, req.user.timezone || 'UTC', {
+      days: req.query.days,
+      limit: req.query.limit,
+    }));
+  }));
+
   // ── Plan today (intelligence-flavoured) ──────────────────────────────────────
   router.get('/plan/today', asyncHandler(async (req, res) => {
     const { buildTodayPlan }                                            = require('../../engines/intelligence/plan.engine');

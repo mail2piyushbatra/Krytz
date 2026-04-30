@@ -177,7 +177,7 @@ export default function RecallScreen() {
             {semanticResults.map((item, i) => (
               <Card key={item.id || i} className="recall-result-card">
                 <div className="recall-result-score">
-                  {item.similarity != null ? (
+                  {item.similarity !== null && item.similarity !== undefined ? (
                     <span className="recall-score-ring" style={{ '--score-pct': `${item.similarity * 100}%` }}>
                       {Math.round(item.similarity * 100)}%
                     </span>

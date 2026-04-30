@@ -31,6 +31,8 @@ const CommandType = Object.freeze({
   MARK_DONE:     'MARK_DONE',
   ESCALATE:      'ESCALATE',
   OPEN_CONTEXT:  'OPEN_CONTEXT',
+  CREATE_CALENDAR_EVENT: 'CREATE_CALENDAR_EVENT',
+  CALL_HTTP_API: 'CALL_HTTP_API',
 });
 
 const CommandStatus = Object.freeze({
@@ -120,7 +122,7 @@ async function executeCommand(db, userId, command) {
 
 // ─── Command dispatchers (idempotent) ─────────────────────────────────────────
 
-async function _dispatch(db, userId, command) {
+function _dispatch(db, userId, command) {
   switch (command.type) {
     case CommandType.NOTIFY_USER:
       return _execNotify(db, userId, command.payload);
@@ -139,6 +141,12 @@ async function _dispatch(db, userId, command) {
 
     case CommandType.OPEN_CONTEXT:
       return _execOpenContext(db, userId, command.payload);
+
+    case CommandType.CREATE_CALENDAR_EVENT:
+      return _execCreateCalendarEvent(db, userId, command.payload);
+
+    case CommandType.CALL_HTTP_API:
+      return _execCallHttpApi(db, userId, command.payload);
 
     default:
       throw new Error(`Unknown command type: ${command.type}`);
@@ -179,7 +187,7 @@ async function _execSchedule(db, userId, payload) {
 
   await db.query(
     `INSERT INTO item_events(item_id, from_state, to_state, confidence, reason)
-     SELECT state, state, state, confidence, $2 FROM items WHERE id = $1`,
+     SELECT id, state, state, confidence, $2 FROM items WHERE id = $1`,
     [itemId, `deadline_set:${deadline}`]
   ).catch(() => {});
 
@@ -198,7 +206,7 @@ async function _execDefer(db, userId, payload) {
   await db.query(
     `INSERT INTO snoozes(id, user_id, item_id, snooze_until)
      VALUES($1, $2, $3, $4)
-     ON CONFLICT(user_id, item_id) DO UPDATE SET snooze_until = $4, updated_at = now()`,
+     ON CONFLICT(user_id, item_id) DO UPDATE SET snooze_until = $4`,
     [id, userId, itemId, snoozeUntil]
   );
 
@@ -305,6 +313,85 @@ async function _execOpenContext(db, userId, payload) {
 
 // ─── Command logging ──────────────────────────────────────────────────────────
 
+async function _execCreateCalendarEvent(db, userId, payload) {
+  const googleCalendarAdapter = require('../connector/google_calendar.adapter');
+  const event = await googleCalendarAdapter.createEvent(db, userId, payload || {});
+  return {
+    ...event,
+    events: [{ type: 'CALENDAR_EVENT_CREATED', eventId: event.eventId, htmlLink: event.htmlLink }],
+  };
+}
+
+async function _execCallHttpApi(_db, _userId, payload = {}) {
+  const url = validateToolUrl(payload.url);
+  const method = String(payload.method || 'POST').toUpperCase();
+  if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    throw new Error('method must be one of GET, POST, PUT, PATCH, DELETE');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.min(Number(payload.timeoutMs || 10000), 30000));
+  try {
+    const headers = normalizeHeaders(payload.headers);
+    const body = payload.body === undefined || method === 'GET'
+      ? undefined
+      : typeof payload.body === 'string'
+        ? payload.body
+        : JSON.stringify(payload.body);
+    if (body && !headers['Content-Type'] && !headers['content-type']) headers['Content-Type'] = 'application/json';
+
+    const res = await fetch(url.toString(), {
+      method,
+      headers,
+      body,
+      signal: controller.signal,
+    });
+    const text = await res.text();
+    return {
+      ok: res.ok,
+      status: res.status,
+      statusText: res.statusText,
+      response: parseResponseBody(text),
+      events: [{ type: 'EXTERNAL_API_CALLED', method, host: url.host, status: res.status }],
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function validateToolUrl(value) {
+  if (!value) throw new Error('url is required');
+  const url = new URL(value);
+  if (!['https:', 'http:'].includes(url.protocol)) throw new Error('url must use http or https');
+
+  const host = url.hostname.toLowerCase();
+  const allowedHosts = (process.env.KRYTZ_TOOL_ALLOWED_HOSTS || process.env.EXTERNAL_TOOL_ALLOWED_HOSTS || '')
+    .split(',')
+    .map(item => item.trim().toLowerCase())
+    .filter(Boolean);
+  const isLocalDev = process.env.NODE_ENV !== 'production' && ['localhost', '127.0.0.1', '::1'].includes(host);
+  if (!isLocalDev && !allowedHosts.includes(host)) {
+    throw new Error(`External tool host is not allowed: ${host}`);
+  }
+
+  return url;
+}
+
+function normalizeHeaders(headers = {}) {
+  return Object.fromEntries(
+    Object.entries(headers)
+      .filter(([key, value]) => key && value !== undefined && value !== null)
+      .map(([key, value]) => [key, String(value)])
+  );
+}
+
+function parseResponseBody(text) {
+  if (!text) return null;
+  const clipped = text.length > 4000 ? `${text.slice(0, 4000)}...` : text;
+  try { return JSON.parse(clipped); }
+  catch { return clipped; }
+}
+
 async function _logCommand(db, userId, cmdId, command, status, attempts, error) {
   try {
     await db.query(
@@ -312,7 +399,7 @@ async function _logCommand(db, userId, cmdId, command, status, attempts, error) 
        VALUES($1, $2, $3, $4, $5, $6, $7)`,
       [cmdId, userId, command.type, JSON.stringify(command.payload || {}), status, attempts, error]
     );
-  } catch (_) {
+  } catch {
     // Command log table may not exist yet — non-fatal
     logger.warn('Command log insert failed (table may not exist)', { cmdId });
   }

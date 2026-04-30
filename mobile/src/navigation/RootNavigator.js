@@ -12,7 +12,7 @@ export default function RootNavigator() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {token == null ? (
+      {token === null || token === undefined ? (
         // Auth Stack
         <Stack.Group>
           <Stack.Screen name="Login" component={LoginScreen} />

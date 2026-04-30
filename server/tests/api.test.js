@@ -226,11 +226,11 @@ describeLive('Categories API', () => {
       expect(res.body.data.categories).toBeInstanceOf(Array);
       // Should have default categories seeded
       const names = res.body.data.categories.map(c => c.name);
-      expect(names).toContain('infra');
-      expect(names).toContain('product');
-      expect(names).toContain('hiring');
-      expect(names).toContain('operations');
-      expect(names).toContain('personal');
+      expect(names).toContain('work');
+      expect(names).toContain('learning');
+      expect(names).toContain('health');
+      expect(names).toContain('errands');
+      expect(names).toContain('learning');
     });
   });
 

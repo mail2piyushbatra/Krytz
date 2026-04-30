@@ -1,0 +1,109 @@
+openapi: 3.0.0
+info:
+  title: Krytz API
+  version: 1.0.0
+  description: The core production API for the Krytz Intelligence Platform.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+  /auth/me:
+    get:
+      summary: Get Profile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    patch:
+      summary: Update Profile Settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                timezone:
+                  type: string
+                settings:
+                  type: object
+                daily_cost_usd:
+                  type: number
+      responses:
+        '200':
+          description: Profile updated
+  /export:
+    get:
+      summary: Export User Data
+      description: Returns a JSON file download containing the user's entire ledger (items, entries, events).
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: JSON file download
+          content:
+            application/json:
+              schema:
+                type: object
+  /analytics/overview:
+    get:
+      summary: Get Stats Overview
+      description: Aggregated stats for dashboards, including category health, velocity, and completion trends.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Aggregated stats
+  /entries:
+    post:
+      summary: Create new entry
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rawText]
+              properties:
+                rawText:
+                  type: string
+      responses:
+        '201':
+          description: Entry created
+    get:
+      summary: List entries
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of entries
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

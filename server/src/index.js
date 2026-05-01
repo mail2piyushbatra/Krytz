@@ -204,6 +204,9 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 
 start().catch((err) => {
   logger.error('Failed to start server', { error: err });
+  // Railway's log viewer parses JSON and only shows `message`, hiding err.message.
+  // Write the raw error directly so the actual cause is always visible.
+  process.stderr.write(`STARTUP ERROR: ${err.message}\n${err.stack || ''}\n`);
   process.exit(1);
 });
 

@@ -33,9 +33,21 @@ class CortexEngine extends BaseEngine {
     this._recallEngine  = null;
     this._dag           = new DAGExecutor();
 
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    this._connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
-    this._queue = new Queue('ingestion-queue', { connection: this._connection });
+    if (process.env.REDIS_URL) {
+      this._connection = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null });
+      this._connection.on('error', (err) => {
+        // Log once per error type to avoid log spam on reconnect cycles
+        if (!this._lastRedisErr || this._lastRedisErr !== err.code) {
+          this._lastRedisErr = err.code;
+          logger.warn('Redis connection error — async queue degraded to inline', { code: err.code });
+        }
+      });
+      this._queue = new Queue('ingestion-queue', { connection: this._connection });
+    } else {
+      this._connection = null;
+      this._queue = null;
+      logger.warn('REDIS_URL not set — BullMQ disabled, using inline async processing');
+    }
   }
 
   async initialize() {
@@ -132,16 +144,29 @@ class CortexEngine extends BaseEngine {
   }
 
   ingestAsync(entryId, rawText, options = {}) {
-    this._queue.add('ingest', { entryId, rawText, options }, {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
-      removeOnComplete: true,
-      removeOnFail: false
-    });
-    logger.info('Entry queued for async ingest in BullMQ', { entryId });
+    if (this._queue) {
+      this._queue.add('ingest', { entryId, rawText, options }, {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: true,
+        removeOnFail: false
+      });
+      logger.info('Entry queued for async ingest in BullMQ', { entryId });
+    } else {
+      // No Redis — process inline (fire-and-forget)
+      setImmediate(() => {
+        this.ingest(entryId, rawText, options).catch((err) => {
+          logger.error('Inline async ingestion failed', { entryId, error: err.message });
+        });
+      });
+    }
   }
 
   startWorker() {
+    if (!this._connection) {
+      logger.info('Cortex worker skipped — no Redis, using inline processing');
+      return;
+    }
     this._worker = new Worker('ingestion-queue', async (job) => {
       const { entryId, rawText, options } = job.data;
       return this.ingest(entryId, rawText, options);

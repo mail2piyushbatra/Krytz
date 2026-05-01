@@ -98,33 +98,44 @@ async function _handleInstantDone(userId, text, entryId, category, engines) {
       }
     }
 
-    // Fallback: direct DB match (uses pg_trgm similarity if available, else ILIKE)
+    // Fallback: direct DB match (uses pg_trgm similarity if available, else FTS)
     let rows;
     try {
       const result = await db.query(
-        `UPDATE items SET state = 'DONE', confidence = 1.0, updated_at = now(), last_seen = now()
-         WHERE id = (
-           SELECT id FROM items
+        `WITH target AS (
+           SELECT id, state AS from_state, canonical_text
+           FROM items
            WHERE user_id = $1 AND state IN ('OPEN', 'IN_PROGRESS')
            ORDER BY similarity(canonical_text, $2) DESC, last_seen DESC
            LIMIT 1
-         ) RETURNING id, canonical_text`,
+         ), upd AS (
+           UPDATE items SET state = 'DONE', confidence = 1.0, updated_at = now(), last_seen = now()
+           WHERE id = (SELECT id FROM target)
+           RETURNING id, canonical_text
+         )
+         SELECT upd.id, upd.canonical_text, target.from_state FROM upd, target`,
         [userId, text]
       );
       rows = result.rows;
     } catch (simErr) {
-      // pg_trgm not available — fall back to ILIKE substring match
       // pg_trgm not available — fall back to FTS search_vector match
       const keywords = text.split(/\s+/).filter(w => w.length > 3).slice(0, 3);
       if (keywords.length === 0) { rows = []; }
       else {
         const result = await db.query(
-          `UPDATE items SET state = 'DONE', confidence = 1.0, updated_at = now(), last_seen = now()
-           WHERE id = (
-             SELECT id FROM items
-             WHERE user_id = $1 AND state IN ('OPEN', 'IN_PROGRESS') AND search_vector @@ plainto_tsquery('english', $2)
-             ORDER BY ts_rank(search_vector, plainto_tsquery('english', $2)) DESC, last_seen DESC LIMIT 1
-           ) RETURNING id, canonical_text`,
+          `WITH target AS (
+             SELECT id, state AS from_state, canonical_text
+             FROM items
+             WHERE user_id = $1 AND state IN ('OPEN', 'IN_PROGRESS')
+               AND search_vector @@ plainto_tsquery('english', $2)
+             ORDER BY ts_rank(search_vector, plainto_tsquery('english', $2)) DESC, last_seen DESC
+             LIMIT 1
+           ), upd AS (
+             UPDATE items SET state = 'DONE', confidence = 1.0, updated_at = now(), last_seen = now()
+             WHERE id = (SELECT id FROM target)
+             RETURNING id, canonical_text
+           )
+           SELECT upd.id, upd.canonical_text, target.from_state FROM upd, target`,
           [userId, keywords.join(' ')]
         );
         rows = result.rows;
@@ -134,8 +145,8 @@ async function _handleInstantDone(userId, text, entryId, category, engines) {
     if (rows.length > 0) {
       await db.query(
         `INSERT INTO item_events (item_id, from_state, to_state, confidence, reason)
-         VALUES ($1, 'OPEN', 'DONE', 1.0, $2)`,
-        [rows[0].id, `Marked done via entry ${entryId}`]
+         VALUES ($1, $2, 'DONE', 1.0, $3)`,
+        [rows[0].id, rows[0].from_state, `Marked done via entry ${entryId}`]
       );
       logger.info('Instant DONE via DB match', { userId, itemId: rows[0].id, matched: rows[0].canonical_text });
     } else {

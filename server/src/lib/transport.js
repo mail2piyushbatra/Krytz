@@ -25,6 +25,7 @@
 
 const { WebSocketServer } = require('ws');
 const { v4: uuid } = require('uuid');
+const jwt    = require('jsonwebtoken');
 const logger = require('../lib/logger');
 
 class HybridTransport {
@@ -49,7 +50,20 @@ class HybridTransport {
           const msg = JSON.parse(data);
 
           if (msg.type === 'auth') {
-            userId = msg.userId;
+            if (!msg.token) {
+              ws.send(JSON.stringify({ type: 'error', message: 'auth token required' }));
+              ws.close(4001, 'Unauthorized');
+              return;
+            }
+            let decoded;
+            try {
+              decoded = jwt.verify(msg.token, process.env.JWT_SECRET);
+            } catch {
+              ws.send(JSON.stringify({ type: 'error', message: 'invalid or expired token' }));
+              ws.close(4001, 'Unauthorized');
+              return;
+            }
+            userId = decoded.sub;
             this._registerClient(userId, { ws, id, channels: new Set(msg.channels || ['items']) });
             ws.send(JSON.stringify({ type: 'auth_ok', id, channels: msg.channels || ['items'] }));
             logger.info('WS client authenticated', { userId, id });

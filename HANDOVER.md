@@ -1,52 +1,43 @@
-# ✦ KRYTZ — Session Handover
+# KRYTZ Session Handover
 
-> **Date:** 2026-04-29  
-> **Session:** Finalizing PWA Build, Auto-Categorization, and Production Readiness  
-> **Location:** `E:\flowra`
+> **Date:** 2026-05-01
+> **Location:** `E:\krytz`
 
----
+## Current State
 
-## 1. WHAT WAS BUILT & FINALIZED
+The repo has moved past the earlier deferred graph, connector, auth-reset, and RLS gaps.
 
-The system has transitioned from the "Flowra" legacy concepts to the **Krytz** architecture. The application is now a fully functional, production-ready Progressive Web App (PWA) backed by an event-driven AI intelligence pipeline.
+- Task graph data in `item_edges` is surfaced in the client through the Strategy and Inspector graph views.
+- Weekly memory retrieval is wired into the client, and nightly memory consolidation is scheduled through `server/src/lib/cron.js`.
+- Gmail, Google Calendar, and Notion connectors call real provider APIs instead of mock/demo payloads.
+- Password reset storage now matches the auth service schema.
+- RLS middleware is mounted on the API stack and uses request-scoped database context.
+- Agentic tool execution is exposed through `/api/v1/tools/execute` and `/api/v1/tools/history`, including external HTTP calls and Google Calendar event creation.
+- Root lint passes, the server has a deterministic local unit test entrypoint, and the CI workflow no longer depends on Prisma.
 
-### Core Achievements:
-- **PWA Deployment:** The Vite + React client is fully configured with a `manifest.json`, Service Worker, and assets for offline-first capabilities and mobile home-screen installation.
-- **Auto-Categorization Engine:** Items are now automatically routed into buckets (`work`, `personal`, `health`, `errands`, `learning`) via the Cortex worker during extraction.
-- **Priority Scoring:** Dynamic mathematical priority assignment based on deadlines and urgency keywords is active.
-- **Drift Management:** The UI actively detects tasks untouched for >7 days, highlighting them in amber and surfacing a "Drift Alert" banner.
-- **Task Detail Drill-down:** Implemented a glassmorphic modal displaying the cryptographic-style event history of state transitions (OPEN → IN_PROGRESS → DONE) and AI confidence metrics.
-- **Schema Stabilization:** Added missing `extracted_states` and `file_attachments` tables. Categories are now securely seeded on user registration.
-- **Documentation:** Authored a comprehensive `WHITEPAPER.md` detailing the 4-phase intelligence pipeline and the 5-layer storage architecture.
+## Verified In Repo
 
----
+- `npm run lint` passes at the repo root with warnings only.
+- `npm test --workspace=server` passes through `server/tests/unit/run-tests.cjs`.
+- Client production build passes.
+- Connector, execution, auth, cron, and route files pass syntax checks.
 
-## 2. SYSTEM ARCHITECTURE AT A GLANCE
+## Remaining Gaps
 
-- **Client:** React 18, Vite, Zustand, Vanilla CSS (Glassmorphism).
-- **API:** Node.js, Express, JWT Auth.
-- **Worker:** Node.js background process consuming BullMQ.
-- **Database:** PostgreSQL 16 (`pgvector` for embeddings).
-- **Message Queue:** Redis (BullMQ).
-- **File Storage:** MinIO (S3 compatible) for attachments.
+1. **Backend runtime still not live-verified here**
+   `http://localhost:8301/health` is not reachable in this session because Docker/service access is not available.
+2. **Strict React Flow dependency is still not literal**
+   The graph UI exists and works through custom SVG rendering, but `@xyflow/react` is not installed or used.
+3. **API/docs surface is still light**
+   The code now has profile update, settings payload support, stats, export, graph, and tool execution routes, but there is still no full OpenAPI/Postman package or operator runbook tied to the current repo.
 
----
+## Practical Next Step
 
-## 3. KNOWN ISSUES / DEFERRED TO V4
+Start the backend stack and verify:
 
-1. **API/Docs Surface:** Missing OpenAPI/Postman documentation, deployment/debug runbooks.
-2. **Product Endpoints:** Missing a settings API (to read/update user preferences) and profile update endpoint.
-3. **Analytics API:** Missing an aggregated entry count/stats endpoint for mobile dashboards.
+- `GET /health`
+- authenticated `GET /api/v1/stats`
+- authenticated `GET /api/v1/inspector/graph`
+- authenticated `POST /api/v1/tools/execute`
 
----
-
-## 4. DEPLOYMENT STATUS
-
-The application is completely ready for deployment.
-- **Client:** Deployable to Vercel/Netlify as static assets.
-- **Backend Stack:** Deployable to Railway, Render, or a VPS using the provided `docker-compose.yml` and `Dockerfile`.
-- **Reference:** See `artifacts/deployment_guide.md` for exact production variables and commands.
-
----
-
-**End of handover.**
+That is the main remaining proof gap between source readiness and runtime readiness.

@@ -46,6 +46,10 @@ app.use(cors({
   credentials: true,
 }));
 app.use(logger.requestLogger());
+
+// Stripe verifies against the exact raw bytes, so mount this before JSON parsing.
+if (pool) app.use('/api/v1', stripeWebhookRoute(pool));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -94,9 +98,6 @@ app.get('/health/engines', (req, res) => {
 });
 
 // â”€â”€â”€ API Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-// Stripe webhook FIRST (needs raw body â€” before express.json)
-if (pool) app.use('/api/v1', stripeWebhookRoute(pool));
 
 if (pool) app.use('/api/v1', rlsMiddleware(pool));
 

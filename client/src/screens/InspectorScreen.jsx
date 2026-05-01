@@ -8,6 +8,8 @@ import { Link } from 'react-router-dom';
 import { inspector } from '../services/api';
 import useAuthStore from '../stores/authStore';
 import { Card, MetricCard, Badge, ActionBtn, PageLoader, EmptyState } from '../components/ui/UiKit';
+import { Background, Controls, MarkerType, MiniMap, ReactFlow } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import { 
   Heart, GitBranch, Activity, AlertTriangle, Plug, Lock,
   Server, Database, Cpu, Wifi, Clock, CheckCircle2, XCircle, 
@@ -281,12 +283,34 @@ function getStatus(data) {
 /* â”€â”€ Graph Tab â”€â”€ */
 function GraphTab({ graph }) {
   if (!graph) return <EmptyState icon={GitBranch} title="No graph data" description="The temporal state graph is empty." />;
+  const flow = buildInspectorFlow(graph);
   return (
     <div className="graph-view">
       <div className="graph-stats-row">
         <MetricCard title="Nodes" value={graph.nodes?.length || 0} icon={GitBranch} />
         <MetricCard title="Edges" value={graph.edges?.length || 0} icon={Activity} />
       </div>
+      <Card className="graph-flow-card">
+        {flow.nodes.length === 0 ? (
+          <p className="health-no-data">No connected graph nodes yet.</p>
+        ) : (
+          <ReactFlow
+            className="graph-flow"
+            nodes={flow.nodes}
+            edges={flow.edges}
+            fitView
+            minZoom={0.45}
+            maxZoom={1.6}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            proOptions={{ hideAttribution: true }}
+          >
+            <MiniMap pannable zoomable nodeStrokeWidth={3} />
+            <Controls showInteractive={false} />
+            <Background gap={16} size={1} color="rgba(148, 163, 184, 0.16)" />
+          </ReactFlow>
+        )}
+      </Card>
       <div className="graph-nodes-list">
         {graph.nodes?.slice(0, 15).map(n => (
           <Card key={n.id} className="graph-node-card">
@@ -431,4 +455,62 @@ function connectorMetaText(meta = {}) {
     Number.isFinite(meta.lastSyncCount) ? `Items: ${meta.lastSyncCount}` : null,
   ].filter(Boolean);
   return details.join(' | ') || 'Awaiting credentials';
+}
+
+function buildInspectorFlow(graph, { nodeLimit = 18, edgeLimit = 32 } = {}) {
+  const baseNodes = (graph?.nodes || []).slice(0, nodeLimit);
+  const positions = new Map(
+    baseNodes.map((node, index) => {
+      const column = index % 3;
+      const row = Math.floor(index / 3);
+      return [node.id, { x: 90 + column * 220, y: 70 + row * 96, node }];
+    })
+  );
+
+  const nodes = [...positions.entries()].map(([id, item]) => ({
+    id,
+    position: { x: item.x, y: item.y },
+    data: { label: truncate(item.node.label, 20) },
+    draggable: false,
+    style: {
+      width: 160,
+      minHeight: 44,
+      borderRadius: 12,
+      border: `1px solid ${item.node.state === 'DONE' ? 'rgba(34, 197, 94, 0.38)' : item.node.blocker ? 'rgba(212, 155, 75, 0.45)' : 'rgba(255, 255, 255, 0.1)'}`,
+      background: item.node.state === 'DONE' ? 'rgba(34, 197, 94, 0.12)' : item.node.blocker ? 'rgba(212, 155, 75, 0.12)' : 'rgba(15, 23, 42, 0.92)',
+      color: '#f8fafc',
+      fontSize: '12px',
+      fontWeight: 600,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '10px 12px',
+      textAlign: 'center',
+      lineHeight: 1.35,
+    },
+  }));
+
+  const edges = (graph?.edges || [])
+    .filter(edge => positions.has(edge.source) && positions.has(edge.target))
+    .slice(0, edgeLimit)
+    .map(edge => ({
+      id: edge.id || `${edge.source}-${edge.target}`,
+      source: edge.source,
+      target: edge.target,
+      label: edge.label || edge.type || '',
+      type: 'smoothstep',
+      markerEnd: { type: MarkerType.ArrowClosed, color: 'rgba(148, 163, 184, 0.78)' },
+      style: { stroke: 'rgba(148, 163, 184, 0.7)', strokeWidth: 1.4 },
+      labelStyle: { fill: 'rgba(226, 232, 240, 0.88)', fontSize: 10, fontWeight: 600 },
+      labelBgStyle: { fill: 'rgba(15, 23, 42, 0.88)', fillOpacity: 1 },
+      labelBgPadding: [6, 3],
+      labelBgBorderRadius: 6,
+    }));
+
+  return { nodes, edges };
+}
+
+function truncate(value, max = 80) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  return text.length > max ? `${text.slice(0, max - 1)}...` : text;
 }

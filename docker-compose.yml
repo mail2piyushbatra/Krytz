@@ -21,6 +21,19 @@ services:
       timeout: 3s
       retries: 5
 
+  db-role-setup:
+    image: pgvector/pgvector:pg16
+    container_name: Krytz2-db-role-setup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: Krytz_dev_password
+    volumes:
+      - ./server/prisma/docker-app-role.sql:/docker-app-role.sql:ro
+    command: >
+      sh -c "psql -h postgres -U Krytz -d Krytz -v ON_ERROR_STOP=1 -f /docker-app-role.sql"
+
   # â”€â”€â”€ Redis â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   redis:
     image: redis:7-alpine
@@ -65,8 +78,8 @@ services:
       /bin/sh -c "
         mc alias set Krytz http://minio:9000 Krytz_access_key Krytz_secret_key;
         mc mb Krytz/Krytz-files --ignore-existing;
-        mc anonymous set download Krytz/Krytz-files;
-        echo 'Bucket Krytz-files created.';
+        mc anonymous set none Krytz/Krytz-files;
+        echo 'Bucket Krytz-files created with anonymous access disabled.';
       "
 
   # â”€â”€â”€ Krytz API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -76,8 +89,8 @@ services:
       target: development
     container_name: Krytz2-api
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-role-setup:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       minio:
@@ -85,7 +98,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 8000
-      DATABASE_URL: postgresql://Krytz:Krytz_dev_password@postgres:5432/Krytz?schema=public
+      DATABASE_URL: postgresql://krytz_app:krytz_app_dev_password@postgres:5432/Krytz?schema=public
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev-jwt-secret-not-for-production
       JWT_REFRESH_SECRET: dev-refresh-secret-not-for-production
@@ -116,13 +129,13 @@ services:
       target: development
     container_name: Krytz2-worker
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-role-setup:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://Krytz:Krytz_dev_password@postgres:5432/Krytz?schema=public
+      DATABASE_URL: postgresql://krytz_app:krytz_app_dev_password@postgres:5432/Krytz?schema=public
       REDIS_URL: redis://redis:6379
       OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-your-openai-api-key}
       LOG_LEVEL: debug

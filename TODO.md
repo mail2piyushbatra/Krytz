@@ -2,7 +2,17 @@
 
 > **Rule:** See [STANDARDS.md](./STANDARDS.md) — NO stubs, NO partial code, NO TODOs left in source files.  
 > **Vision:** See [docs/00_unified_vision.md](./docs/00_unified_vision.md) — Merged product + engine roadmap.  
-> **Last Updated:** 2026-04-24
+> **Last Updated:** 2026-05-01
+
+## Status Snapshot
+
+This file began as a build tracker. The phase tables below are still useful history, but the old claim that the repo was fully complete was no longer accurate.
+
+Current repo reality:
+
+- Closed since the earlier draft: real Gmail/Google Calendar/Notion connectors, mounted RLS middleware, password reset schema alignment, task graph UI, weekly memory RAG wiring, nightly memory consolidation, and agentic tool execution routes.
+- Repo health: root lint now passes with warnings only, server unit tests run locally without worker spawn failures, and CI is being aligned to the current raw-SQL stack.
+- Still open: live backend verification on `http://localhost:8301`, a literal `@xyflow/react` implementation if that dependency is mandatory, and fuller OpenAPI/Postman plus runbook coverage.
 
 ---
 
@@ -393,20 +403,19 @@
 
 ---
 
-## Grand Summary
+## Current Summary
 
-| Phase | Description | Total | Done | % |
-|---|---|---|---|---|
-| **0** | Project Setup | 11 | 11 | 100% |
-| **1A** | Server Backend + Normalization | 45 | 45 | 100% |
-| **1B** | Mobile App / Web Client | 33 | 33 | 100% |
-| **2** | Retention | 8 | 8 | 100% |
-| **3** | Connectors | 9 | 9 | 100% |
-| **4** | Data Model + Priority + State (5D Pt 1) | 32 | 32 | 100% |
-| **5** | Decision + Causality + Execution (5D Pt 2) | 17 | 17 | 100% |
-| **6** | Observability (Inspector) | 22 | 22 | 100% |
-| **7** | Intelligence + Learning + Bootstrap | 15 | 15 | 100% |
-| **8** | API & Operations | 5 | 5 | 100% |
-| **Infra** | DevOps | 10 | 10 | 100% |
-| **Test** | Testing | 10 | 10 | 100% |
-| **TOTAL** | | **217** | **217** | **100%** |
+The table totals below are no longer used as a source-of-truth completion percentage. Use this summary instead:
+
+| Area | Current State |
+|---|---|
+| Runtime verification | Blocked in this session until the local backend stack is reachable |
+| Task graph UI | Implemented with custom SVG graph views |
+| Weekly memory RAG | Wired to client |
+| Nightly memory consolidation | Implemented and scheduled |
+| Connectors | Real provider integrations in place |
+| Agentic tool calling | Implemented through `/api/v1/tools/execute` |
+| Repo lint | Passing with warnings only |
+| Server tests | Deterministic local unit runner in place |
+| CI | Needs only source-level checks by default, not live Docker integration |
+| API docs/runbooks | Still incomplete |

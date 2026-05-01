@@ -6,6 +6,54 @@ const pool = require('../../lib/db');
 
 const SALT_ROUNDS = 12;
 
+const ACCOUNT_DELETION_STEPS = [
+  ['platform_support_notes', 'subject_user_id = $1 OR author_user_id = $1'],
+  ['platform_data_requests', 'subject_user_id = $1 OR requester_user_id = $1'],
+  ['platform_audit_events', 'actor_user_id = $1'],
+  ['platform_backup_runs', 'requested_by = $1'],
+  ['platform_deploy_runs', 'requested_by = $1'],
+  ['platform_observability_events', 'created_by = $1'],
+  ['file_attachments', 'entry_id IN (SELECT id FROM entries WHERE user_id = $1)'],
+  ['extracted_states', 'entry_id IN (SELECT id FROM entries WHERE user_id = $1)'],
+  ['decision_traces', 'user_id = $1'],
+  ['traces', 'user_id = $1'],
+  ['anomaly_events', 'user_id = $1'],
+  ['command_log', 'user_id = $1'],
+  ['user_learning_model', 'user_id = $1'],
+  ['connector_state', 'user_id = $1'],
+  ['plan_cache', 'user_id = $1'],
+  ['cost_usage', 'user_id = $1'],
+  ['capture_queue', 'user_id = $1'],
+  ['notifications', 'user_id = $1'],
+  ['feedback', 'user_id = $1'],
+  ['memory_summaries', 'user_id = $1'],
+  ['semantic_memory', 'user_id = $1'],
+  ['episodic_memory', 'user_id = $1'],
+  ['entity_aliases', 'user_id = $1'],
+  ['entities', 'user_id = $1'],
+  ['commitment_dependencies', 'commitment_id IN (SELECT id FROM commitments WHERE user_id = $1) OR depends_on_id IN (SELECT id FROM commitments WHERE user_id = $1)'],
+  ['contradictions', 'user_id = $1'],
+  ['commitments', 'user_id = $1'],
+  ['time_estimates', 'user_id = $1'],
+  ['deletion_requests', 'user_id = $1'],
+  ['stripe_customers', 'user_id = $1'],
+  ['action_runs', 'item_id IN (SELECT id FROM items WHERE user_id = $1) OR rule_id IN (SELECT id FROM rules WHERE user_id = $1)'],
+  ['rules', 'user_id = $1'],
+  ['item_events', 'item_id IN (SELECT id FROM items WHERE user_id = $1)'],
+  ['item_edges', 'user_id = $1 OR from_item IN (SELECT id FROM items WHERE user_id = $1) OR to_item IN (SELECT id FROM items WHERE user_id = $1)'],
+  ['suggestion_events', 'user_id = $1'],
+  ['undo_log', 'user_id = $1'],
+  ['snoozes', 'user_id = $1'],
+  ['items', 'user_id = $1'],
+  ['entries', 'user_id = $1'],
+  ['categories', 'user_id = $1'],
+  ['daily_states', 'user_id = $1'],
+  ['metrics', 'user_id = $1'],
+  ['events', 'user_id = $1'],
+  ['refresh_tokens', 'user_id = $1'],
+  ['organization_members', 'user_id = $1'],
+];
+
 async function register({ email, password, name }) {
   const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
   if (existing.rows.length > 0) {
@@ -99,8 +147,93 @@ async function getProfile(userId) {
 }
 
 async function deleteAccount(userId) {
-  await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+  const client = await pool.connect();
+  const tableCache = new Map();
+  let fileKeys = [];
+
+  try {
+    await client.query('BEGIN');
+    await client.query(`SELECT set_config('app.current_user_id', $1, true)`, [userId]);
+
+    const user = await getUserForDeletion(client, userId);
+    if (!user) throw new AppError('User not found.', 404, 'NOT_FOUND');
+
+    fileKeys = await getAccountFileKeys(client, tableCache, userId);
+
+    if (user.email) {
+      await deleteWhereIfTableExists(
+        client,
+        tableCache,
+        'platform_invites',
+        'invited_by = $1 OR lower(invited_email) = lower($2)',
+        [userId, user.email]
+      );
+    } else {
+      await deleteWhereIfTableExists(client, tableCache, 'platform_invites', 'invited_by = $1', [userId]);
+    }
+
+    for (const [tableName, whereClause] of ACCOUNT_DELETION_STEPS) {
+      await deleteWhereIfTableExists(client, tableCache, tableName, whereClause, [userId]);
+    }
+
+    await deleteWhereIfTableExists(client, tableCache, 'users', 'id = $1', [userId]);
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  if (fileKeys.length > 0) {
+    const { deleteFilesFromS3 } = require('../files/file.service');
+    await deleteFilesFromS3(fileKeys);
+  }
+
   return { message: 'Account and all data deleted.' };
+}
+
+async function getUserForDeletion(client, userId) {
+  const { rows } = await client.query('SELECT id, email FROM users WHERE id = $1', [userId]);
+  return rows[0] || null;
+}
+
+async function getAccountFileKeys(client, tableCache, userId) {
+  const hasEntries = await tableExists(client, tableCache, 'entries');
+  const hasFiles = await tableExists(client, tableCache, 'file_attachments');
+  if (!hasEntries || !hasFiles) return [];
+
+  const { rows } = await client.query(
+    `SELECT DISTINCT fa.file_key
+       FROM file_attachments fa
+       JOIN entries e ON e.id = fa.entry_id
+      WHERE e.user_id = $1
+        AND fa.file_key IS NOT NULL`,
+    [userId]
+  );
+  return rows.map((row) => row.file_key).filter(Boolean);
+}
+
+async function deleteWhereIfTableExists(client, tableCache, tableName, whereClause, params) {
+  if (!(await tableExists(client, tableCache, tableName))) return 0;
+  const { rowCount } = await client.query(`DELETE FROM ${tableName} WHERE ${whereClause}`, params);
+  return rowCount;
+}
+
+async function tableExists(client, tableCache, tableName) {
+  assertSafeTableName(tableName);
+  if (tableCache.has(tableName)) return tableCache.get(tableName);
+
+  const { rows: [row] } = await client.query('SELECT to_regclass($1) AS table_name', [`public.${tableName}`]);
+  const exists = Boolean(row.table_name);
+  tableCache.set(tableName, exists);
+  return exists;
+}
+
+function assertSafeTableName(tableName) {
+  if (!/^[a-z_][a-z0-9_]*$/.test(tableName)) {
+    throw new Error(`Unsafe table name: ${tableName}`);
+  }
 }
 
 async function generateTokens(user) {

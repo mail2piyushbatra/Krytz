@@ -232,7 +232,9 @@ async function forgotPassword(email) {
     [token, expires, rows[0].id]
   );
 
-  console.log(`\n\n=== PASSWORD RESET LINK ===\nMock email sent to ${email}\nReset Token: ${token}\nURL: http://localhost:5173/?resetToken=${token}\n===========================\n\n`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n\n=== PASSWORD RESET LINK ===\nMock email sent to ${email}\nReset Token: ${token}\nURL: http://localhost:5173/?resetToken=${token}\n===========================\n\n`);
+  }
 
   return { message: 'If that email exists, a reset link has been sent.' };
 }

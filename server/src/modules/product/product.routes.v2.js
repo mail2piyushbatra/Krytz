@@ -148,9 +148,11 @@ function productRoutesV2(engines, pool) {
 
     let result = {};
 
+    const fromState = rows[0].state;
+
     if (type === 'done') {
       await pool.query(`UPDATE items SET state='DONE', updated_at=now() WHERE id=$1 AND user_id=$2`, [itemId, userId]);
-      await pool.query(`INSERT INTO item_events(id,item_id,from_state,to_state,confidence,reason) VALUES(uuid_generate_v4(),$1,'OPEN','DONE',0.9,'user_action')`, [itemId]).catch(() => {});
+      await pool.query(`INSERT INTO item_events(id,item_id,from_state,to_state,confidence,reason) VALUES(uuid_generate_v4(),$1,$2,'DONE',0.9,'user_action')`, [itemId, fromState]).catch(() => {});
       await recordSuggestionEvent(pool, userId, itemId, 'accepted', null).catch(() => {});
       result = { state: 'DONE' };
 
@@ -162,7 +164,7 @@ function productRoutesV2(engines, pool) {
 
     } else if (type === 'drop') {
       await pool.query(`UPDATE items SET state='DROPPED', updated_at=now() WHERE id=$1 AND user_id=$2`, [itemId, userId]);
-      await pool.query(`INSERT INTO item_events(id,item_id,from_state,to_state,confidence,reason) VALUES(uuid_generate_v4(),$1,'OPEN','DROPPED',0.5,'user_dropped')`, [itemId]).catch(() => {});
+      await pool.query(`INSERT INTO item_events(id,item_id,from_state,to_state,confidence,reason) VALUES(uuid_generate_v4(),$1,$2,'DROPPED',0.5,'user_dropped')`, [itemId, fromState]).catch(() => {});
       await recordSuggestionEvent(pool, userId, itemId, 'dropped', null).catch(() => {});
       result = { state: 'DROPPED' };
     }

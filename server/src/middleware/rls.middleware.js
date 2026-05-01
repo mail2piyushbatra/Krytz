@@ -64,9 +64,12 @@ function attachUserFromBearer(req) {
   if (req.user?.id) return;
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return;
-
-  const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
-  req.user = { id: decoded.sub, email: decoded.email };
+  try {
+    const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
+    req.user = { id: decoded.sub, email: decoded.email };
+  } catch {
+    // Invalid/expired token — leave req.user unset; auth middleware rejects if route requires auth
+  }
 }
 
 async function withUserContext(pool, userId, fn) {

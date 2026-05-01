@@ -23,4 +23,4 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS categories_isolation ON categories;
 CREATE POLICY categories_isolation ON categories
-  USING (user_id = current_setting('app.user_id', true)::UUID);
+  USING (user_id = current_user_id());

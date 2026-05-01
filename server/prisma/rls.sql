@@ -168,6 +168,28 @@ DROP POLICY IF EXISTS events_isolation ON events;
 CREATE POLICY events_isolation ON events
   USING (user_id = current_user_id() OR user_id IS NULL);
 
+-- ─── Tables missing from original policy set ────────────────────────────────
+
+ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE entries FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS entries_isolation ON entries;
+CREATE POLICY entries_isolation ON entries
+  USING (user_id = current_user_id());
+
+-- extracted_states has no direct user_id — access via entries join
+ALTER TABLE extracted_states ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extracted_states FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS extracted_states_isolation ON extracted_states;
+CREATE POLICY extracted_states_isolation ON extracted_states
+  USING (entry_id IN (SELECT id FROM entries WHERE user_id = current_user_id()));
+
+-- file_attachments has no direct user_id — access via entries join
+ALTER TABLE file_attachments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE file_attachments FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS file_attachments_isolation ON file_attachments;
+CREATE POLICY file_attachments_isolation ON file_attachments
+  USING (entry_id IN (SELECT id FROM entries WHERE user_id = current_user_id()));
+
 -- ─── App role grants ─────────────────────────────────────────────────────────
 -- Run once as superuser to create the application role.
 -- Production: connect as flowra_app, NOT as superuser (superuser bypasses RLS).

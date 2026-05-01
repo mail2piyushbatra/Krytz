@@ -11,11 +11,7 @@ function errorHandler(err, req, res, next) {
   if (err.code === '23505') {
     return res.status(409).json({
       success: false,
-      error: {
-        code: 'CONFLICT',
-        message: 'A record with this value already exists.',
-        details: err.detail,
-      },
+      error: { code: 'CONFLICT', message: 'A record with this value already exists.' },
     });
   }
 

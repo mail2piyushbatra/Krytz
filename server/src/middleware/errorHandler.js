@@ -62,14 +62,13 @@ function errorHandler(err, req, res, next) {
   }
 
   // Fallback: internal server error
-  // Temporarily include error detail in production for debugging the auth flow.
-  // TODO(security): remove the production exposure once login is verified end-to-end.
   res.status(500).json({
     success: false,
     error: {
       code: 'INTERNAL_ERROR',
-      message: err.message || 'An unexpected error occurred.',
-      stack: err.stack ? err.stack.split('\n').slice(0, 5).join('\n') : undefined,
+      message: process.env.NODE_ENV === 'production'
+        ? 'An unexpected error occurred.'
+        : err.message,
     },
   });
 }

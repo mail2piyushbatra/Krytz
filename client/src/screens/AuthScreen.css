@@ -193,3 +193,20 @@
   color: var(--text-primary);
   text-decoration: underline;
 }
+
+.auth-legal {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.auth-legal-link {
+  color: var(--text-secondary);
+  text-decoration: underline;
+}
+
+.auth-legal-link:hover {
+  color: var(--text-primary);
+}

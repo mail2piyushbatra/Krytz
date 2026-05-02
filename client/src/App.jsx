@@ -24,6 +24,7 @@ import PlatformScreen from './screens/PlatformScreen';
 import InspectorScreen from './screens/InspectorScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
+import { PrivacyScreen, TermsScreen } from './screens/LegalScreen';
 
 // â”€â”€ Lazy-loaded screens (code splitting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PLATFORM_LANDING_BY_ROLE = {
@@ -60,33 +61,36 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (loading) return <SplashScreen />;
-
-  if (!user) {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<SplashScreen />}>
-          <ToastProvider>
-            <OfflineBanner />
-            <AuthScreen />
-          </ToastProvider>
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <OfflineBanner />
-        <div className="layout" role="application" aria-label="Krytz application">
-          <Sidebar />
-          <ErrorBoundary>
-            <MainContent />
-          </ErrorBoundary>
-        </div>
-      </ToastProvider>
+      <ErrorBoundary>
+        <ToastProvider>
+          <OfflineBanner />
+          <Suspense fallback={<SplashScreen />}>
+            <Routes>
+              {/* Public legal pages — accessible without login */}
+              <Route path="/privacy" element={<PrivacyScreen />} />
+              <Route path="/terms" element={<TermsScreen />} />
+              {/* Everything else: gated on auth */}
+              <Route path="*" element={<AuthGate loading={loading} user={user} />} />
+            </Routes>
+          </Suspense>
+        </ToastProvider>
+      </ErrorBoundary>
     </BrowserRouter>
+  );
+}
+
+function AuthGate({ loading, user }) {
+  if (loading) return <SplashScreen />;
+  if (!user) return <AuthScreen />;
+  return (
+    <div className="layout" role="application" aria-label="Krytz application">
+      <Sidebar />
+      <ErrorBoundary>
+        <MainContent />
+      </ErrorBoundary>
+    </div>
   );
 }
 

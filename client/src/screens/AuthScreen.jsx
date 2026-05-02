@@ -218,6 +218,11 @@ export default function AuthScreen() {
           ) : (
             <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>← Back to login</button>
           )}
+          <p className="auth-legal">
+            By continuing you agree to our{' '}
+            <a href="/terms" className="auth-legal-link">Terms</a>{' '}and{' '}
+            <a href="/privacy" className="auth-legal-link">Privacy Policy</a>.
+          </p>
         </div>
       </form>
     </div>

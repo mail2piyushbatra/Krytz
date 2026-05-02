@@ -3,7 +3,13 @@
  *  Handles JWT auth, auto-refresh, and response unwrapping.
  */
 
-export const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8301/api/v1';
+// Default to local dev API when running on localhost; otherwise hit the deployed Railway backend.
+// Override either by setting VITE_API_URL at build time.
+const isLocal = typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+const DEFAULT_API = isLocal
+  ? 'http://localhost:8301/api/v1'
+  : 'https://krytzserver-production.up.railway.app/api/v1';
+export const API_BASE = import.meta.env.VITE_API_URL || DEFAULT_API;
 
 let accessToken = localStorage.getItem('Krytz_token');
 let refreshToken = localStorage.getItem('Krytz_refresh');

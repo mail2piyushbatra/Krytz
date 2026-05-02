@@ -42,7 +42,16 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',')
-    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:8088', 'http://localhost:19006'],
+    : [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+        'http://localhost:8088',
+        'http://localhost:19006',
+        'https://www.krytz.in',
+        'https://krytz.in',
+        'https://krytz-coral.vercel.app',
+      ],
   credentials: true,
 }));
 app.use(logger.requestLogger());

@@ -68,7 +68,13 @@ async function register({ email, password, name }) {
     [email, passwordHash, name || null]
   );
 
-  await bootstrapFirstPlatformFounder(rows[0].id);
+  // Founder bootstrap is non-critical for registration — if the platform tables
+  // are missing or the insert fails, the user account is still valid.
+  try {
+    await bootstrapFirstPlatformFounder(rows[0].id);
+  } catch (err) {
+    require('../../lib/logger').warn('bootstrapFirstPlatformFounder failed', { error: err.message });
+  }
 
   // Seed default categories so auto-categorization works from the first task
   try {
@@ -76,7 +82,18 @@ async function register({ email, password, name }) {
     await seedDefaults(rows[0].id);
   } catch { /* non-blocking — categories can be created later */ }
 
-  const user = await toApiUser(rows[0]);
+  const user = await toApiUser(rows[0]).catch(() => ({
+    id: rows[0].id,
+    email: rows[0].email,
+    name: rows[0].name,
+    role: 'member',
+    platformRole: null,
+    platformMemberships: [],
+    timezone: rows[0].timezone,
+    onboarded: rows[0].onboarded,
+    settings: rows[0].settings,
+    createdAt: rows[0].created_at,
+  }));
   const tokens = await generateTokens(user);
   return { user, ...tokens };
 }

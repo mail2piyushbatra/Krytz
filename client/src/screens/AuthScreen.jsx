@@ -1,9 +1,34 @@
-/** âœ¦ Krytz â€” Auth Screen (Login / Register / Reset) */
-import { useState, useEffect } from 'react';
+/** Krytz — Auth Screen (Login / Register / Reset / Google) */
+import { useState, useEffect, useRef } from 'react';
 import useAuthStore from '../stores/authStore';
 import { auth } from '../services/api';
 import { ActionBtn } from '../components/ui/UiKit';
 import './AuthScreen.css';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  || '692406372365-jds36ljd41fkocssm4a0vpo26vekid2i.apps.googleusercontent.com';
+
+const GSI_SRC = 'https://accounts.google.com/gsi/client';
+
+function loadGoogleScript() {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  if (window.google?.accounts?.id) return Promise.resolve(window.google);
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${GSI_SRC}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.google));
+      existing.addEventListener('error', reject);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = GSI_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(window.google);
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
 
 export default function AuthScreen() {
   const [mode, setMode] = useState('login'); // 'login', 'register', 'forgot', 'reset'
@@ -14,8 +39,9 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  
-  const { login, register, error, clearError } = useAuthStore();
+  const googleBtnRef = useRef(null);
+
+  const { login, register, loginWithGoogle, error, clearError } = useAuthStore();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -25,6 +51,44 @@ export default function AuthScreen() {
       setMode('reset');
     }
   }, []);
+
+  // Render Google sign-in button when on login/register modes.
+  useEffect(() => {
+    if (mode !== 'login' && mode !== 'register') return;
+    let cancelled = false;
+
+    loadGoogleScript()
+      .then((google) => {
+        if (cancelled || !google?.accounts?.id || !googleBtnRef.current) return;
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => {
+            try {
+              setLocalError('');
+              setLoading(true);
+              await loginWithGoogle(response.credential);
+            } catch (err) {
+              setLocalError(err.message || 'Google sign-in failed.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        });
+        // Clear any previous render before re-rendering on mode flip
+        googleBtnRef.current.innerHTML = '';
+        google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: 280,
+          text: mode === 'register' ? 'signup_with' : 'signin_with',
+        });
+      })
+      .catch(() => {
+        // Network blocked / offline — leave the slot empty rather than crashing.
+      });
+
+    return () => { cancelled = true; };
+  }, [mode, loginWithGoogle]);
 
   const validate = () => {
     setLocalError('');
@@ -43,9 +107,9 @@ export default function AuthScreen() {
     e.preventDefault();
     clearError();
     setSuccessMsg('');
-    
+
     if (!validate()) return;
-    
+
     setLoading(true);
     try {
       if (mode === 'login') await login(email, password);
@@ -71,10 +135,6 @@ export default function AuthScreen() {
     setSuccessMsg('');
   };
 
-  const handleOAuth = (provider) => {
-    alert(`OAuth with ${provider} is coming in Phase 3!`);
-  };
-
   return (
     <div className="auth-bg" id="auth-screen">
       <div className="auth-gradient" />
@@ -82,7 +142,7 @@ export default function AuthScreen() {
 
       <form className="auth-card glass animate-scaleIn" onSubmit={handleSubmit}>
         <div className="auth-logo">
-          <span className="auth-logo-mark">âœ¦</span>
+          <span className="auth-logo-mark">✦</span>
           <h1 className="auth-logo-text">Krytz</h1>
         </div>
         <p className="auth-tagline">
@@ -141,15 +201,8 @@ export default function AuthScreen() {
         {(mode === 'login' || mode === 'register') && (
           <>
             <div className="auth-divider"><span>or continue with</span></div>
-            <div className="oauth-buttons">
-              <button type="button" className="btn btn-oauth" onClick={() => handleOAuth('Google')}>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="G" className="oauth-icon" />
-                Google
-              </button>
-              <button type="button" className="btn btn-oauth" onClick={() => handleOAuth('Apple')}>
-                <svg viewBox="0 0 384 512" className="oauth-icon apple-icon" fill="currentColor"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-                Apple
-              </button>
+            <div className="oauth-buttons" style={{ justifyContent: 'center' }}>
+              <div ref={googleBtnRef} />
             </div>
           </>
         )}
@@ -163,7 +216,7 @@ export default function AuthScreen() {
           ) : mode === 'register' ? (
             <p className="auth-switch">Already have an account? <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>Sign in</button></p>
           ) : (
-            <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>â† Back to login</button>
+            <button type="button" className="auth-switch-btn" onClick={() => toggleMode('login')}>← Back to login</button>
           )}
         </div>
       </form>

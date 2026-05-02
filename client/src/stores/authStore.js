@@ -35,6 +35,18 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  loginWithGoogle: async (idToken) => {
+    set({ error: null });
+    try {
+      const user = await authApi.loginWithGoogle(idToken);
+      set({ user, error: null });
+      return user;
+    } catch (err) {
+      set({ error: err.message });
+      throw err;
+    }
+  },
+
   register: async (email, password, name) => {
     set({ error: null });
     try {

@@ -1,7 +1,7 @@
 const express = require('express');
 const { validate } = require('../../middleware/validate');
 const { authenticate } = require('../../middleware/auth');
-const { registerSchema, loginSchema, refreshSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } = require('./auth.schema');
+const { registerSchema, loginSchema, refreshSchema, googleLoginSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } = require('./auth.schema');
 const authService = require('./auth.service');
 
 const router = express.Router();
@@ -20,6 +20,16 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
 router.post('/login', validate(loginSchema), async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/v1/auth/google
+router.post('/google', validate(googleLoginSchema), async (req, res, next) => {
+  try {
+    const result = await authService.loginWithGoogle(req.body);
     res.json({ success: true, data: result });
   } catch (err) {
     next(err);

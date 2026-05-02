@@ -15,6 +15,10 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token is required'),
 });
 
+const googleLoginSchema = z.object({
+  idToken: z.string().min(1, 'Google ID token is required'),
+});
+
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
 });
@@ -29,4 +33,4 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
-module.exports = { registerSchema, loginSchema, refreshSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema };
+module.exports = { registerSchema, loginSchema, refreshSchema, googleLoginSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema };

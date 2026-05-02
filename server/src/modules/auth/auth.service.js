@@ -6,6 +6,19 @@ const pool = require('../../lib/db');
 
 const SALT_ROUNDS = 12;
 
+// Public Google OAuth Web Client ID. Override at runtime with GOOGLE_CLIENT_ID.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+  || '692406372365-jds36ljd41fkocssm4a0vpo26vekid2i.apps.googleusercontent.com';
+
+let _googleClient = null;
+function getGoogleClient() {
+  if (!_googleClient) {
+    const { OAuth2Client } = require('google-auth-library');
+    _googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+  }
+  return _googleClient;
+}
+
 const ACCOUNT_DELETION_STEPS = [
   ['platform_support_notes', 'subject_user_id = $1 OR author_user_id = $1'],
   ['platform_data_requests', 'subject_user_id = $1 OR requester_user_id = $1'],
@@ -116,6 +129,72 @@ async function login({ email, password }) {
   }
 
   const user = await toApiUser(rows[0]);
+  const tokens = await generateTokens(user);
+  return { user, ...tokens };
+}
+
+/**
+ * Sign in with Google.
+ * Verifies the ID token against Google's public keys, extracts the user's email
+ * and name, then upserts a user record (matched by email) and returns our JWT.
+ *
+ * Users created via Google have password_hash=null and cannot log in via the
+ * email/password flow until they set a password.
+ */
+async function loginWithGoogle({ idToken }) {
+  let payload;
+  try {
+    const ticket = await getGoogleClient().verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (err) {
+    throw new AppError('Google token verification failed.', 401, 'UNAUTHORIZED');
+  }
+
+  if (!payload || !payload.email || !payload.email_verified) {
+    throw new AppError('Google account email is missing or unverified.', 401, 'UNAUTHORIZED');
+  }
+
+  const email = payload.email.toLowerCase();
+  const name = payload.name || payload.given_name || null;
+
+  // Upsert by email; if the user already exists from email/password signup,
+  // this just updates the name (if it was missing) and returns the row.
+  const { rows } = await pool.query(
+    `INSERT INTO users (email, name, onboarded)
+     VALUES ($1, $2, false)
+     ON CONFLICT (email) DO UPDATE SET
+       name = COALESCE(users.name, EXCLUDED.name),
+       updated_at = now()
+     RETURNING id, email, name, timezone, onboarded, settings, created_at`,
+    [email, name]
+  );
+
+  try {
+    await bootstrapFirstPlatformFounder(rows[0].id);
+  } catch (err) {
+    require('../../lib/logger').warn('bootstrapFirstPlatformFounder failed (google)', { error: err.message });
+  }
+
+  try {
+    const { seedDefaults } = require('../categories/category.service');
+    await seedDefaults(rows[0].id);
+  } catch { /* non-blocking */ }
+
+  const user = await toApiUser(rows[0]).catch(() => ({
+    id: rows[0].id,
+    email: rows[0].email,
+    name: rows[0].name,
+    role: 'member',
+    platformRole: null,
+    platformMemberships: [],
+    timezone: rows[0].timezone,
+    onboarded: rows[0].onboarded,
+    settings: rows[0].settings,
+    createdAt: rows[0].created_at,
+  }));
   const tokens = await generateTokens(user);
   return { user, ...tokens };
 }
@@ -426,4 +505,4 @@ async function changePassword(userId, currentPassword, newPassword) {
   return { message: 'Password updated successfully.' };
 }
 
-module.exports = { register, login, refresh, getProfile, updateProfile, deleteAccount, forgotPassword, resetPassword, changePassword };
+module.exports = { register, login, loginWithGoogle, refresh, getProfile, updateProfile, deleteAccount, forgotPassword, resetPassword, changePassword };

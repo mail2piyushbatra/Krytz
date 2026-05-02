@@ -100,6 +100,14 @@ export const auth = {
     setTokens(data.accessToken, data.refreshToken);
     return data.user;
   },
+  async loginWithGoogle(idToken) {
+    const data = await request('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+    setTokens(data.accessToken, data.refreshToken);
+    return data.user;
+  },
   async me() {
     const data = await request('/auth/me');
     return data.user || data;

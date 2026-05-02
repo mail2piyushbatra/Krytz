@@ -1,5 +1,5 @@
 /**
- * âœ¦ Krytz â€” Items Service
+ * ✦ Krytz — Items Service
  *
  * The core todo ledger. CRUD operations over the `items` table,
  * with filtering, dynamic sort scoring, and completion tracking.
@@ -11,7 +11,7 @@ const logger = require('../../lib/logger');
 const { AppError } = require('../../middleware/errorHandler');
 const { embed } = require('../../engines/memory/embed');
 
-// â”€â”€â”€ Row â†’ API mapping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Row → API mapping ────────────────────────────────────────────────────────
 
 function toApiItem(row) {
   return {
@@ -33,7 +33,7 @@ function toApiItem(row) {
   };
 }
 
-// â”€â”€â”€ Dynamic sort score â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Dynamic sort score ───────────────────────────────────────────────────────
 // Items within each category auto-sort by composite relevance score.
 
 function computeSortScore(item) {
@@ -66,7 +66,7 @@ function computeSortScore(item) {
   return score;
 }
 
-// â”€â”€â”€ List items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── List items ───────────────────────────────────────────────────────────────
 
 async function listItems(userId, { state, category, blocker, since, sort, page, limit }) {
   const conditions = ['i.user_id = $1'];
@@ -157,7 +157,7 @@ async function listItems(userId, { state, category, blocker, since, sort, page, 
   };
 }
 
-// â”€â”€â”€ Get single item with history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Get single item with history ─────────────────────────────────────────────
 
 async function getItem(userId, itemId) {
   const { rows } = await db.query(
@@ -185,7 +185,7 @@ async function getItem(userId, itemId) {
   };
 }
 
-// â”€â”€â”€ Create item directly â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Create item directly ─────────────────────────────────────────────────────
 
 // ─── Auto-categorization ────────────────────────────────────────────────────────
 // Matches item text against user's existing categories using keyword similarity.
@@ -292,7 +292,7 @@ async function createItem(userId, { text, category, deadline, blocker, priority 
 }
 
 
-// â”€â”€â”€ Embedding generation (fire-and-forget) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Embedding generation (fire-and-forget) ───────────────────────────────────
 
 async function generateEmbedding(itemId, text) {
   const vec = await embed(text);
@@ -306,7 +306,7 @@ async function generateEmbedding(itemId, text) {
   );
 }
 
-// â”€â”€â”€ Semantic search using pgvector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Semantic search using pgvector ───────────────────────────────────────────
 
 async function semanticSearch(userId, query, { limit = 10, threshold = 0.3 } = {}) {
   const queryVec = await embed(query);
@@ -340,7 +340,7 @@ async function semanticSearch(userId, query, { limit = 10, threshold = 0.3 } = {
   return rows.map(r => ({ ...toApiItem(r), score: parseFloat(r.similarity) }));
 }
 
-// â”€â”€â”€ Update item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Update item ──────────────────────────────────────────────────────────────
 
 async function updateItem(userId, itemId, updates) {
   // Fetch current state
@@ -403,7 +403,7 @@ async function updateItem(userId, itemId, updates) {
   return item;
 }
 
-// â”€â”€â”€ Soft-delete (mark DROPPED) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Soft-delete (mark DROPPED) ───────────────────────────────────────────────
 
 async function deleteItem(userId, itemId) {
   const { rows } = await db.query(
@@ -424,7 +424,7 @@ async function deleteItem(userId, itemId) {
   return { message: 'Item dropped' };
 }
 
-// â”€â”€â”€ Completion stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Completion stats ─────────────────────────────────────────────────────────
 
 async function getCompletionStats(userId, days = 7) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -449,7 +449,7 @@ async function getCompletionStats(userId, days = 7) {
     [userId, since]
   );
 
-  // Average time to complete (first_seen â†’ DONE event)
+  // Average time to complete (first_seen → DONE event)
   const avgTime = await db.query(
     `SELECT i.category,
             AVG(EXTRACT(EPOCH FROM (ie.created_at - i.first_seen)) / 86400)::numeric(10,1) AS avg_days

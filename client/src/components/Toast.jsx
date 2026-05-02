@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Global Toast System
+/** ✦ Krytz — Global Toast System
  *
  *  Usage from any component:
  *    import { useToast } from '../components/Toast';
@@ -53,7 +53,7 @@ export function ToastProvider({ children }) {
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Fallback if used outside provider â€” won't crash, just logs
+    // Fallback if used outside provider — won't crash, just logs
     return {
       success: (msg) => console.log('[toast]', msg),
       error:   (msg) => console.error('[toast]', msg),

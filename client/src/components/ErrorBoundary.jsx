@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Error Boundary
+/** ✦ Krytz — Error Boundary
  *
  * Catches React render errors and shows a recovery UI
  * instead of killing the entire app.
@@ -24,7 +24,7 @@ export default class ErrorBoundary extends Component {
       return (
         <div className="error-boundary" role="alert" aria-live="assertive">
           <div className="error-boundary-inner">
-            <span className="error-boundary-icon">âš </span>
+            <span className="error-boundary-icon">⚠</span>
             <h2>Something went wrong</h2>
             <p className="error-boundary-msg">{this.state.error?.message || 'An unexpected error occurred.'}</p>
             <div className="error-boundary-actions">

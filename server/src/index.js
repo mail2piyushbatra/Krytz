@@ -17,7 +17,7 @@ const exportRoutes   = require('./modules/export/export.routes');
 const { errorHandler } = require('./middleware/errorHandler');
 const db = require('./lib/db');
 
-// â”€â”€â”€ V3 Infrastructure â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── V3 Infrastructure ────────────────────────────────────────────
 const { intelligenceRoutes, stripeWebhookRoute } = require('./modules/intelligence/intelligence.routes');
 const productRoutesV2 = require('./modules/product/product.routes.v2');
 const supportRoutes   = require('./modules/support/support.routes');
@@ -28,13 +28,13 @@ const { tierMiddleware } = require('./lib/tiers');
 const { startCron }     = require('./lib/cron');
 const { runBootMigrations } = require('./lib/bootMigrations');
 
-// Single shared pg Pool â€” all modules use lib/db.js
+// Single shared pg Pool — all modules use lib/db.js
 const pool = db;
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// â”€â”€â”€ Global Middleware â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Global Middleware ────────────────────────────────────────────
 
 const { requestId } = require('./middleware/requestId');
 app.use(requestId);
@@ -86,7 +86,7 @@ const aiLimiter = rateLimit({
   },
 });
 
-// â”€â”€â”€ Health Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Health Check ─────────────────────────────────────────────────
 
 app.get('/health', (req, res) => {
   res.json({
@@ -106,7 +106,7 @@ app.get('/health/engines', (req, res) => {
   });
 });
 
-// â”€â”€â”€ API Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── API Routes ───────────────────────────────────────────────────
 
 if (pool) app.use('/api/v1', rlsMiddleware(pool));
 
@@ -120,7 +120,7 @@ app.use('/api/v1/state', stateRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/recall', aiLimiter, recallRoutes);
 
-// â”€â”€â”€ V3 Routes (pool-based, tier + RLS aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── V3 Routes (pool-based, tier + RLS aware) ─────────────────────
 if (pool) {
   // Attach tier to req for feature-gate middleware
   app.use('/api/v1', tierMiddleware(pool));
@@ -143,7 +143,7 @@ if (pool) {
   app.use('/api/v1/inspector', inspectorRoutes(pool));
 }
 
-// â”€â”€â”€ 404 Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 404 Handler ──────────────────────────────────────────────────
 
 app.use((req, res) => {
   res.status(404).json({
@@ -152,11 +152,11 @@ app.use((req, res) => {
   });
 });
 
-// â”€â”€â”€ Error Handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Error Handler ────────────────────────────────────────────────
 
 app.use(errorHandler);
 
-// â”€â”€â”€ Start Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Start Server ─────────────────────────────────────────────────
 
 const { initializeEngines } = require('./engines');
 
@@ -185,7 +185,7 @@ async function start() {
   }
 }
 
-// â”€â”€â”€ Graceful Shutdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Graceful Shutdown ────────────────────────────────────────────
 
 async function shutdown(signal) {
   logger.info(`${signal} received. Shutting down gracefully...`);

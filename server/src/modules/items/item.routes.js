@@ -1,5 +1,5 @@
 /**
- * âœ¦ Krytz â€” Items Routes
+ * ✦ Krytz — Items Routes
  *
  * The todo ledger API. Full CRUD over items with filtering,
  * dynamic sort scoring, and completion tracking.
@@ -15,7 +15,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// GET /api/v1/items â€” List items (filterable by state, category, blocker)
+// GET /api/v1/items — List items (filterable by state, category, blocker)
 router.get('/', async (req, res, next) => {
   try {
     const filters = listItemsSchema.parse(req.query);
@@ -26,7 +26,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// GET /api/v1/items/completions â€” Completion ledger (done items + stats)
+// GET /api/v1/items/completions — Completion ledger (done items + stats)
 router.get('/completions', async (req, res, next) => {
   try {
     const days = Math.min(parseInt(req.query.days) || 7, 90);
@@ -37,7 +37,7 @@ router.get('/completions', async (req, res, next) => {
   }
 });
 
-// POST /api/v1/items/search â€” Semantic search using vector embeddings
+// POST /api/v1/items/search — Semantic search using vector embeddings
 router.post('/search', async (req, res, next) => {
   try {
     const { query, limit, threshold } = req.body;
@@ -54,7 +54,7 @@ router.post('/search', async (req, res, next) => {
   }
 });
 
-// GET /api/v1/items/:id â€” Single item with event history
+// GET /api/v1/items/:id — Single item with event history
 router.get('/:id', async (req, res, next) => {
   try {
     const result = await itemService.getItem(req.user.id, req.params.id);
@@ -64,7 +64,7 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// POST /api/v1/items â€” Create item directly (bypasses entry â†’ extraction)
+// POST /api/v1/items — Create item directly (bypasses entry → extraction)
 router.post('/', validate(createItemSchema), async (req, res, next) => {
   try {
     const item = await itemService.createItem(req.user.id, req.body);
@@ -74,7 +74,7 @@ router.post('/', validate(createItemSchema), async (req, res, next) => {
   }
 });
 
-// PATCH /api/v1/items/:id â€” Update state, category, text, priority, etc.
+// PATCH /api/v1/items/:id — Update state, category, text, priority, etc.
 router.patch('/:id', validate(updateItemSchema), async (req, res, next) => {
   try {
     const item = await itemService.updateItem(req.user.id, req.params.id, req.body);
@@ -84,7 +84,7 @@ router.patch('/:id', validate(updateItemSchema), async (req, res, next) => {
   }
 });
 
-// DELETE /api/v1/items/:id â€” Soft-delete (mark DROPPED)
+// DELETE /api/v1/items/:id — Soft-delete (mark DROPPED)
 router.delete('/:id', async (req, res, next) => {
   try {
     const result = await itemService.deleteItem(req.user.id, req.params.id);

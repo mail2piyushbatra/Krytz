@@ -1,8 +1,8 @@
-/** âœ¦ Krytz â€” Service Worker
+/** ✦ Krytz — Service Worker
  *
  * Strategy:
- * - App shell (HTML, CSS, JS) â†’ Cache-first with network update
- * - API calls â†’ Network-first with cache fallback
+ * - App shell (HTML, CSS, JS) → Cache-first with network update
+ * - API calls → Network-first with cache fallback
  * - Offline page for navigation requests that fail
  */
 
@@ -15,7 +15,7 @@ const SHELL_URLS = [
   '/index.html',
 ];
 
-// â”€â”€ Install â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Install ─────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
@@ -24,7 +24,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// â”€â”€ Activate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Activate ────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -37,7 +37,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// â”€â”€ Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Fetch ───────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -46,13 +46,13 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
 
-  // API requests â†’ Network-first
+  // API requests → Network-first
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, API_CACHE));
     return;
   }
 
-  // Navigation requests â†’ App shell (SPA)
+  // Navigation requests → App shell (SPA)
   if (request.mode === 'navigate') {
     event.respondWith(
       caches.match('/index.html')
@@ -62,17 +62,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets â†’ Cache-first
+  // Static assets → Cache-first
   if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|webp|woff2?)$/)) {
     event.respondWith(cacheFirst(request, SHELL_CACHE));
     return;
   }
 
-  // Everything else â†’ Network with cache fallback
+  // Everything else → Network with cache fallback
   event.respondWith(networkFirst(request, CACHE_NAME));
 });
 
-// â”€â”€ Strategies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Strategies ──────────────────────────────────────────────────────
 
 async function cacheFirst(request, cacheName) {
   const cached = await caches.match(request);
@@ -107,7 +107,7 @@ async function networkFirst(request, cacheName) {
   }
 }
 
-// â”€â”€ Background Sync (future) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Background Sync (future) ────────────────────────────────────────
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();

@@ -1,15 +1,15 @@
 /**
- * âœ¦ SECURITY UTILS
+ * ✦ SECURITY UTILS
  * Fixes three Doc 7 subtle bugs:
- *   (1) ReDoS risk in MATCH operator â€” safeRegex() with length + complexity + catastrophic pattern check
- *   (2) Dedupe key collision â€” buildDedupeKey() uses SHA-256(ruleId:itemId:timeWindow)
- *   (3) Embedding cache unbounded in multi-instance â€” RedisEmbedCache (L1 in-process + L2 Redis)
+ *   (1) ReDoS risk in MATCH operator — safeRegex() with length + complexity + catastrophic pattern check
+ *   (2) Dedupe key collision — buildDedupeKey() uses SHA-256(ruleId:itemId:timeWindow)
+ *   (3) Embedding cache unbounded in multi-instance — RedisEmbedCache (L1 in-process + L2 Redis)
  */
 'use strict';
 
 const crypto = require('crypto');
 
-// â”€â”€â”€ (1) Safe regex â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── (1) Safe regex ───────────────────────────────────────────────────────────
 const MAX_REGEX_LENGTH     = 100;
 const MAX_REGEX_COMPLEXITY = 10;
 
@@ -37,13 +37,13 @@ function safeRegexTest(pattern, input) {
   return { matched: regex.test((input || '').slice(0, 500)) };
 }
 
-// â”€â”€â”€ (2) Dedupe key builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── (2) Dedupe key builder ───────────────────────────────────────────────────
 function buildDedupeKey(ruleId, itemId, windowMs = 24 * 60 * 60 * 1000) {
   const timeWindow = Math.floor(Date.now() / windowMs);
   return crypto.createHash('sha256').update(`${ruleId}:${itemId}:${timeWindow}`).digest('hex').slice(0, 32);
 }
 
-// â”€â”€â”€ (3) Redis-backed embed cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── (3) Redis-backed embed cache ─────────────────────────────────────────────
 class RedisEmbedCache {
   constructor(redis, { ttlSeconds = 86_400, prefix = 'Krytz:embed:' } = {}) {
     this._redis    = redis;

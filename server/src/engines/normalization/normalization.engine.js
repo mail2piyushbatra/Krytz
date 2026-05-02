@@ -1,13 +1,13 @@
 /**
- * âœ¦ NORMALIZATION ENGINE â€” v2
+ * ✦ NORMALIZATION ENGINE — v2
  *
  * Transforms any raw input into Krytz's Internal Representation (IR).
  *
  * Upgrades from v1:
  *   - Confidence scoring on every IR object
  *   - Ambiguity detection: flags "tomorrow", "next week", relative dates
- *   - Real iCal (.ics) parsing â€” not just JSON calendar events
- *   - Real EML/RFC-2822 email parsing â€” strips quoted text
+ *   - Real iCal (.ics) parsing — not just JSON calendar events
+ *   - Real EML/RFC-2822 email parsing — strips quoted text
  *   - Added input size guard (truncate + warn on oversized inputs)
  */
 

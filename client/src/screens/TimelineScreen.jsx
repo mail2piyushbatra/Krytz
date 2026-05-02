@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Timeline Screen (v3: premium visual feed) */
+/** ✦ Krytz — Timeline Screen (v3: premium visual feed) */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { entries } from '../services/api';
 import { Card, ActionBtn, PageLoader, EmptyState, Badge } from '../components/ui/UiKit';
@@ -86,7 +86,7 @@ export default function TimelineScreen() {
     try {
       await entries.update(entryId, newText);
       setAllEntries(prev => prev.map(e => e.id === entryId ? { ...e, rawText: newText, raw_text: newText } : e));
-      setFlash('Updated âœ“');
+      setFlash('Updated ✓');
       setTimeout(() => setFlash(null), 2000);
     } catch (err) {
       setFlash(`Error: ${err.message}`);

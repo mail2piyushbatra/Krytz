@@ -1,4 +1,4 @@
-/* âœ¦ Krytz â€” Strategy Screen CSS
+/* ✦ Krytz — Strategy Screen CSS
    Executive lens: category health, velocity, blockers. */
 
 .strategy-screen {
@@ -6,7 +6,7 @@
   padding-bottom: 96px;
 }
 
-/* â”€â”€ Eyebrow + Headline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Eyebrow + Headline ──────────────────────────── */
 
 .strategy-eyebrow {
   font-size: var(--text-xs);
@@ -25,7 +25,7 @@
   margin-bottom: var(--space-8);
 }
 
-/* â”€â”€ KPI Strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── KPI Strip ───────────────────────────────────── */
 
 .strategy-kpis {
   display: grid;
@@ -63,7 +63,7 @@
 .strategy-kpi--danger .strategy-kpi-value { color: var(--status-action); }
 .strategy-kpi--done .strategy-kpi-value   { color: var(--status-done); }
 
-/* â”€â”€ Velocity Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Velocity Bar ────────────────────────────────── */
 
 .strategy-velocity-wrap {
   margin-bottom: var(--space-8);
@@ -98,7 +98,7 @@
   min-width: 2px;
 }
 
-/* â”€â”€ Category Health Grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Category Health Grid ────────────────────────── */
 
 .strategy-health-grid {
   display: grid;
@@ -181,7 +181,7 @@
   font-weight: 600;
 }
 
-/* â”€â”€ Drill-down panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Drill-down panel ─────────────────────────────── */
 
 .strategy-drill {
   margin-top: var(--space-3);
@@ -231,7 +231,7 @@
   font-style: italic;
 }
 
-/* â”€â”€ Top Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Top Items ───────────────────────────────────── */
 
 .strategy-top-items {
   display: flex;
@@ -303,7 +303,7 @@
   min-width: 2px;
 }
 
-/* â”€â”€ Blockers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Blockers ────────────────────────────────────── */
 
 .strategy-blockers {
   display: flex;
@@ -343,7 +343,7 @@
   font-weight: 500;
 }
 
-/* â”€â”€ Mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mobile ──────────────────────────────────────── */
 
 @media (max-width: 760px) {
   .strategy-headline {
@@ -381,7 +381,7 @@
   }
 }
 
-/* â”€â”€ Week delta badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Week delta badge ────────────────────────────── */
 
 .strategy-kpi-delta {
   font-size: 0.6rem;
@@ -392,7 +392,7 @@
 .delta-up   { color: var(--status-done); }
 .delta-down { color: var(--status-action); }
 
-/* â”€â”€ Intelligence toggle bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Intelligence toggle bar ─────────────────────── */
 
 .strategy-intel-bar {
   display: flex;
@@ -449,7 +449,7 @@
 .strategy-intel-overloaded { background: var(--status-action); }
 .strategy-intel-underloaded { background: var(--text-tertiary); }
 
-/* â”€â”€ Intelligence panels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Intelligence panels ─────────────────────────── */
 
 .strategy-panel {
   background: var(--bg-secondary);
@@ -569,7 +569,7 @@
 .strategy-cap-overloaded { color: var(--status-action); background: rgba(239,83,80,0.1); }
 .strategy-cap-underloaded { color: var(--text-tertiary); background: var(--bg-tertiary); }
 
-/* â”€â”€ Contradiction cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Contradiction cards ─────────────────────────── */
 
 .strategy-contradiction-card {
   padding: var(--space-3) var(--space-4);
@@ -600,7 +600,7 @@
   line-height: 1.5;
 }
 
-/* â”€â”€ Commitment cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Commitment cards ────────────────────────────── */
 
 .strategy-commitment-card {
   padding: var(--space-3) var(--space-4);
@@ -647,7 +647,7 @@
 .strategy-urgency-due_soon { color: var(--status-deadline); }
 .strategy-urgency-open     { color: var(--text-tertiary); }
 
-/* â”€â”€ Action buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Action buttons ──────────────────────────────── */
 
 .strategy-action-btn {
   padding: 5px 12px;
@@ -692,7 +692,7 @@
   flex-shrink: 0;
 }
 
-/* â”€â”€ Drill-down pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Drill-down pagination ───────────────────────── */
 
 .strategy-drill-pagination {
   display: flex;
@@ -1158,7 +1158,7 @@
   line-height: 1.45;
 }
 
-/* â”€â”€ Mobile overrides for new components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mobile overrides for new components ──────────── */
 
 @media (max-width: 760px) {
   .strategy-panel-grid {

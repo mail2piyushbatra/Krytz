@@ -1,9 +1,9 @@
 /**
- * âœ¦ RULE DSL â€” SCHEMA + NL COMPILER + LINTER
+ * ✦ RULE DSL — SCHEMA + NL COMPILER + LINTER
  *
  * Three concerns in one file:
  *   1. Schema: validates rule JSON (Zod-equivalent in pure JS)
- *   2. Compiler: NL â†’ DSL via LLM (constrained, function-calling)
+ *   2. Compiler: NL → DSL via LLM (constrained, function-calling)
  *   3. Linter: safety + cost guards before a rule is saved
  */
 
@@ -11,7 +11,7 @@
 
 const OpenAI = require('openai');
 
-// â”€â”€â”€ Available DSL variables (resolver-backed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Available DSL variables (resolver-backed) ────────────────────────────────
 const VARIABLES = [
   'item.state', 'item.persistence_days', 'item.priority',
   'item.blocker', 'item.deadline_days', 'item.project',
@@ -25,7 +25,7 @@ const ACTIONS = ['NOTIFY', 'SET_STATE', 'ADD_TAG', 'WEBHOOK'];
 const STATES  = ['IN_PROGRESS', 'DONE', 'DROPPED'];
 const OPS     = ['AND', 'OR', 'GT', 'GTE', 'LT', 'LTE', 'EQ', 'EXISTS', 'MATCH'];
 
-// â”€â”€â”€ Schema validator (pure JS â€” no Zod dependency) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Schema validator (pure JS — no Zod dependency) ──────────────────────────
 function validateExpr(node) {
   if (!node || typeof node !== 'object') throw new Error('Expr must be an object');
   if ('const' in node) {
@@ -101,7 +101,7 @@ function validateRule(rule) {
   return errors;
 }
 
-// â”€â”€â”€ Policy linter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Policy linter ────────────────────────────────────────────────────────────
 function lintRule(rule) {
   const warnings = [];
 
@@ -110,20 +110,20 @@ function lintRule(rule) {
     warnings.push('NOTIFY with cooldown < 1h may produce spam. Recommended: cooldown_seconds >= 86400');
   }
 
-  // No state guard â€” rule fires on ALL items every sweep
+  // No state guard — rule fires on ALL items every sweep
   const condStr = JSON.stringify(rule.condition);
   if (!condStr.includes('item.state')) {
-    warnings.push('No item.state guard â€” rule will evaluate on every item. Add state filter.');
+    warnings.push('No item.state guard — rule will evaluate on every item. Add state filter.');
   }
 
   // Regex complexity
   const regexMatches = condStr.match(/"regex"\s*:\s*"[^"]+"/g) || [];
   for (const m of regexMatches) {
-    if (m.length > 100) warnings.push('Complex regex pattern detected â€” may be slow at scale');
+    if (m.length > 100) warnings.push('Complex regex pattern detected — may be slow at scale');
   }
 
   // Oversized condition
-  if (condStr.length > 3000) warnings.push('Condition JSON > 3000 chars â€” consider simplifying');
+  if (condStr.length > 3000) warnings.push('Condition JSON > 3000 chars — consider simplifying');
 
   // Webhook safety
   if (rule.action.type === 'WEBHOOK') {
@@ -135,11 +135,11 @@ function lintRule(rule) {
   return warnings;
 }
 
-// â”€â”€â”€ NL â†’ DSL compiler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── NL → DSL compiler ───────────────────────────────────────────────────────
 const COMPILER_SYSTEM = `You are a rule DSL compiler for Krytz, a task tracking system.
 Convert the user's natural language description into a STRICT JSON rule object.
 
-ONLY use these exact fields and values â€” nothing else:
+ONLY use these exact fields and values — nothing else:
 
 Operators: ${OPS.join(', ')}
 Variables: ${VARIABLES.join(', ')}
@@ -167,9 +167,9 @@ And Expr is:
 Rules:
 - Always add a cooldown when action is NOTIFY (default 86400)
 - Always add item.state guard when possible
-- Keep conditions simple â€” max 3 AND levels
+- Keep conditions simple — max 3 AND levels
 - Use {{item.text}} template in NOTIFY body when referencing the item
-- Return ONLY the JSON object â€” no explanation, no markdown code fences`;
+- Return ONLY the JSON object — no explanation, no markdown code fences`;
 
 async function compileRule(nl) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

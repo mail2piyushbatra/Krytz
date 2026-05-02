@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Recall Screen (v3: spotlight interface)
+/** ✦ Krytz — Recall Screen (v3: spotlight interface)
  *  Mode A: AI Recall (natural language Q&A via /recall)
  *  Mode B: Semantic Search (vector similarity via /items/search)
  */
@@ -40,7 +40,7 @@ export default function RecallScreen() {
         setSemantic(data?.results || data?.items || []);
         saveToHistory(query.trim());
       } else {
-        // AI recall â€” natural language Q&A
+        // AI recall — natural language Q&A
         try {
           const data = await recallApi.query(query.trim());
           setAnswer(data);
@@ -54,7 +54,7 @@ export default function RecallScreen() {
           );
           if (matches.length > 0) {
             setAnswer({
-              answer: `AI recall unavailable â€” found ${matches.length} matching entries:`,
+              answer: `AI recall unavailable — found ${matches.length} matching entries:`,
               sources: matches.slice(0, 5),
               fallback: true,
             });
@@ -163,7 +163,7 @@ export default function RecallScreen() {
       {/* Error */}
       {error && (
         <Card className="recall-error animate-slideUp">
-          <p>âš ï¸ {error}</p>
+          <p>⚠ï¸ {error}</p>
         </Card>
       )}
 
@@ -268,7 +268,7 @@ export default function RecallScreen() {
           icon={mode === 'semantic' ? Target : Search}
           title={mode === 'semantic' ? 'Find similar items' : 'Ask anything about your notes'}
           description={mode === 'semantic'
-            ? 'Type any phrase â€” semantic search finds items with similar meaning, not just exact words.'
+            ? 'Type any phrase — semantic search finds items with similar meaning, not just exact words.'
             : 'Try: "What meetings did I have this week?" or "Am I still blocked on anything?"'}
         />
       )}

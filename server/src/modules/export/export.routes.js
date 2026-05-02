@@ -1,7 +1,7 @@
 /**
- * âœ¦ Krytz â€” Export Routes
+ * ✦ Krytz — Export Routes
  *
- * GET /api/v1/export â€” Full JSON dump of the user's ledger.
+ * GET /api/v1/export — Full JSON dump of the user's ledger.
  * Satisfies audit requirement Â§3.2.
  */
 
@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-// GET /api/v1/export â€” Full ledger export
+// GET /api/v1/export — Full ledger export
 router.get('/', async (req, res, next) => {
   try {
     const userId = req.user.id;

@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Settings Screen
+/** ✦ Krytz — Settings Screen
  *
  * Profile (name, timezone picker), category management (CRUD),
  * data export, account management, appearance.
@@ -11,7 +11,7 @@ import { Card, ActionBtn, Badge } from '../components/ui/UiKit';
 import { useToast } from '../components/Toast';
 import './SettingsScreen.css';
 
-// â”€â”€ Common timezones grouped by region â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Common timezones grouped by region ────────────────────────
 const TIMEZONE_GROUPS = {
   'Americas': [
     'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
@@ -174,7 +174,7 @@ export default function SettingsScreen() {
     } catch (err) { toast.error('Error: ' + err.message); }
   }
 
-  // â”€â”€ Category CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Category CRUD ─────────────────────────────────────────────
 
   async function handleCreateCategory(e) {
     e.preventDefault();
@@ -284,7 +284,7 @@ export default function SettingsScreen() {
               type="password"
               value={currentPassword}
               onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              placeholder="••••••••"
               required
             />
           </div>
@@ -366,7 +366,7 @@ export default function SettingsScreen() {
             {tier.captures_today !== undefined && (
               <div className="settings-info-row">
                 <span className="settings-info-label">Captures today</span>
-                <span className="settings-info-value">{tier.captures_today} / {tier.max_daily_captures || 'âˆž'}</span>
+                <span className="settings-info-value">{tier.captures_today} / {tier.max_daily_captures || '∞'}</span>
               </div>
             )}
           </Card>
@@ -386,7 +386,7 @@ export default function SettingsScreen() {
                 id="theme-light"
               >
                 <span className="theme-dot" style={{ background: '#FAF8F5', border: '1px solid #ddd' }} />
-                â˜€ Cream (Light)
+                ☀ Cream (Light)
               </button>
               <button
                 className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
@@ -394,7 +394,7 @@ export default function SettingsScreen() {
                 id="theme-dark"
               >
                 <span className="theme-dot" style={{ background: '#0E1117' }} />
-                â—‘ Obsidian (Dark)
+                ◑ Obsidian (Dark)
               </button>
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function SettingsScreen() {
               <div className="settings-data-desc">Download all your data as a file</div>
             </div>
             <button className="btn btn-secondary" onClick={handleExport} disabled={exporting} id="settings-export">
-              {exporting ? <span className="spinner" /> : 'ðŸ“¥ JSON'}
+              {exporting ? <span className="spinner" /> : '📥 JSON'}
             </button>
           </div>
           <div className="settings-data-row">
@@ -431,7 +431,7 @@ export default function SettingsScreen() {
         <div className="section-title">Smart Rules</div>
         <Card>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: 'var(--space-4)' }}>
-            Describe a rule in plain English â€” e.g. "If an item is older than 7 days and open, mark it as stalled."
+            Describe a rule in plain English — e.g. "If an item is older than 7 days and open, mark it as stalled."
           </p>
 
           {/* Existing rules */}
@@ -467,7 +467,7 @@ export default function SettingsScreen() {
                       className="btn btn-ghost btn-sm"
                       onClick={() => handleDeleteRule(rule.id, rule.name || 'this rule')}
                       style={{ color: 'var(--danger)' }}
-                    >Ã—</button>
+                    >×</button>
                   </div>
                 </div>
               ))}
@@ -502,7 +502,7 @@ export default function SettingsScreen() {
           <div className="settings-info-row">
             <span className="settings-info-label">Member since</span>
             <span className="settings-info-value">
-              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'â€”'}
+              {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
             </span>
           </div>
         </Card>
@@ -536,7 +536,7 @@ export default function SettingsScreen() {
   );
 }
 
-// â”€â”€â”€ Category Row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Category Row ──────────────────────────────────────────────────────────────
 
 function SettingsKpiCard({ label, value, detail }) {
   return (
@@ -607,7 +607,7 @@ function CategoryRow({ cat, editing, onEdit, onUpdate, onDelete }) {
           )}
           <div className="cat-row-actions">
             <button className="btn btn-ghost btn-sm" onClick={onEdit}>Edit</button>
-            <button className="btn btn-ghost btn-sm" onClick={onDelete} style={{ color: 'var(--danger)' }}>Ã—</button>
+            <button className="btn btn-ghost btn-sm" onClick={onDelete} style={{ color: 'var(--danger)' }}>×</button>
           </div>
         </>
       )}

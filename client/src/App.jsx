@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” App Shell + Router (v2)
+/** ✦ Krytz — App Shell + Router (v2)
  *
  * Closes architecture gaps:
  * - #3  Error boundaries (wraps all routes)
@@ -26,7 +26,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import { PrivacyScreen, TermsScreen } from './screens/LegalScreen';
 
-// â”€â”€ Lazy-loaded screens (code splitting) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Lazy-loaded screens (code splitting) ──────────────────────
 const PLATFORM_LANDING_BY_ROLE = {
   founder: '/platform/founder',
   operator: '/platform/operator',
@@ -49,7 +49,7 @@ export default function App() {
 
   useEffect(() => { init(); }, []);
 
-  // â”€â”€ Global Cmd+K / Ctrl+K shortcut â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Global Cmd+K / Ctrl+K shortcut ──────────────
   useEffect(() => {
     function handleKeyDown(e) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -158,7 +158,7 @@ function SplashScreen() {
         WebkitTextFillColor: 'transparent',
         filter: 'drop-shadow(0 0 20px rgba(200, 164, 90, 0.2))',
         animation: 'pulse 2s ease-in-out infinite',
-      }}>âœ¦</span>
+      }}>✦</span>
       <span style={{
         color: 'var(--text-secondary)',
         fontSize: '0.875rem',

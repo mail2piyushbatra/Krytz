@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Notifications Store (Zustand)
+/** ✦ Krytz — Notifications Store (Zustand)
  *
  * Centralized notification state. Polled every 60s.
  * Exposes unread count for badge display.

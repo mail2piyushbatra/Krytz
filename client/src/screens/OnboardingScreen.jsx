@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Onboarding Screen (v3: premium animated experience) */
+/** ✦ Krytz — Onboarding Screen (v3: premium animated experience) */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';

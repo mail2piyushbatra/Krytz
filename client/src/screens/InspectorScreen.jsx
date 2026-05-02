@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Inspector Screen (v3: premium data platform UI)
+/** ✦ Krytz — Inspector Screen (v3: premium data platform UI)
  *
  * Observability, causality graph, and engine health.
  * Also manages connectors (Layer 5 gap).
@@ -209,7 +209,7 @@ function promptConnectorConfig(platform) {
   return JSON.parse(trimmed);
 }
 
-/* â”€â”€ Health Tab â”€â”€ */
+/* ── Health Tab ── */
 function HealthTab({ health }) {
   if (!health) return <EmptyState icon={Heart} title="No health data" description="Engine fleet has not reported yet." />;
 
@@ -280,7 +280,7 @@ function getStatus(data) {
   return 'ok';
 }
 
-/* â”€â”€ Graph Tab â”€â”€ */
+/* ── Graph Tab ── */
 function GraphTab({ graph }) {
   if (!graph) return <EmptyState icon={GitBranch} title="No graph data" description="The temporal state graph is empty." />;
   const flow = buildInspectorFlow(graph);
@@ -330,7 +330,7 @@ function GraphTab({ graph }) {
   );
 }
 
-/* â”€â”€ Traces Tab â”€â”€ */
+/* ── Traces Tab ── */
 function TracesTab({ traces }) {
   if (!traces?.length) return <EmptyState icon={Activity} title="No traces found" description="System activity traces will appear here." />;
   return (
@@ -351,7 +351,7 @@ function TracesTab({ traces }) {
   );
 }
 
-/* â”€â”€ Anomalies Tab â”€â”€ */
+/* ── Anomalies Tab ── */
 function AnomaliesTab({ anomalies }) {
   if (!anomalies?.length) {
     return (
@@ -378,7 +378,7 @@ function AnomaliesTab({ anomalies }) {
   );
 }
 
-/* â”€â”€ Connectors Tab â”€â”€ */
+/* ── Connectors Tab ── */
 function ConnectorsTab({ connectors, onAdd, onSync, onDisconnect }) {
   return (
     <div className="connectors-view">

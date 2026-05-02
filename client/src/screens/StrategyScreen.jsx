@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Strategy Screen (v2)
+/** ✦ Krytz — Strategy Screen (v2)
  *
  * Live executive lens with ACTIONABLE intelligence:
  * - KPI strip + velocity bar
@@ -86,11 +86,11 @@ export default function StrategyScreen() {
     return () => clearTimeout(timer);
   }, [loadData]);
 
-  // â”€â”€ Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Actions ───────────────────────────────────────────────
   async function handleMarkDone(itemId) {
     try {
       await items.markDone(itemId);
-      showToast('âœ“ Marked done');
+      showToast('✓ Marked done');
       loadData();
     } catch { showToast('Failed to mark done'); }
   }
@@ -98,7 +98,7 @@ export default function StrategyScreen() {
   async function handleSnooze(itemId) {
     try {
       await actions.submit(itemId, 'snooze', 180);
-      showToast('â¸ Snoozed for 3h');
+      showToast('⏸ Snoozed for 3h');
       loadData();
     } catch { showToast('Failed to snooze'); }
   }
@@ -106,7 +106,7 @@ export default function StrategyScreen() {
   async function handleUnblock(itemId) {
     try {
       await items.toggleBlocker(itemId, false);
-      showToast('âœ“ Blocker cleared');
+      showToast('✓ Blocker cleared');
       loadData();
     } catch { showToast('Failed to clear blocker'); }
   }
@@ -114,7 +114,7 @@ export default function StrategyScreen() {
   async function handleResolveContradiction(id) {
     try {
       await intelligence.resolveContradiction(id);
-      showToast('âœ“ Contradiction resolved');
+      showToast('✓ Contradiction resolved');
       setContradictions(prev => prev.filter(c => c.id !== id));
     } catch { showToast('Failed to resolve'); }
   }
@@ -122,12 +122,12 @@ export default function StrategyScreen() {
   async function handleFulfillCommitment(id) {
     try {
       await intelligence.fulfillCommitment(id);
-      showToast('âœ“ Commitment fulfilled');
+      showToast('✓ Commitment fulfilled');
       setCommitments(prev => prev.filter(c => c.id !== id));
     } catch { showToast('Failed to fulfill'); }
   }
 
-  // â”€â”€ Drill category â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Drill category ────────────────────────────────────────
   async function drillCat(catName) {
     if (focusCat === catName) { setFocusCat(null); setCatDetail(null); setCatPage(0); return; }
     setFocusCat(catName);
@@ -140,7 +140,7 @@ export default function StrategyScreen() {
     setCatLoading(false);
   }
 
-  // â”€â”€ Derived numbers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Derived numbers ───────────────────────────────────────
   const blockers        = openItems.filter(i => i.blocker);
   const overdueItems    = openItems.filter(i => i.dueDate && new Date(i.dueDate) < new Date());
   const totalOpen       = openItems.length;
@@ -183,7 +183,7 @@ export default function StrategyScreen() {
 
       {error && <div className="command-error">{error}</div>}
 
-      {/* â”€â”€ KPI strip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── KPI strip ─────────────────────────────────────── */}
       <div className="strategy-kpis-grid">
         <MetricCard 
           title="Open Items" 
@@ -219,7 +219,7 @@ export default function StrategyScreen() {
         />
       </div>
 
-      {/* â”€â”€ Velocity bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Velocity bar ──────────────────────────────────── */}
       <div className="strategy-velocity-wrap">
         <div className="strategy-velocity-label">
           <span>Weekly flow</span>
@@ -233,7 +233,7 @@ export default function StrategyScreen() {
         </div>
       </div>
 
-      {/* â”€â”€ Intelligence panels toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Intelligence panels toggle ────────────────────── */}
       <div className="strategy-intel-bar">
         <button
           className={`strategy-intel-btn ${activePanel === 'capacity' ? 'active' : ''}`}
@@ -273,7 +273,7 @@ export default function StrategyScreen() {
         </button>
       </div>
 
-      {/* â”€â”€ Capacity Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Capacity Panel ────────────────────────────────── */}
       {activePanel === 'capacity' && capacity && (
         <Card className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
@@ -297,16 +297,16 @@ export default function StrategyScreen() {
             
             <div className="strategy-panel-grid-flex">
               <div className="strategy-panel-stat">
-                <span className="strategy-panel-stat-val">{capacity.capacity?.openItems ?? 'â€”'}</span>
+                <span className="strategy-panel-stat-val">{capacity.capacity?.openItems ?? '—'}</span>
                 <span className="strategy-panel-stat-lbl">Open items</span>
               </div>
               <div className="strategy-panel-stat">
-                <span className="strategy-panel-stat-val">{capacity.streak?.current ?? 'â€”'}</span>
+                <span className="strategy-panel-stat-val">{capacity.streak?.current ?? '—'}</span>
                 <span className="strategy-panel-stat-lbl">Day streak</span>
               </div>
               <div className="strategy-panel-stat">
                 <span className={`strategy-panel-stat-val ${capacity.burnout?.risk === 'high' ? 'strategy-danger-val' : ''}`}>
-                  {capacity.burnout?.risk || 'â€”'}
+                  {capacity.burnout?.risk || '—'}
                 </span>
                 <span className="strategy-panel-stat-lbl">Workload level</span>
               </div>
@@ -323,7 +323,7 @@ export default function StrategyScreen() {
         </Card>
       )}
 
-      {/* â”€â”€ Contradictions Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Contradictions Panel ──────────────────────────── */}
       {activePanel === 'graph' && (
         <TaskGraphPanel graph={taskGraph} />
       )}
@@ -339,7 +339,7 @@ export default function StrategyScreen() {
             <span className="strategy-panel-count">{contradictions.length}</span>
           </div>
           {contradictions.length === 0 ? (
-            <p className="strategy-panel-empty">No conflicts detected â€” your plan is consistent.</p>
+            <p className="strategy-panel-empty">No conflicts detected — your plan is consistent.</p>
           ) : contradictions.map(c => (
             <div key={c.id} className={`strategy-contradiction-card strategy-sev-${c.severity || 'medium'}`}>
               <div className="strategy-contradiction-type">{c.type?.replace(/_/g, ' ')}</div>
@@ -356,7 +356,7 @@ export default function StrategyScreen() {
         </div>
       )}
 
-      {/* â”€â”€ Commitments Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Commitments Panel ─────────────────────────────── */}
       {activePanel === 'commitments' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
@@ -370,7 +370,7 @@ export default function StrategyScreen() {
               <div className="strategy-commitment-body">
                 <span className="strategy-commitment-text">{c.commitment_text}</span>
                 <div className="strategy-commitment-meta">
-                  {c.counterparty_name && <span className="badge badge-tag">â†’ {c.counterparty_name}</span>}
+                  {c.counterparty_name && <span className="badge badge-tag">→ {c.counterparty_name}</span>}
                   {c.due_date && (
                     <span className={`badge ${c.urgency === 'overdue' ? 'badge-action' : c.urgency === 'due_soon' ? 'badge-deadline' : 'badge-tag'}`}>
                       {new Date(c.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -391,7 +391,7 @@ export default function StrategyScreen() {
         </div>
       )}
 
-      {/* â”€â”€ Estimation Stats Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Estimation Stats Panel ────────────────────────── */}
       {activePanel === 'estimates' && (
         <div className="strategy-panel animate-fadeIn">
           <div className="strategy-panel-header">
@@ -420,13 +420,13 @@ export default function StrategyScreen() {
                 </div>
               </div>
               <p className="strategy-panel-insight">{estimationStats.insight}</p>
-              {estimationStats.biasLabel && <p className="strategy-panel-rec">ðŸ“Š {estimationStats.biasLabel}</p>}
+              {estimationStats.biasLabel && <p className="strategy-panel-rec">📊 {estimationStats.biasLabel}</p>}
             </>
           )}
         </div>
       )}
 
-      {/* â”€â”€ Category health grid & Radar Chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Category health grid & Radar Chart ───────────────── */}
       <div className="section-title" style={{ marginBottom: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
         Category Health
       </div>
@@ -442,7 +442,7 @@ export default function StrategyScreen() {
 
       <div className="strategy-health-grid">
         {healthRows.length === 0 ? (
-          <div className="strategy-empty">No categories yet â€” add them in Settings.</div>
+          <div className="strategy-empty">No categories yet — add them in Settings.</div>
         ) : healthRows.map(cat => {
           const status = cat.blockers > 0 ? 'at-risk' : cat.open > 5 ? 'heavy' : cat.open > 0 ? 'active' : 'clear';
           const isOpen = focusCat === cat.name;
@@ -461,7 +461,7 @@ export default function StrategyScreen() {
                 <span className="strategy-cat-dot" style={{ background: cat.color }} />
                 <span className="strategy-health-name">{cat.name}</span>
                 <span className={`strategy-health-tag strategy-tag-${status}`}>
-                  {status === 'at-risk' ? 'âš  Blocked' : status === 'heavy' ? 'â— Loaded' : status === 'active' ? 'âœ“ Active' : 'â€” Clear'}
+                  {status === 'at-risk' ? '⚠ Blocked' : status === 'heavy' ? '● Loaded' : status === 'active' ? '✓ Active' : '— Clear'}
                 </span>
               </div>
               <div className="strategy-health-stats">
@@ -474,30 +474,30 @@ export default function StrategyScreen() {
                 <div className="strategy-drill" onClick={e => e.stopPropagation()}>
                   {catLoading ? (
                     <div className="strategy-drill-loading">
-                      <span className="spinner" /> Loadingâ€¦
+                      <span className="spinner" /> Loading…
                     </div>
                   ) : catDetail ? (
                     <>
                       <div className="strategy-drill-row">
                         <span>Avg completion</span>
-                        <strong>{catDetail.avgCompletionDays !== null && catDetail.avgCompletionDays !== undefined ? `${catDetail.avgCompletionDays.toFixed(1)} days` : 'â€”'}</strong>
+                        <strong>{catDetail.avgCompletionDays !== null && catDetail.avgCompletionDays !== undefined ? `${catDetail.avgCompletionDays.toFixed(1)} days` : '—'}</strong>
                       </div>
                       <div className="strategy-drill-row">
                         <span>Completed (30d)</span>
-                        <strong>{catDetail.completedLast30 ?? 'â€”'}</strong>
+                        <strong>{catDetail.completedLast30 ?? '—'}</strong>
                       </div>
                       {pagedItems.map((it, i) => (
                         <div key={i} className="strategy-drill-item">
-                          <span className="strategy-drill-bullet">â€º</span>
+                          <span className="strategy-drill-bullet">›</span>
                           <span className="strategy-drill-item-text">{it.text || it.canonical_text}</span>
-                          <button className="strategy-drill-done-btn" onClick={() => handleMarkDone(it.id)} title="Mark done">âœ“</button>
+                          <button className="strategy-drill-done-btn" onClick={() => handleMarkDone(it.id)} title="Mark done">✓</button>
                         </div>
                       ))}
                       {totalPages > 1 && (
                         <div className="strategy-drill-pagination">
-                          <button disabled={catPage === 0} onClick={() => setCatPage(p => p - 1)}>â€¹</button>
+                          <button disabled={catPage === 0} onClick={() => setCatPage(p => p - 1)}>‹</button>
                           <span>{catPage + 1} / {totalPages}</span>
-                          <button disabled={catPage >= totalPages - 1} onClick={() => setCatPage(p => p + 1)}>â€º</button>
+                          <button disabled={catPage >= totalPages - 1} onClick={() => setCatPage(p => p + 1)}>›</button>
                         </div>
                       )}
                     </>
@@ -511,7 +511,7 @@ export default function StrategyScreen() {
         })}
       </div>
 
-      {/* â”€â”€ Top 5 priority items WITH ACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Top 5 priority items WITH ACTIONS ────────────── */}
       {topItems.length > 0 && (
         <>
           <div className="section-title" style={{ margin: 'var(--space-6) 0 var(--space-4)' }}>
@@ -539,8 +539,8 @@ export default function StrategyScreen() {
                   </div>
                 </div>
                 <div className="strategy-top-actions">
-                  <ActionBtn className="strategy-action-btn strategy-action-done" onClick={() => handleMarkDone(item.id)} variant="ghost" title="Done">âœ“</ActionBtn>
-                  <ActionBtn className="strategy-action-btn strategy-action-snooze" onClick={() => handleSnooze(item.id)} variant="ghost" title="Snooze 3h">â¸</ActionBtn>
+                  <ActionBtn className="strategy-action-btn strategy-action-done" onClick={() => handleMarkDone(item.id)} variant="ghost" title="Done">✓</ActionBtn>
+                  <ActionBtn className="strategy-action-btn strategy-action-snooze" onClick={() => handleSnooze(item.id)} variant="ghost" title="Snooze 3h">⏸</ActionBtn>
                 </div>
                 {typeof item.priority === 'number' && (
                   <span className="strategy-priority-bar">
@@ -553,7 +553,7 @@ export default function StrategyScreen() {
         </>
       )}
 
-      {/* â”€â”€ Blockers spotlight WITH ACTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Blockers spotlight WITH ACTIONS ────────────────── */}
       {blockers.length > 0 && (
         <>
           <div className="section-title" style={{ margin: 'var(--space-6) 0 var(--space-4)' }}>

@@ -1,5 +1,5 @@
 /**
- * âœ¦ Krytz LOGGER
+ * ✦ Krytz LOGGER
  *
  * Structured JSON logging with levels, context, and request tracing.
  * Replaces console.log/Morgan with a proper logging system.

@@ -1,4 +1,4 @@
-/** âœ¦ Krytz â€” Items Store (Zustand)
+/** ✦ Krytz — Items Store (Zustand)
  *
  * Centralized state for items across screens.
  * Supports optimistic updates, reducing redundant API calls.

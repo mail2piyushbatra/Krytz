@@ -1,6 +1,6 @@
-/** âœ¦ Krytz â€” useTheme hook
+/** ✦ Krytz — useTheme hook
  *  Persists theme preference in localStorage.
- *  Applies [data-theme] on <html> â€” zero component changes needed.
+ *  Applies [data-theme] on <html> — zero component changes needed.
  */
 import { useState, useEffect } from 'react';
 

@@ -30,7 +30,7 @@ const MAX_TEXT_LENGTH = 10000;
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
 
-// â”€â”€â”€ 5D Engine Constants (Phase 4-7) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── 5D Engine Constants (Phase 4-7) ──────────────────────────────────────────
 
 // Propagation safety limits
 const MAX_PROPAGATION_DEPTH = 10;
@@ -42,7 +42,7 @@ const ANOMALY_THRESHOLDS = {
   OSCILLATION_WINDOW:    5,       // recent changes to check for oscillation
   OSCILLATION_MIN_FLIPS: 3,       // min sign flips to flag
   THRASH_WINDOW_DAYS:    7,       // days to check for state thrashing
-  THRASH_MIN_CYCLES:     3,       // min ACTIVEâ†’DRIFT cycles to flag
+  THRASH_MIN_CYCLES:     3,       // min ACTIVE→DRIFT cycles to flag
   EMA_DAMPING_ALPHA:     0.3,     // stronger EMA on spike
   FREEZE_DURATION_MS:    3600000, // 1 hour freeze on oscillation
 };

@@ -1,42 +1,42 @@
 /**
- * âœ¦ Krytz ENGINE REGISTRY â€” v4
+ * ✦ Krytz ENGINE REGISTRY — v4
  *
  * This file registers and exports all core engines.
- * Engines are the intelligence layer â€” they contain the actual product logic,
+ * Engines are the intelligence layer — they contain the actual product logic,
  * separated from the API/route layer (modules/).
  *
  * Architecture:
- *   Request â†’ Module (route/validation) â†’ Engine (logic) â†’ Repository â†’ Database
- *                                                       â†˜ LLM (OpenAI)
+ *   Request → Module (route/validation) → Engine (logic) → Repository → Database
+ *                                                       ↘ LLM (OpenAI)
  *
  * Core Engines:
- *   1. CortexEngine         â€” DAG-based orchestration & ingestion pipeline
- *   2. ExtractionEngine     â€” AI-powered state extraction from raw inputs
- *   3. RecallEngine         â€” Intent-aware retrieval with semantic ranking
- *   4. StateEngine          â€” State aggregation, daily/weekly snapshots
- *   5. NormalizationEngine  â€” Transform any input into Internal Representation (IR)
+ *   1. CortexEngine         — DAG-based orchestration & ingestion pipeline
+ *   2. ExtractionEngine     — AI-powered state extraction from raw inputs
+ *   3. RecallEngine         — Intent-aware retrieval with semantic ranking
+ *   4. StateEngine          — State aggregation, daily/weekly snapshots
+ *   5. NormalizationEngine  — Transform any input into Internal Representation (IR)
  *
  * Subsystems:
- *   6. TemporalStateGraph   â€” DB-backed item lifecycle + confidence tracking
- *   7. DAGExecutor          â€” Parallel task graph execution
- *   8. QueryPlanner         â€” Intent classification + context packing
- *   9. EmbedPipeline        â€” Embedding cache + batch API calls
+ *   6. TemporalStateGraph   — DB-backed item lifecycle + confidence tracking
+ *   7. DAGExecutor          — Parallel task graph execution
+ *   8. QueryPlanner         — Intent classification + context packing
+ *   9. EmbedPipeline        — Embedding cache + batch API calls
  *
  * Automation:
- *  10. RuleDSL              â€” Rule schema validation + NL compiler
- *  11. RuleEvaluator        â€” Deterministic condition interpreter
+ *  10. RuleDSL              — Rule schema validation + NL compiler
+ *  11. RuleEvaluator        — Deterministic condition interpreter
  *
  * Learning:
- *  12. PolicyOptimizer      â€” Contextual bandit for rule tuning
+ *  12. PolicyOptimizer      — Contextual bandit for rule tuning
  *
  * Phase 4-7 Engines:
- *  13. DecisionEngine       â€” DO_NOW / DEFER / IGNORE classification + trace
- *  14. CausalityGraph       â€” Item dependency DAG, transitive closure, bottlenecks
- *  15. RipplePropagation    â€” Cascade state changes through dependency graph
- *  16. ExecutionEngine      â€” Command â†’ Side Effect â†’ Event closed loop
- *  17. ObservabilityEngine  â€” Trace storage, replay, anomaly detection + mitigation
- *  18. LearningEngine       â€” Adaptive weight calibration + behavior pattern detection
- *  19. ConnectorFramework   â€” External data source adapter registry (Phase 3)
+ *  13. DecisionEngine       — DO_NOW / DEFER / IGNORE classification + trace
+ *  14. CausalityGraph       — Item dependency DAG, transitive closure, bottlenecks
+ *  15. RipplePropagation    — Cascade state changes through dependency graph
+ *  16. ExecutionEngine      — Command → Side Effect → Event closed loop
+ *  17. ObservabilityEngine  — Trace storage, replay, anomaly detection + mitigation
+ *  18. LearningEngine       — Adaptive weight calibration + behavior pattern detection
+ *  19. ConnectorFramework   — External data source adapter registry (Phase 3)
  */
 
 const CortexEngine = require('./cortex/cortex.engine');
@@ -81,7 +81,7 @@ const itemMatcher         = require('./intelligence/item.matcher');
 const logger = require('../lib/logger');
 const db     = require('../lib/db');
 
-// â”€â”€ Singleton instances â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Singleton instances ─────────────────────────────────────────────────────
 
 const engines = {
   cortex:        new CortexEngine(),
@@ -91,9 +91,9 @@ const engines = {
   normalization: new NormalizationEngine(),
 };
 
-// â”€â”€ TSG instance (shared across engines) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── TSG instance (shared across engines) ────────────────────────────────────
 const tsg = new TemporalStateGraph();
-tsg.setDB(db);  // Wire persistence â€” TSG writes through to items + item_events tables
+tsg.setDB(db);  // Wire persistence — TSG writes through to items + item_events tables
 
 /**
  * Initialize all engines. Call once at server startup.
@@ -107,7 +107,7 @@ async function initializeEngines() {
       logger.info(`${name} engine: ready`);
     } catch (err) {
       logger.error(`${name} engine: FAILED`, { error: err.message });
-      throw err; // Fail fast â€” all engines must initialize
+      throw err; // Fail fast — all engines must initialize
     }
   }
 
@@ -134,7 +134,7 @@ async function initializeEngines() {
 }
 
 /**
- * Get system-wide health â€” all engines + subsystems.
+ * Get system-wide health — all engines + subsystems.
  */
 function getSystemHealth() {
   return {
